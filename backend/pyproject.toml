@@ -26,6 +26,7 @@ dependencies = [
     "joserfc~=1.8.0",
     "requests~=2.34.2",
     "rdflib~=7.6.0",
+    "procrastinate~=3.10.0",
 ]
 
 [project.optional-dependencies]

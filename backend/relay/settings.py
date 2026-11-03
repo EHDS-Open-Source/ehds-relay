@@ -27,11 +27,6 @@ class Settings(BaseSettings):
     # No default: set RELAY_OIDC_CLIENT_SECRET wherever sign-in is used.
     oidc_client_secret: SecretStr | None = None
 
-    # Outgoing email (Mailpit in development, which accepts anything on its SMTP port)
-    smtp_host: str = "localhost"
-    smtp_port: int = 1025
-    smtp_from: str = "ehds-relay@example.org"
-
     # Sign-in and sessions. The browser reaches the API through the web app's origin, so the
     # OIDC redirect and the session cookie belong to web_url.
     web_url: str = "http://localhost:5173"
@@ -44,6 +39,16 @@ class Settings(BaseSettings):
     # ...and after this long regardless of activity.
     session_max_hours: int = 12
 
+    # Outgoing email (Mailpit in development, which accepts anything on its SMTP port)
+    smtp_host: str = "localhost"
+    smtp_port: int = 1025
+    smtp_from: str = "ehds-relay@example.org"
+    # The worker stops retrying an email after this many failed attempts.
+    email_max_attempts: int = 5
+
+    # How long an invitation link stays valid
+    invitation_ttl_days: int = 30
+
     @property
     def oidc_discovery_url(self) -> str:
         """Where the API fetches the OIDC discovery document from."""
@@ -53,6 +58,13 @@ class Settings(BaseSettings):
     @property
     def web_base_url(self) -> str:
         return self.web_url.rstrip("/")
+
+    @property
+    def database_dsn(self) -> str:
+        """`database_url` without SQLAlchemy's driver suffix, for libpq clients (the worker's
+        job queue)."""
+        scheme, sep, rest = self.database_url.partition("://")
+        return f"{scheme.split('+', 1)[0]}{sep}{rest}"
 
 
 @lru_cache

@@ -3,7 +3,7 @@
 Proof of concept: FastAPI + PostgreSQL backend, run on a local kind cluster with Tilt, and a
 React + Vite frontend.
 
-Not here yet: gateway. The worker is a placeholder.
+Not here yet: gateway.
 
 ## Layout
 
@@ -31,7 +31,7 @@ tilt up                  # deploy everything below, with live reload
 |---|---|---|
 | API | http://localhost:8000 | OpenAPI docs at `/docs` |
 | Web | http://localhost:5173 | Vite dev server on the host (hot module reload), proxies `/api` to the API |
-| Worker | no port | Same image as the API, restarts on code change. A placeholder until the job queue lands |
+| Worker | no port | Same image as the API, restarts on code change. Runs background jobs (Procrastinate), such as sending queued email |
 | Keycloak | http://localhost:8080 | Admin console `admin`/`admin`; realm `ehds-relay`, client `ehds-relay-bff` |
 | Mailpit | http://localhost:8025 (SMTP `localhost:1025`) | Catches mail from the worker and from Keycloak (sign-up verification, password reset) |
 | Postgres | `localhost:5432` | Database `relay`, user/password `relay`/`relay` |
@@ -92,10 +92,6 @@ The dev server proxies `/api`, `/healthz` and `/readyz` to the API on
 `localhost:${API_LOCAL_PORT:-8000}` (e.g. the Tilt port-forward). Set `WEB_PORT` to run it
 on another port. More in `frontend/README.md`.
 
-The API client in `frontend/packages/api-client` is generated from the backend's OpenAPI spec
-(`python -m relay.openapi`, which needs no database). Commit the regenerated spec and client
-with the API change.
-
 ## Signing in
 
 The API is the browser's backend for OpenID Connect (Keycloak in development). It runs the
@@ -139,6 +135,29 @@ Tests never contact the provider: `backend/tests/fake_oidc.py` stands in for it 
 sign-in flow tests, and the other tests insert a session row and set the cookie (see the
 `client` and `sign_in` fixtures in `backend/tests/conftest.py`).
 
+The API client in `frontend/packages/api-client` is generated from the backend's OpenAPI spec
+(`python -m relay.openapi`, which needs no database). Commit the regenerated spec and client
+with the API change.
+
+## Email in development
+
+The API never talks to a mail server. It writes each email to the `email_outbox` table in the
+same transaction as the change it reports (for example, a new invitation), so an email is sent
+only if that change was saved. The worker (`python -m relay.worker`) checks the outbox every
+10 seconds, sends due emails over SMTP and clears their bodies once sent. A failed send is
+retried with a growing delay, up to `RELAY_EMAIL_MAX_ATTEMPTS` (default 5) attempts; the error
+is kept in `last_error`.
+
+In Tilt the worker sends to Mailpit: open http://localhost:8025 (`MAILPIT_UI_LOCAL_PORT`) to
+read what was sent. Settings: `RELAY_SMTP_HOST`, `RELAY_SMTP_PORT`, `RELAY_SMTP_FROM`.
+
+The worker's job queue (Procrastinate) keeps its tables in the same database; the Alembic
+migrations create them. At start-up the worker waits up to five minutes for them (the API
+pod's init container runs the migrations), then exits so it is restarted.
+
+Invitation links have the form `{RELAY_WEB_URL}/invitations/{token}` and stay valid for
+`RELAY_INVITATION_TTL_DAYS` (default 30) days.
+
 ## API
 
 | Method | Path | |
@@ -148,3 +167,9 @@ sign-in flow tests, and the other tests insert a session row and set the cookie 
 | POST | `/api/v1/organisations` | create `{"name": "Acme", "country": "NL"}` |
 | GET | `/api/v1/organisations` | list |
 | GET | `/api/v1/organisations/{id}` | get |
+| POST | `/api/v1/organisations/{id}/invitations` | Owners: invite `{"email": "a@example.org", "role": "standard"}`; emails a link |
+| GET | `/api/v1/organisations/{id}/invitations?status=pending` | Owners: list, newest first |
+| DELETE | `/api/v1/organisations/{id}/invitations/{invitation_id}` | Owners: cancel a pending invitation |
+| POST | `/api/v1/organisations/{id}/invitations/{invitation_id}/resend` | Owners: new link and expiry, old link stops working |
+| GET | `/api/v1/invitations/{token}` | public preview of an invitation |
+| POST | `/api/v1/invitations/{token}/accept` | join as the signed-in user, whose email must be the invited one |
