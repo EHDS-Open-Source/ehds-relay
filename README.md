@@ -1,21 +1,24 @@
 # EHDS Relay
 
-Backend proof of concept: FastAPI + PostgreSQL, run on a local kind cluster with Tilt.
+Proof of concept: FastAPI + PostgreSQL backend, run on a local kind cluster with Tilt, and a
+React + Vite frontend.
 
-Not here yet: background worker, Keycloak/OIDC, frontend, gateway.
+Not here yet: background worker, Keycloak/OIDC, gateway.
 
 ## Layout
 
 | Path | What |
 |---|---|
 | `backend/` | Python package `relay` (FastAPI routers in `api/`, request/response DTOs in `dtos/`, SQLAlchemy models in `domain/`, Alembic migrations) and tests |
+| `frontend/` | pnpm workspace: `packages/web` (Vite + React app), `packages/ui` (shared shadcn/ui components and theme), `packages/api-client` (typed API client) |
 | `deploy/helm/ehds-relay/` | Umbrella Helm chart: API + `groundhog2k/postgres` subchart (`postgres.enabled`) |
 | `.kind/`, `scripts/cluster.sh` | Local kind cluster `ehds-relay` and the shared local registries |
 | `Tiltfile` | Dev loop: renders the chart, builds the image, live-syncs code |
 
 ## Prerequisites
 
-docker, kind, kubectl, helm, tilt, Python 3.13.
+docker, kind, kubectl, helm, tilt, Python 3.13, Node 24 and pnpm (`corepack enable`; version
+pinned in `frontend/package.json`).
 
 ## Quickstart
 
@@ -39,9 +42,9 @@ which other kind clusters on the machine may share).
 ## Backend
 
 ```bash
-make install             # backend/.venv with pip-tools + requirements-dev.txt
-make test                # pytest, against a throwaway Postgres (testcontainers, needs docker)
-make check               # ruff + pyright
+make install             # backend/.venv + frontend node_modules
+make test                # pytest (throwaway Postgres via testcontainers, needs docker) + vitest
+make check               # ruff + pyright, eslint + prettier + tsc
 ```
 
 Dependencies are declared in `backend/pyproject.toml` and locked with pip-compile into
@@ -56,6 +59,22 @@ Migrations run automatically in the API pod's init container. To add one:
 ```bash
 cd backend && .venv/bin/alembic revision -m "describe change"
 ```
+
+## Frontend
+
+```bash
+make install             # also runs pnpm install in frontend/
+make web                 # Vite dev server on http://localhost:5173
+make api_client          # after changing routes or DTOs: regenerate the typed API client
+```
+
+The dev server proxies `/api`, `/healthz` and `/readyz` to the API on
+`localhost:${API_LOCAL_PORT:-8000}` (e.g. the Tilt port-forward). Set `WEB_PORT` to run it
+on another port. More in `frontend/README.md`.
+
+The API client in `frontend/packages/api-client` is generated from the backend's OpenAPI spec
+(`python -m relay.openapi`, which needs no database). Commit the regenerated spec and client
+with the API change.
 
 ## API
 
