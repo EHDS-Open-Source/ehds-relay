@@ -10,6 +10,7 @@ from relay.api import (
     health,
     invitations,
     members,
+    notifications,
     organisations,
     session,
 )
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
     app.include_router(organisations.router)
     app.include_router(datasets.router)
     app.include_router(members.router)
+    app.include_router(notifications.router)
     app.include_router(invitations.org_router)
     app.include_router(invitations.router)
     app.include_router(export.router)

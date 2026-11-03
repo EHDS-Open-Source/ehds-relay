@@ -149,6 +149,24 @@ export interface paths {
         patch: operations["update_me_api_v1_me_patch"];
         trace?: never;
     };
+    "/api/v1/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Notifications */
+        get: operations["get_notifications_api_v1_me_notifications_get"];
+        /** Update Notifications */
+        put: operations["update_notifications_api_v1_me_notifications_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organisations": {
         parameters: {
             query?: never;
@@ -920,6 +938,41 @@ export interface components {
             role: components["schemas"]["MemberRole"];
         };
         /**
+         * NotificationKind
+         * @description Courtesy emails a user can switch off.
+         *
+         *     Mail the service cannot work without (invitations, sign-in) is not listed here and is always
+         *     sent. To add a kind, add a member here and give it a label in the web app; every kind is on
+         *     until the user switches it off, so no migration is needed.
+         * @enum {string}
+         */
+        NotificationKind: "revalidation_reminder";
+        /**
+         * NotificationSettingDTO
+         * @description Whether one kind of notification is sent to the signed-in user.
+         */
+        NotificationSettingDTO: {
+            /** Enabled */
+            enabled: boolean;
+            kind: components["schemas"]["NotificationKind"];
+        };
+        /**
+         * NotificationSettingsDTO
+         * @description Every kind of notification the user can switch, with its current setting.
+         */
+        NotificationSettingsDTO: {
+            /** Settings */
+            settings: components["schemas"]["NotificationSettingDTO"][];
+        };
+        /**
+         * NotificationSettingsUpdateDTO
+         * @description New settings for some kinds; kinds left out keep their setting.
+         */
+        NotificationSettingsUpdateDTO: {
+            /** Settings */
+            settings: components["schemas"]["NotificationSettingDTO"][];
+        };
+        /**
          * Organisation
          * @description An organisation: health data access body or health data holder.
          */
@@ -1329,6 +1382,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeDTO"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_notifications_api_v1_me_notifications_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettingsDTO"];
+                };
+            };
+        };
+    };
+    update_notifications_api_v1_me_notifications_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationSettingsUpdateDTO"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettingsDTO"];
                 };
             };
             /** @description Validation Error */

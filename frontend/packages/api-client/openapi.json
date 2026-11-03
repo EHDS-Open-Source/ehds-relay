@@ -979,6 +979,68 @@
         "title": "MemberUpdateDTO",
         "type": "object"
       },
+      "NotificationKind": {
+        "description": "Courtesy emails a user can switch off.\n\nMail the service cannot work without (invitations, sign-in) is not listed here and is always\nsent. To add a kind, add a member here and give it a label in the web app; every kind is on\nuntil the user switches it off, so no migration is needed.",
+        "enum": [
+          "revalidation_reminder"
+        ],
+        "title": "NotificationKind",
+        "type": "string"
+      },
+      "NotificationSettingDTO": {
+        "description": "Whether one kind of notification is sent to the signed-in user.",
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/NotificationKind"
+          }
+        },
+        "required": [
+          "kind",
+          "enabled"
+        ],
+        "title": "NotificationSettingDTO",
+        "type": "object"
+      },
+      "NotificationSettingsDTO": {
+        "description": "Every kind of notification the user can switch, with its current setting.",
+        "properties": {
+          "settings": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationSettingDTO"
+            },
+            "title": "Settings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "title": "NotificationSettingsDTO",
+        "type": "object"
+      },
+      "NotificationSettingsUpdateDTO": {
+        "additionalProperties": false,
+        "description": "New settings for some kinds; kinds left out keep their setting.",
+        "properties": {
+          "settings": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationSettingDTO"
+            },
+            "maxItems": 1,
+            "title": "Settings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "title": "NotificationSettingsUpdateDTO",
+        "type": "object"
+      },
       "Organisation": {
         "additionalProperties": false,
         "description": "An organisation: health data access body or health data holder.",
@@ -1771,6 +1833,66 @@
         "summary": "Update Me",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/api/v1/me/notifications": {
+      "get": {
+        "operationId": "get_notifications_api_v1_me_notifications_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettingsDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Notifications",
+        "tags": [
+          "notifications"
+        ]
+      },
+      "put": {
+        "operationId": "update_notifications_api_v1_me_notifications_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSettingsUpdateDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettingsDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Notifications",
+        "tags": [
+          "notifications"
         ]
       }
     },

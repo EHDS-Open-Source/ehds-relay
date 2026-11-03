@@ -196,6 +196,45 @@ export const zMemberUpdateDto = z.object({
 });
 
 /**
+ * NotificationKind
+ *
+ * Courtesy emails a user can switch off.
+ *
+ * Mail the service cannot work without (invitations, sign-in) is not listed here and is always
+ * sent. To add a kind, add a member here and give it a label in the web app; every kind is on
+ * until the user switches it off, so no migration is needed.
+ */
+export const zNotificationKind = z.enum(['revalidation_reminder']);
+
+/**
+ * NotificationSettingDTO
+ *
+ * Whether one kind of notification is sent to the signed-in user.
+ */
+export const zNotificationSettingDto = z.object({
+    enabled: z.boolean(),
+    kind: zNotificationKind
+});
+
+/**
+ * NotificationSettingsDTO
+ *
+ * Every kind of notification the user can switch, with its current setting.
+ */
+export const zNotificationSettingsDto = z.object({
+    settings: z.array(zNotificationSettingDto)
+});
+
+/**
+ * NotificationSettingsUpdateDTO
+ *
+ * New settings for some kinds; kinds left out keep their setting.
+ */
+export const zNotificationSettingsUpdateDto = z.object({
+    settings: z.array(zNotificationSettingDto).max(1)
+});
+
+/**
  * OrganisationCreateDTO
  */
 export const zOrganisationCreateDto = z.object({

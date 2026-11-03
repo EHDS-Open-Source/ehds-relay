@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -24,15 +24,35 @@ async function renameOk(request: Request): Promise<Response> {
  */
 function stubApi(
   patch: (request: Request) => Response | Promise<Response> = renameOk,
-  options: { orgs?: unknown[]; logoutUrl?: string | null } = {},
+  options: {
+    orgs?: unknown[];
+    logoutUrl?: string | null;
+    notificationsGet?: () => Response;
+    notificationsPut?: (request: Request) => Response | Promise<Response>;
+  } = {},
 ) {
   let me = { ...demoSession.user };
+  let enabled = true;
+  const settings = () => ({
+    settings: [{ kind: "revalidation_reminder", enabled }],
+  });
   const fetch = vi.fn(async (request: Request) => {
     const path = new URL(request.url).pathname;
     if (path === "/api/v1/me" && request.method === "PATCH") {
       const response = await patch(request.clone());
       if (response.ok) me = (await response.clone().json()) as typeof me;
       return response;
+    }
+    if (path === "/api/v1/me/notifications") {
+      if (request.method === "PUT") {
+        if (options.notificationsPut)
+          return options.notificationsPut(request.clone());
+        const body = (await request.clone().json()) as {
+          settings: { enabled: boolean }[];
+        };
+        enabled = body.settings[0]!.enabled;
+      } else if (options.notificationsGet) return options.notificationsGet();
+      return Response.json(settings());
     }
     if (path === "/api/v1/me") return Response.json(me);
     if (path === "/api/v1/organisations")
@@ -173,5 +193,91 @@ describe("AccountPage", () => {
           new URL(request.url).pathname === "/api/v1/auth/logout",
       ),
     ).toBe(true);
+  });
+
+  it("ACC-4 lists each organisation with country and role", async () => {
+    stubApi(undefined, {
+      orgs: [
+        makeOrg({
+          id: "a",
+          name: "Alpha Health",
+          country: "FR",
+          role: "owner",
+        }),
+        makeOrg({
+          id: "b",
+          name: "Beta Care",
+          country: "DE",
+          role: "standard",
+        }),
+      ],
+    });
+    renderPage();
+    await nameInput();
+    const rows = within(
+      screen.getByRole("table", { name: undefined }),
+    ).getAllByRole("row");
+    expect(rows).toHaveLength(3);
+    expect(rows[1]).toHaveTextContent("Alpha Health");
+    expect(rows[1]).toHaveTextContent("France");
+    expect(rows[1]).toHaveTextContent("Owner");
+    expect(rows[2]).toHaveTextContent("Beta Care");
+    expect(rows[2]).toHaveTextContent("Germany");
+    expect(rows[2]).toHaveTextContent("Standard");
+  });
+
+  it("ACC-4 says so when the user is in no organisation", async () => {
+    stubApi(undefined, { orgs: [] });
+    renderPage();
+    expect(await screen.findByText(text.orgs.none)).toBeVisible();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("ACC-5 shows a labelled switch that is on by default", async () => {
+    stubApi();
+    renderPage();
+    const sw = await screen.findByRole("switch", {
+      name: text.notifications.kinds.revalidation_reminder!.label,
+    });
+    expect(sw).toBeChecked();
+  });
+
+  it("ACC-5 saves a switch immediately", async () => {
+    const fetch = stubApi();
+    renderPage();
+    const sw = await screen.findByRole("switch");
+    await userEvent.click(sw);
+    expect(await screen.findByText(text.notifications.saved)).toBeVisible();
+    expect(sw).not.toBeChecked();
+    const put = fetch.mock.calls.find(([r]) => r.method === "PUT")![0];
+    expect(await put.json()).toEqual({
+      settings: [{ kind: "revalidation_reminder", enabled: false }],
+    });
+  });
+
+  it("ACC-5 shows a readable message when saving fails and keeps the switch", async () => {
+    stubApi(undefined, {
+      notificationsPut: () =>
+        Response.json({ detail: "raw server text" }, { status: 500 }),
+    });
+    renderPage();
+    const sw = await screen.findByRole("switch");
+    await userEvent.click(sw);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      text.notifications.failed,
+    );
+    expect(screen.queryByText("raw server text")).not.toBeInTheDocument();
+    expect(sw).toBeChecked();
+  });
+
+  it("ACC-5 shows a readable message when loading fails", async () => {
+    stubApi(undefined, {
+      notificationsGet: () => Response.json({ detail: "x" }, { status: 500 }),
+    });
+    renderPage();
+    expect(
+      await screen.findByText(text.notifications.loadFailed),
+    ).toBeVisible();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
   });
 });
