@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     smtp_host: str = "localhost"
     smtp_port: int = 1025
     smtp_from: str = "ehds-relay@example.org"
+    # The worker stops retrying an email after this many failed attempts.
+    email_max_attempts: int = 5
+
+    # How long an invitation link stays valid
+    invitation_ttl_days: int = 30
 
     @property
     def oidc_discovery_url(self) -> str:
@@ -53,6 +58,13 @@ class Settings(BaseSettings):
     @property
     def web_base_url(self) -> str:
         return self.web_url.rstrip("/")
+
+    @property
+    def database_dsn(self) -> str:
+        """`database_url` without SQLAlchemy's driver suffix, for libpq clients (the worker's
+        job queue)."""
+        scheme, sep, rest = self.database_url.partition("://")
+        return f"{scheme.split('+', 1)[0]}{sep}{rest}"
 
 
 @lru_cache
