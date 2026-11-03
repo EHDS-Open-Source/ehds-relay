@@ -10,6 +10,7 @@ import {
 import { validateCatalogueSearch } from "../pages/catalogue/search";
 import { isExportFormat, type ExportFormat } from "../datasets/download";
 import { CataloguePage } from "../pages/CataloguePage";
+import { AcceptInvitationPage } from "../pages/AcceptInvitationPage";
 import { DatasetDetailPage } from "../pages/DatasetDetailPage";
 import { DatasetEditPage } from "../pages/DatasetEditPage";
 import { DatasetExportPage } from "../pages/DatasetExportPage";
@@ -49,6 +50,17 @@ const signInRoute = createRoute({
     ...(typeof search.error === "string" && { error: search.error }),
   }),
   component: SignInPage,
+});
+
+// Public: the link in the invitation email. Works signed out; the session is loaded so the
+// page knows whether someone is signed in.
+const invitationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "invitations/$token",
+  beforeLoad: async ({ context }) => {
+    await context.session.load();
+  },
+  component: AcceptInvitationPage,
 });
 
 // Everything below /orgs needs a signed-in user.
@@ -171,6 +183,7 @@ const settingsRoute = createRoute({
 export const routeTree = rootRoute.addChildren([
   homeRoute,
   signInRoute,
+  invitationRoute,
   orgsRoute.addChildren([
     orgPickerRoute,
     newOrgRoute,

@@ -167,6 +167,131 @@ export const shellMessages = {
     description: "The service could not be reached. Try again in a moment.",
     retry: "Try again",
   },
+  members: {
+    ownersOnly: "Only an owner of this organisation can manage its members.",
+    loadFailed: "Could not load this list. Try again in a moment.",
+    retry: "Try again",
+    roles: { owner: "Owner", standard: "Standard" },
+    list: {
+      title: "Members",
+      name: "Name",
+      email: "Email",
+      role: "Role",
+      joined: "Joined",
+      actions: "Actions",
+      roleFor: (name: string) => `Role of ${name}`,
+      remove: "Remove",
+      you: "you",
+    },
+    removeDialog: {
+      title: "Remove this member?",
+      description: (name: string) =>
+        `${name} will lose access to this organisation. Their datasets stay.`,
+      confirm: "Remove member",
+    },
+    errors: {
+      lastOwner:
+        "This is the last owner. Make someone else an owner first, then try again.",
+      forbidden: "Only an owner can change members.",
+      notFound: "This member no longer exists. The list has been refreshed.",
+      failed: "The change could not be saved. Try again in a moment.",
+    },
+    invitations: {
+      title: "Invitations",
+      emailLabel: "Email address",
+      roleLabel: "Role",
+      send: "Send invitation",
+      sending: "Sending...",
+      sent: (email: string) => `Invitation sent to ${email}.`,
+      emailRequired: "Enter the email address of the person to invite.",
+      emailInvalid: "Enter an email address, for example name@example.org.",
+      filterLabel: "Show invitations",
+      filters: {
+        all: "All",
+        pending: "Pending",
+        accepted: "Accepted",
+        cancelled: "Cancelled",
+        expired: "Expired",
+      },
+      statuses: {
+        pending: "Pending",
+        accepted: "Accepted",
+        cancelled: "Cancelled",
+        expired: "Expired",
+      },
+      email: "Email",
+      role: "Role",
+      sentOn: "Date sent",
+      status: "Status",
+      actions: "Actions",
+      resend: "Resend",
+      resent: (email: string) => `Invitation sent again to ${email}.`,
+      cancel: "Cancel invitation",
+      empty: "No invitations to show.",
+      cancelDialog: {
+        title: "Cancel this invitation?",
+        description: (email: string) =>
+          `The link sent to ${email} will stop working.`,
+        confirm: "Cancel invitation",
+        keep: "Keep invitation",
+      },
+      errors: {
+        alreadyMember: "This person is already a member of the organisation.",
+        alreadyInvited:
+          "This person already has a pending invitation. Use Resend on that invitation to send it again.",
+        notPending:
+          "This invitation can no longer be changed. The list has been refreshed.",
+        invalid: "Check the email address and try again.",
+        forbidden: "Only an owner can manage invitations.",
+        failed: "The invitation could not be saved. Try again in a moment.",
+      },
+    },
+  },
+  acceptInvite: {
+    loading: "Loading your invitation...",
+    title: (organisation: string) => `Join ${organisation}`,
+    invitedBy: (name: string) => `${name} invited you`,
+    invitedByUnknown: "You have been invited",
+    asRole: (role: string) => `as ${role}`,
+    forAddress: (email: string) => `The invitation was sent to ${email}.`,
+    signInHint: "Sign in with that address to accept the invitation.",
+    signIn: "Sign in",
+    createAccount: "Create an account",
+    accept: "Accept invitation",
+    accepting: "Joining...",
+    alreadyMember: "You are already a member of this organisation.",
+    openOrganisation: "Open the organisation",
+    wrongAccount: {
+      title: "This invitation is for another account",
+      description: (invited: string, current: string) =>
+        `It was sent to ${invited}, but you are signed in as ${current}. Sign out and sign in with ${invited} to accept it.`,
+      signOut: "Sign out",
+    },
+    notFound: {
+      title: "Invitation not found",
+      description:
+        "This link does not match an invitation, or the organisation no longer exists. Ask the person who invited you to send a new one.",
+    },
+    gone: {
+      cancelled: {
+        title: "This invitation was cancelled",
+        description:
+          "Ask the person who invited you to send you a new invitation.",
+      },
+      expired: {
+        title: "This invitation has expired",
+        description:
+          "Ask the person who invited you to send you a new invitation.",
+      },
+      accepted: {
+        title: "This invitation was already used",
+        description:
+          "If that was you, sign in to open the organisation. Otherwise ask for a new invitation.",
+      },
+    },
+    failed: "Something went wrong. Please try again in a moment.",
+    goToOrganisations: "Go to my organisations",
+  },
   countries: {
     AT: "Austria",
     BE: "Belgium",
