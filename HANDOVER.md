@@ -1,51 +1,63 @@
-# Handover: organisations, memberships and roles
+# Handover: dataset permissions and tenant isolation
 
 ## Status
-Implementation done and pushed. `make check` passes; the touched test files pass
-(`test_organisations.py`, `test_members.py`, `test_datasets.py`, `test_stubs.py`,
-`test_auth_required.py`: 117 tests). The full `make test` has not been run from this branch.
+Implementation done and pushed, including Save and Publish and the title rule (the dataset
+metadata reshape branch is merged in). `make check` passes. These test files pass (151 tests):
+`test_tenant_isolation.py`, `test_datasets.py`, `test_stubs.py`, `test_auth_required.py`,
+`test_organisations.py`, `test_members.py`, `test_session.py`, `test_rdf.py`,
+`test_dataset_metadata.py`. The full `make test` has not been run from this branch.
+
+## Migration number: must be re-pointed when merging
+`backend/relay/migrations/versions/0007_dataset_rls.py` has revision `"0007"` but
+`down_revision = "0004"` for now, because the invitation outbox (`0005`) and job queue (`0006`)
+migrations live on another branch. When the two branches are merged, set its
+`down_revision` to `"0006"` (and update the `Revises:` line in its docstring). Until then
+Alembic sees a single chain 0004 -> 0007 on this branch.
 
 ## Done
-- `membership` table (migration `0004`): primary key (org_id, user_id), role `owner` or
-  `standard`, cascades when the organisation or user is deleted. Datasets do not reference it,
-  so removing a member keeps their datasets.
-- `relay/auth/authz.py`: `require_member` (404 for non-members and deleted organisations),
-  `require_owner` (403 for Standard), aliases `MemberDep` / `OwnerDep`, plus `lock_org` and
-  `recheck_owner` for membership changes. This is the one place to add the per-request database
-  context for row-level security and the suspended-organisation write block later (TODO there).
-- `POST /organisations` creates the Owner membership in the same transaction.
-  `GET /organisations` lists only the caller's organisations (not deleted), ordered by name.
-  `GET /organisations/{id}` needs membership; `PATCH /organisations/{id}` is Owner-only and
-  rejects an explicit null.
-- Members: `GET` (Owner-only; Owners first, then by name), `PATCH /{user_id}` (role change;
-  same role is a no-op 200), `DELETE /{user_id}` (204). Last Owner: 409 with detail
-  "cannot remove or demote the last owner". An Owner may step down or leave when another
-  Owner exists.
-- Dataset and export routers depend on `require_member` at router level (a one-line change, so it
-  merges cleanly with the dataset metadata work). The existing dataset-belongs-to-org check stays.
-- New test fixtures in `conftest.py`: `as_user`, `owner` (same person as `user`, so `client` is the
-  Owner), `standard`, `outsider`, `add_member`, `org`.
+- Row-level security on `dataset`, enabled and forced (the app role owns the table, so FORCE is
+  what makes the policy apply to it). The policy compares `org_id` with
+  `app.current_org_id`; with no setting, nothing is visible and nothing can be written.
+  Writes for another organisation fail (`WITH CHECK`). No other table has RLS.
+- `relay/db.py`: `set_tenant(session, org_id)` stores the organisation on the session and sets
+  `app.current_org_id` transaction-locally; an `after_begin` listener on `Session` sets it again
+  for every later transaction, so `commit()` followed by `refresh()` still works.
+- `require_member` calls `set_tenant`, so every dataset and export route runs under the
+  caller's organisation. The app-level `ds.org_id != org_id` check stays as a second guard.
+  No repository layer, by decision.
+- Datasets:
+  - `DatasetCreateDTO` / `DatasetUpdateDTO` take `publish: bool = false`. `metadata` is now
+    required on create too.
+  - Saving without a title is 422, also for drafts.
+  - `publish: true` publishes if nothing is missing; otherwise it saves as a draft (200/201)
+    and the response lists `missing_for_publish`.
+  - `publish: false` always stores a draft, so it takes a published dataset back to draft.
+    The old 422 "published dataset requires ..." on PUT is gone. A published dataset never has
+    missing fields.
+  - `DELETE /datasets/{id}`: 204 for an Owner, 403 for Standard, 404 for non-members and
+    other organisations' datasets. Hard delete, no version check, no audit entry yet.
+  - `POST /datasets/{id}/publish` is unchanged.
+- Tests: the app in tests now connects as a `relay` role (login, not superuser, not BYPASSRLS)
+  that runs the migrations and so owns the tables, as in the dev Helm setup. Fixtures that
+  arrange and inspect rows (`db`, `engine`, the TRUNCATE) stay on the superuser. New fixtures:
+  `app_database_url`, `app_engine`. `test_tenant_isolation.py` runs raw SQL as `relay` to
+  show RLS works without the app's own checks; removing the `set_tenant` call makes 37 tests
+  fail.
+- Also fixed: the CSRF test in `test_session.py` did not send the now-required `country`.
 
 ## API shape changes (tell the frontend)
-- `OrganisationCreateDTO.country` is now required (`^[A-Z]{2}$`). The response field stays
-  nullable for older rows.
-- `OrganisationDTO.role` (`owner` | `standard`) is new and required: the caller's role.
-- `OrganisationUpdateDTO`: explicit `null` for `name` or `country` gives 422.
-- `MemberRole` moved to `relay/domain/memberships.py`; `relay/dtos/membership.py` re-exports it.
-  Schema name and values are unchanged.
-
-## Concurrency
-Member PATCH and DELETE lock the organisation row (`SELECT ... FOR UPDATE`) before reading the
-target and counting Owners. Because the Owner check in the dependency runs before the lock, the
-caller's role is read again after the last-Owner check; a caller demoted by a concurrent request
-then gets 403. In the mutual-demotion race the second request gets 409.
-`test_mgt_5_concurrent_demotions_keep_one_owner` holds the lock itself until both requests are
-waiting on it, so it really exercises the race (it fails if the lock is removed).
+- `publish` on dataset create and update (additive).
+- Create and update without a title: 422 (stricter). Create without `metadata`: 422.
+- PUT with `publish: false` on a Published dataset stores Draft.
+- `publish: true` with missing fields returns 200/201 with `status: "draft"`.
+- `DELETE /datasets/{id}` is real (was 501).
 
 ## Next
 - Tester: run the full `make test`.
-- Regenerate the API client (`make api_client`) once this is on a base that has the client
-  generator; this branch's base does not have it yet.
+- `make api_client` does not exist on this branch's base, so the client is not regenerated.
+  Run it once this is on a base that has the generator, and commit the spec and client.
+- Re-point the migration (see above) when merging with the invitations branch.
+- Not done: the manual check in Tilt (`psql` as `relay`, and the API calls).
 
 ## Blockers
 None.
