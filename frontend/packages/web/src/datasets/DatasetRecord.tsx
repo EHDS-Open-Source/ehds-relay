@@ -2,9 +2,63 @@ import { DetailField, DetailSection } from "@ehds-relay/ui";
 import type { ReactNode } from "react";
 
 import { shellMessages } from "../shell/messages";
-import { datasetSections, type DatasetMetadata, type FieldDef } from "./fields";
+import { datasetSections, fieldLabel, type FieldKey } from "./fields";
+import type { DatasetMetadata } from "./formValues";
 
 const m = shellMessages.datasets;
+
+/** How the record view renders a field's value. */
+type FieldKind =
+  | "langTexts"
+  | "text"
+  | "boolean"
+  | "number"
+  | "accessRights"
+  | "terms"
+  | "strings"
+  | "organisation"
+  | "contactPoints"
+  | "distributions"
+  | "variables"
+  | "temporal"
+  | "turtle";
+
+// Every field needs a kind, so a field added to the map cannot be left out of the record
+const fieldKinds: Record<FieldKey, FieldKind> = {
+  title: "langTexts",
+  description: "langTexts",
+  distributions: "distributions",
+  structured_data: "boolean",
+  variables: "variables",
+  provenance: "text",
+  keyword: "strings",
+  health_theme: "terms",
+  health_category: "terms",
+  coding_system: "terms",
+  has_personal_data: "boolean",
+  conforms_to: "terms",
+  access_rights: "accessRights",
+  applicable_legislation: "terms",
+  health_data_access_body: "organisation",
+  geographical_coverage: "terms",
+  type: "terms",
+  number_of_records: "number",
+  number_of_unique_individuals: "number",
+  language: "terms",
+  code_values: "strings",
+  temporal_coverage: "temporal",
+  health_data_holder: "organisation",
+  publisher: "organisation",
+  contact_points: "contactPoints",
+  identifier: "strings",
+  generated_by: "terms",
+  quantum_label: "turtle",
+};
+
+interface FieldDef {
+  key: FieldKey;
+  kind: FieldKind;
+}
 
 type Term = { label: string; uri: string };
 type Organisation = NonNullable<DatasetMetadata["health_data_holder"]>;
@@ -121,7 +175,6 @@ function renderValue(def: FieldDef, metadata: DatasetMetadata): ReactNode {
       const value = metadata.access_rights;
       return value ? m.accessRights[value] : null;
     }
-    case "term":
     case "terms": {
       const terms = (metadata[def.key as "keyword"] ?? []) as unknown as Term[];
       return (
@@ -216,21 +269,21 @@ export function DatasetRecord({ metadata }: { metadata: DatasetMetadata }) {
   return (
     <>
       {datasetSections.map((section) => {
-        const filled = section.fields.filter((def) =>
-          isFilled(metadata[def.key]),
-        );
+        const filled = section.fields
+          .filter((key) => isFilled(metadata[key]))
+          .map((key): FieldDef => ({ key, kind: fieldKinds[key] }));
         if (filled.length === 0) return null;
         return (
           <DetailSection
             key={section.id}
             id={`record-${section.id}`}
-            title={section.label}
+            title={section.title}
           >
             {filled.map((def) => (
               <DetailField
                 key={def.key}
                 id={`record-${def.key}`}
-                label={def.label}
+                label={fieldLabel(def.key)}
                 wide={
                   def.kind !== "boolean" &&
                   def.kind !== "number" &&

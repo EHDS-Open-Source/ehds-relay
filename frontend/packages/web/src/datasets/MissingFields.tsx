@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
-import { fieldAnchor, missingFieldLabel } from "./fields";
+import { fieldAnchorId, fieldLabel } from "./fields";
 
 /** Checklist of what a dataset still needs, each item linking to its input in the edit form. */
 export function MissingFields({
@@ -23,10 +23,10 @@ export function MissingFields({
             <Link
               to="/orgs/$orgId/datasets/$datasetId/edit"
               params={{ orgId, datasetId }}
-              hash={fieldAnchor(key)}
+              hash={fieldAnchorId(key)}
               className="text-primary underline-offset-4 hover:underline"
             >
-              {missingFieldLabel(key)}
+              {fieldLabel(key)}
             </Link>
           </li>
         ))}

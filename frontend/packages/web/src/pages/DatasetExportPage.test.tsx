@@ -34,7 +34,9 @@ describe("dataset export", () => {
     renderApp(path);
     expect(await screen.findByText(m.output.incomplete)).toBeVisible();
     expect(
-      screen.getByRole("link", { name: m.fields.provenance }),
+      screen.getByRole("link", {
+        name: shellMessages.datasetForm.fields.provenance,
+      }),
     ).toBeVisible();
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
     expect(exportCalls(calls)).toHaveLength(0);

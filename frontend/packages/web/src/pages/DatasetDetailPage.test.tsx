@@ -15,6 +15,7 @@ import {
 } from "./datasetTestUtils";
 
 const m = shellMessages.datasets;
+const form = shellMessages.datasetForm;
 const path = `/orgs/${ORG}/datasets/${ID}`;
 
 describe("dataset detail", () => {
@@ -37,13 +38,13 @@ describe("dataset detail", () => {
       .getAllByRole("heading", { level: 2 })
       .map((h) => h.textContent);
     expect(headings).toEqual([
-      m.sections.main,
-      m.sections.access,
-      m.sections.coverage,
-      m.sections.organisations,
-      m.sections.quantum,
+      form.sections.main,
+      form.sections.access,
+      form.sections.coverage,
+      form.sections.organisations,
+      form.sections.quantum,
     ]);
-    expect(screen.queryByText(m.fields.provenance)).not.toBeInTheDocument();
+    expect(screen.queryByText(form.fields.provenance)).not.toBeInTheDocument();
     expect(screen.getByText("Acme Hospital")).toBeVisible();
     expect(screen.getByText("1,200")).toBeVisible();
     expect(screen.getByRole("link", { name: "Cardiology" })).toHaveAttribute(
@@ -67,13 +68,13 @@ describe("dataset detail", () => {
 
     expect(await screen.findByText(m.draft.title)).toBeVisible();
     expect(screen.getByText(m.draft.howToPublish)).toBeVisible();
-    const link = screen.getByRole("link", { name: m.fields.provenance });
+    const link = screen.getByRole("link", { name: form.fields.provenance });
     expect(link).toHaveAttribute("href", `${path}/edit#field-provenance`);
     expect(
       screen.getByRole("link", {
-        name: `${m.fields.publisher} (${m.contactPointPart})`,
+        name: `${form.fields.publisher}: ${form.contactPointOf}`,
       }),
-    ).toHaveAttribute("href", `${path}/edit#field-publisher`);
+    ).toHaveAttribute("href", `${path}/edit#field-publisher-contact_point`);
   });
 
   it("says when the dataset does not exist", async () => {
