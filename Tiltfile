@@ -108,9 +108,6 @@ k8s_resource(
   new_name='api',
   port_forwards=['{}:8000'.format(API_LOCAL_PORT)],
   resource_deps=['postgres'],
-  objects=[
-    RELEASE_NAME + '-oidc:secret',
-  ],
   links=[
     link('http://localhost:{}/docs'.format(API_LOCAL_PORT), 'OpenAPI docs'),
   ],
@@ -133,9 +130,12 @@ k8s_resource(
   RELEASE_NAME + '-keycloak',
   new_name='keycloak',
   port_forwards=['{}:8080'.format(KEYCLOAK_LOCAL_PORT)],
+  # The OIDC client secret is shared with the API but grouped here: this resource has no
+  # image build, so it deploys first and the pod finds the secret straight away.
   objects=[
     RELEASE_NAME + '-keycloak-realm:configmap',
     RELEASE_NAME + '-keycloak:secret',
+    RELEASE_NAME + '-oidc:secret',
   ],
   links=[
     link('http://localhost:{}/admin'.format(KEYCLOAK_LOCAL_PORT), 'Keycloak admin (admin/admin)'),
