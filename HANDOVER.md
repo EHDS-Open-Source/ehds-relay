@@ -36,6 +36,16 @@ holds the reconciled, tested result.
   `PATCH /api/v1/me` is real and a migration (`0008`) remembers that a user set their own name, so the sign-in
   callback no longer overwrites it. Pull request #23.
 
+- **Revalidation reminder date and overdue flag:** any member can set, change or clear a reminder date from a
+  dataset's record (`PUT .../datasets/{id}/revalidation-reminder`); datasets a year past their last validation
+  show an "Overdue" chip and filter in the catalogue. Migration `0009`. Branch
+  `T-040-add-revalidation-reminder-date-and-overd`, no pull request yet. The reminder email itself is not built;
+  `relay/domain/reminders.py` has the helpers it will use.
+- **Notification settings and organisations on the account page:** `GET` and `PUT /api/v1/me/notifications`
+  (one kind today, the revalidation reminder), an `is_enabled` helper, and the account page lists the user's
+  organisations. Migration `0010` (follows `0009`). Branch `T-041-add-notification-settings-and-organisati`,
+  no pull request yet.
+
 **Not built:** the dataset revalidation reminder (email, date and overdue flag), notification settings, password
 reset checks, and the other follow-ups listed in the team vault.
 
