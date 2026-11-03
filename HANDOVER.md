@@ -19,7 +19,14 @@ Temporary file for picking up this branch; delete it before merging.
 - Dataset IRIs are the record page URLs of the web app (`{web_url}/orgs/{org}/datasets/{id}`).
 
 ## Status
-Backend done and tested. Frontend validation panel on the export page: see below.
+Done. The dataset output page shows an "Official checks" panel above the format tabs
+(`frontend/packages/web/src/datasets/ValidationPanel.tsx`): "Passes the official checks", or a list
+of problems, each linking to its field in the edit form. A 501 shows "not available yet".
+`make check` clean; backend 308 tests and frontend 192 tests pass. `make api_client` is stable.
+
+## Not done
+- No catalogue export button in the web app yet (the route works).
+- Not tried in Tilt or a browser; only automated tests.
 
 ## Things to know
 - The public golden example is the Health DCAT-AP minimum. It passes the official checks, but the app
