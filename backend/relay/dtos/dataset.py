@@ -14,7 +14,11 @@ __all__ = [
     "DatasetDTO",
     "DatasetPublishDTO",
     "DatasetUpdateDTO",
+    "RevalidationReminderUpdateDTO",
 ]
+
+# The furthest ahead a reminder can be set; catches typos such as a five-digit year
+REMINDER_MAX_YEARS_AHEAD = 5
 
 
 _PUBLISH_DESCRIPTION = (
@@ -48,8 +52,11 @@ class DatasetPublishDTO(RequestDTO):
 
 
 class RevalidationReminderUpdateDTO(RequestDTO):
-    due_date: date | None = Field(
-        description="When to remind members to revalidate the metadata; null clears it"
+    reminder_date: date | None = Field(
+        description=(
+            "When to remind the member who sets it to revalidate the metadata. Must be after "
+            f"today and at most {REMINDER_MAX_YEARS_AHEAD} years ahead; null clears it"
+        )
     )
 
 
@@ -65,6 +72,26 @@ class DatasetDTO(DTO):
     version: int
     created_at: datetime
     updated_at: datetime
+    # App data kept beside the metadata; none of it is part of the exported record
+    reminder_date: date | None = Field(description="When the revalidation reminder is due")
+    reminder_set_by: uuid.UUID | None = Field(
+        description="Who set the reminder date, and so who it is for"
+    )
+    reminder_set_by_name: str | None
+    reminder_set_at: datetime | None
+    reminder_sent_at: datetime | None = Field(description="When the reminder email went out")
+    published_at: datetime | None = Field(
+        description="When a save last passed the publish checks and left the dataset published"
+    )
+    last_revalidated_at: datetime | None = Field(
+        description="When a member last confirmed the metadata is still right"
+    )
+    last_validated_at: datetime | None = Field(
+        description="The later of published_at and last_revalidated_at"
+    )
+    overdue: bool = Field(
+        description="Published and not validated for a year since last_validated_at"
+    )
 
     @computed_field(description="Mandatory fields still missing before this can be published")
     @property

@@ -6,6 +6,7 @@ SQL, so they show row-level security holding without any of the app's own org ch
 
 import uuid
 from collections.abc import Iterator
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -173,6 +174,11 @@ DATASET_ROUTES: list[tuple[str, str, Any]] = [
     ("put", "", {"metadata": TITLED, "version": 1}),
     ("post", "/publish", {"version": 1}),
     ("delete", "", None),
+    (
+        "put",
+        "/revalidation-reminder",
+        {"reminder_date": (datetime.now(UTC).date() + timedelta(days=30)).isoformat()},
+    ),
 ]
 
 
@@ -204,3 +210,4 @@ def test_auth_5_cross_tenant_dataset_404(
         row = session.get(Dataset, b_ds)
         assert row is not None
         assert (row.org_id, row.version, row.status) == (b, 1, "draft")
+        assert row.reminder_date is None

@@ -1,75 +1,60 @@
-# Handover: integration branch
+# Handover: revalidation reminder date and overdue flag
 
-Temporary file for picking up this work; it is not part of any pull request and should be deleted when
-the integration branch is retired.
+Temporary file for picking up this branch. It is not part of the change. Delete or replace it when
+the branch is merged.
 
-## What this branch is
-`mvp-integration` holds everything built so far, merged together and tested as one. It has no pull
-request. The work is split into pull requests against `main`; the human merges them.
+## What this branch does
+Members can set a date to be reminded to revalidate a dataset's metadata. Published datasets that
+have gone a year without validation are flagged "Overdue". This branch was cut from `mvp-integration`.
 
-## Where things stand
-**Open pull requests** (merge in this order; each description says which earlier ones it includes, and
-its diff shrinks as they land):
-1. #2 to #7: API CI, API route stubs, frontend workspace, UI CI, generated API client, app shell.
-2. #8 dev environment (Keycloak, Mailpit, worker, web), #9 sign-in with a session cookie,
-   #10 organisations, roles and members, #11 dataset metadata to Turtle, #12 JSON-LD and RDF/XML,
-   #13 invitations with email, #14 dataset permissions, publish rules and row-level security.
-   If #14 merges before #13, its migration must be re-pointed to follow the invitation migrations.
+## Status
+- Backend: done and tested.
+- Frontend: in progress (see the end of this file).
 
-**UI pull requests** (open; cut from this branch, so they contain the work of #8 to #14 until those
-merge): #16 sign-in and organisation picker, #17 catalogue with search and filter, #18 dataset form,
-#19 dataset record, edit and export pages. They share a few files (messages, routes, `ui` exports, the
-lockfile and generated API files): merge them one at a time and regenerate the client and lockfile
-instead of hand-merging. On those branches the edit page is not yet wired to the form; this branch
-holds the reconciled, tested result.
+## Backend
+- `PUT /api/v1/organisations/{org_id}/datasets/{dataset_id}/revalidation-reminder` with body
+  `{"reminder_date": "YYYY-MM-DD" | null}` sets, changes or clears the date. This was a 501 stub;
+  its body field was renamed from `due_date` to `reminder_date`.
+  - Any member (Owner or Standard) can call it. Non-members get 404, and so does a dataset in another
+    organisation.
+  - The date must be after today (UTC) and at most 5 years ahead. Otherwise the route returns 422
+    with a plain-words `detail`.
+  - Setting a date records who set it (`reminder_set_by`, and through it `reminder_set_by_name`) and
+    when (`reminder_set_at`). It also clears `reminder_sent_at`, so a changed date gets its own
+    email. `null` clears all of them.
+  - It does not bump the dataset `version` or `updated_at`, so an edit form that is open at the same
+    time does not hit a version conflict.
+- New fields on `DatasetDTO`: `reminder_date`, `reminder_set_by`, `reminder_set_by_name`,
+  `reminder_set_at`, `reminder_sent_at`, `published_at`, `last_revalidated_at`, and the computed
+  `last_validated_at` and `overdue`. None of these are in the exported Health DCAT-AP record.
+- **What "last validated" means for now:** the later of `published_at` and `last_revalidated_at`.
+  - `published_at` is set every time a save or publish ends with the dataset published. It is kept
+    when the dataset goes back to draft.
+  - `last_revalidated_at` is not set by anything yet. The planned "Revalidate" action
+    (`POST .../revalidate`, still a 501 stub) should set it to now.
+  - A dataset is **overdue** when it is published and one calendar year has passed since
+    `last_validated_at` (29 February goes to 28 February). Drafts are never overdue.
+- Migration `0009_dataset_revalidation_reminder` (down revision `0008`) adds the columns, a
+  partial index for due reminders, and backfills `published_at` from `updated_at` for datasets that
+  are already published. The backfill turns forced row-level security off for that one statement
+  and back on.
+- For the reminder email job, `relay/domain/reminders.py` has:
+  - `due_revalidation_reminders(session, today=None)`: every reminder due on or before `today`
+    that has not been sent, across organisations that are not deleted. It returns the dataset and
+    the member who set it (None if they have left the organisation). It scopes the session to each
+    organisation in turn, so give it a session of its own.
+  - `mark_revalidation_reminder_sent(session, org_id, dataset_id, reminder_date)`: marks one
+    reminder sent unless the date changed in the meantime. It does not commit.
+- Tests are in `backend/tests/test_revalidation_reminder.py`, named after the stories, including a
+  migration upgrade, downgrade and upgrade on a throwaway database. The reminder route was also
+  added to the cross-organisation 404 checks in `test_tenant_isolation.py`.
 
-**Also built and merged here** (pull requests #21 to #24 are open):
-- **Export and validation** (#21): the three export routes (`GET .../datasets/{id}/export?format=ttl|jsonld|rdfxml`,
-  `POST .../datasets/{id}/validate`, `GET .../catalogue/export?format=`) are real, with offline checks against the
-  vendored official Health DCAT-AP release 8 shapes in `backend/relay/rdf/shapes/` (its README gives the source,
-  checksums and the one edit). The dataset output page shows the result as a panel. Needs the `pyshacl`
-  dependency: run `make -C backend install` after pulling.
-- **Members and invitations** (#22): the Members page for owners and the public `/invitations/<token>` accept page.
-- **Organisation settings screen:** owners edit the organisation's name and country; the new values show in the
-  header, menu and picker without signing out. Pull request #24.
-- **Account page:** "Manage my account" opens `/account` (name editable, email read-only, sign out).
-  `PATCH /api/v1/me` is real and a migration (`0008`) remembers that a user set their own name, so the sign-in
-  callback no longer overwrites it. Pull request #23.
+## Open questions (guesses made)
+- Who the reminder is for: the member who last set the date. The reminder email work may also want
+  to email Owners, and needs a fallback when the setter has left.
+- The story asks for the change to be "written to the audit log", but there is no audit log yet.
+  For now, who set the date and when is stored on the dataset.
 
-**Not built:** the dataset revalidation reminder (email, date and overdue flag), notification settings, password
-reset checks, and the other follow-ups listed in the team vault.
-
-## Check it works
-- `make check` is clean. `make test`: backend 274 passed, frontend 188 passed (before this file).
-- A real headless-browser walk-through passed every step on the kind cluster: sign in through Keycloak,
-  create an organisation, save a draft, "Not ready to publish" list, full publish, catalogue search and
-  filters, record, edit, delete with confirmation, and the Standard user not seeing Delete.
-
-## Run it locally
-```
-make cluster up        # kind cluster "ehds-relay" (only ever this context)
-tilt up                # api, keycloak, mailpit, worker, postgres, web
-```
-Web app http://localhost:5173, API http://localhost:8000, Keycloak http://localhost:8080,
-Mailpit http://localhost:8025.
-
-Dev-only logins (from the realm file in `deploy/helm/ehds-relay/files/`): `owner` / `owner`,
-`standard` / `standard`, `invitee` / `invitee` (addresses `@example.org`). Keycloak console:
-`admin` / `admin`. "Create one" on the sign-in page registers a new user; the verification email
-arrives in Mailpit. `tilt down` removes the dev database, so seeded data is lost.
-
-## Known issues and follow-ups
-- Restarting Keycloak re-imports the realm with new user ids, so the API creates a second user with no
-  organisations. Fix is to run the realm like the federated node does (persistent data, idempotent
-  account creation, partial import, ordered migrations); it is tracked in the team vault.
-- The invitation email links to `/invitations/<token>`, but the web app has no route for it yet.
-- On an edit conflict the edit page shows two messages (the editor's banner and the form's line).
-- The production build warns the bundle is about 640 kB; lazy-loading the dataset pages would fix it.
-- Individual merge commits on this branch are not guaranteed to build on their own, only the tip.
-- Declare the licence (AGPL-3.0, now in `LICENSE`) in `backend/pyproject.toml`, the `package.json`
-  files and the README.
-
-## Rules
-Only ever deploy to the `kind-ehds-relay` context. Nobody merges to `main` without the owner. Remove a
-branch's `HANDOVER.md` before opening its pull request. Rebuild the API client (`make api_client`)
-after merging anything that changes the API.
+## Next
+- Frontend: a "Set reminder" dialog on the record, the reminder date and "Overdue" label on the
+  record, an "Overdue" chip on catalogue cards, and an overdue filter in the catalogue.
