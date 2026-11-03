@@ -65,3 +65,12 @@ Before finishing a change run `make check` and `make test`.
 
 ### Git
 - Work on a feature branch, not `main`. Only commit when asked.
+
+### Parallel work (several agents at once)
+- One git worktree per branch under `.worktrees/<name>` (gitignored), e.g.
+  `git worktree add .worktrees/my-change -b my-change mvp-integration`. Never share a checkout between agents.
+- Branch from `mvp-integration`, which collects work in progress; open PRs against `main`
+  (or against the branch you stack on while it is unmerged).
+- Run `make check` (fast, no docker) before handing over; `make test` starts a Postgres container,
+  so run it from one place at a time rather than in every worktree at once.
+- Don't hard-code dev ports; read them from env with a default so worktrees can run side by side.
