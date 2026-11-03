@@ -1,0 +1,72 @@
+{
+  "realm": "ehds-relay",
+  "displayName": "EHDS Relay (local development)",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "verifyEmail": true,
+  "rememberMe": true,
+  "smtpServer": {
+    "host": "${RELAY_SMTP_HOST}",
+    "port": "${RELAY_SMTP_PORT}",
+    "from": "${RELAY_SMTP_FROM}",
+    "fromDisplayName": "EHDS Relay",
+    "auth": "false",
+    "ssl": "false",
+    "starttls": "false"
+  },
+  "clients": [
+    {
+      "clientId": "ehds-relay-bff",
+      "name": "EHDS Relay API (backend for frontend)",
+      "description": "Dev-only confidential client for the API's authorization-code flow. The secret comes from the environment and is a throwaway local value.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${RELAY_OIDC_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["${RELAY_WEB_URL}/*", "${RELAY_API_URL}/*"],
+      "webOrigins": ["${RELAY_WEB_URL}", "${RELAY_API_URL}"],
+      "attributes": {
+        "post.logout.redirect.uris": "${RELAY_WEB_URL}/*##${RELAY_API_URL}/*"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "owner",
+      "email": "owner@example.org",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Olive",
+      "lastName": "Owner",
+      "credentials": [{ "type": "password", "value": "owner", "temporary": false }]
+    },
+    {
+      "username": "standard",
+      "email": "standard@example.org",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Sam",
+      "lastName": "Standard",
+      "credentials": [{ "type": "password", "value": "standard", "temporary": false }]
+    },
+    {
+      "username": "invitee",
+      "email": "invitee@example.org",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Ida",
+      "lastName": "Invitee",
+      "credentials": [{ "type": "password", "value": "invitee", "temporary": false }]
+    }
+  ]
+}
