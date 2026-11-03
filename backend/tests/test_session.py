@@ -82,4 +82,4 @@ def test_csrf_header_required_on_unsafe_methods(client: TestClient) -> None:
 
 
 def test_csrf_header_accepted(client: TestClient) -> None:
-    assert client.post("/api/v1/organisations", json={"name": "Acme"}).status_code == 201
+    assert client.post("/api/v1/organisations", json={"name": "Acme", "country": "NL"}).status_code == 201
