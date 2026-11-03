@@ -167,6 +167,9 @@ Invitation links have the form `{RELAY_WEB_URL}/invitations/{token}` and stay va
 | POST | `/api/v1/organisations` | create `{"name": "Acme", "country": "NL"}` |
 | GET | `/api/v1/organisations` | list |
 | GET | `/api/v1/organisations/{id}` | get |
+| GET | `/api/v1/organisations/{id}/datasets/{dataset_id}/export?format=ttl\|jsonld\|rdfxml` | Members: the Health DCAT-AP record as a file; 422 if the record is incomplete |
+| POST | `/api/v1/organisations/{id}/datasets/{dataset_id}/validate` | Members: check against the official release 8 SHACL shapes for the access level (vendored in `backend/relay/rdf/shapes/`, no network) |
+| GET | `/api/v1/organisations/{id}/catalogue/export?format=…` | Members: one `dcat:Catalog` of the published datasets |
 | POST | `/api/v1/organisations/{id}/invitations` | Owners: invite `{"email": "a@example.org", "role": "standard"}`; emails a link |
 | GET | `/api/v1/organisations/{id}/invitations?status=pending` | Owners: list, newest first |
 | DELETE | `/api/v1/organisations/{id}/invitations/{invitation_id}` | Owners: cancel a pending invitation |
