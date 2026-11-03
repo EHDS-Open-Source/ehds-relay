@@ -20,6 +20,7 @@ import {
   type ExportFormat,
 } from "../datasets/download";
 import { MissingFields } from "../datasets/MissingFields";
+import { ValidationPanel } from "../datasets/ValidationPanel";
 import {
   errorStatus,
   useDataset,
@@ -157,7 +158,7 @@ export function DatasetExportPage() {
         </div>
       ) : (
         <>
-          {/* The validation result (does the record pass the official checks) goes here. */}
+          <ValidationPanel orgId={orgId} datasetId={datasetId} />
           <Tabs
             value={format}
             onValueChange={(value) => {
