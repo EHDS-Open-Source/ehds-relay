@@ -178,3 +178,20 @@ def test_email_characters(client: TestClient, org_id: str, email: str, ok: bool)
     meta = {"contact_points": [{"email": email}]}
     res = client.post(url(org_id), json={"metadata": meta})
     assert res.status_code == (201 if ok else 422), email
+
+
+def test_missing_for_publish_reported(client: TestClient, org_id: str) -> None:
+    ds = client.post(url(org_id), json={"metadata": {"title": "t", "structured_data": True}}).json()
+    assert ds["missing_for_publish"] == [
+        "description",
+        "identifier",
+        "access_rights",
+        "applicable_legislation",
+        "health_category",
+        "health_data_access_body",
+        "variables",
+    ]
+    assert client.get(url(org_id)).json()[0]["missing_for_publish"] == ds["missing_for_publish"]
+
+    full = client.post(url(org_id), json={"metadata": complete_metadata()}).json()
+    assert full["missing_for_publish"] == []

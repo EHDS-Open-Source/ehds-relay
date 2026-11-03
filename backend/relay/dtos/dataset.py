@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from relay.domain.datasets import DatasetStatus
 from relay.dtos.base import DTO, RequestDTO
@@ -34,3 +34,8 @@ class DatasetDTO(DTO):
     version: int
     created_at: datetime
     updated_at: datetime
+
+    @computed_field(description="Mandatory fields still missing before this can be published")
+    @property
+    def missing_for_publish(self) -> list[str]:
+        return DatasetMetadata.model_validate(self.metadata).missing_for_publish()
