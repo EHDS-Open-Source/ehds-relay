@@ -565,10 +565,7 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /** Metadata */
-            metadata: {
-                [key: string]: unknown;
-            };
+            metadata: components["schemas"]["DatasetMetadata"];
             /**
              * Missing For Publish
              * @description Mandatory fields still missing before this can be published

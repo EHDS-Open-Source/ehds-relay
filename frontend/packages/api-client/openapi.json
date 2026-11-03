@@ -120,9 +120,7 @@
             "type": "string"
           },
           "metadata": {
-            "additionalProperties": true,
-            "title": "Metadata",
-            "type": "object"
+            "$ref": "#/components/schemas/DatasetMetadata"
           },
           "missing_for_publish": {
             "description": "Mandatory fields still missing before this can be published",
