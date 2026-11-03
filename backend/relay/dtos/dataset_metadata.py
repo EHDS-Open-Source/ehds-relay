@@ -167,11 +167,10 @@ class DatasetMetadata(_Meta):
         """Field keys still needed before publishing.
 
         Fields the EU list qualifies with "where applicable" (coding system, code values,
-        geographical and temporal coverage, number of records) are not required. The health
-        data access body is required unless access is public, unique individuals only when
-        the dataset has personal data, and variables only when it is structured.
+        geographical and temporal coverage, number of records) are not required. Unique
+        individuals are required only when the dataset has personal data, and variables
+        only when it is structured.
         """
-        hdab_needed = self.access_rights != AccessRights.PUBLIC
         # (field key, value, required?) in form order
         checks: list[tuple[str, object, bool]] = [
             ("title", self.title, True),
@@ -187,7 +186,7 @@ class DatasetMetadata(_Meta):
             ("conforms_to", self.conforms_to, True),
             ("access_rights", self.access_rights, True),
             ("applicable_legislation", self.applicable_legislation, True),
-            ("health_data_access_body", self.health_data_access_body, hdab_needed),
+            ("health_data_access_body", self.health_data_access_body, True),
             ("type", self.type, True),
             (
                 "number_of_unique_individuals",

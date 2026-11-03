@@ -37,6 +37,7 @@ from relay.rdf.vocab import (
     DCT,
     DPV,
     FOAF,
+    HEALTH_DATA_THEME,
     HEALTHDCATAP,
     PREFIXES,
     RDFS,
@@ -66,6 +67,7 @@ def dataset_graph(subject: URIRef, meta: DatasetMetadata) -> Graph:
 def add_dataset(g: Graph, subject: URIRef, meta: DatasetMetadata) -> None:
     """Add one dataset to `g` (e.g. a catalogue graph holding several datasets)."""
     g.add((subject, RDF.type, DCAT.Dataset))
+    g.add((subject, DCAT.theme, HEALTH_DATA_THEME))
 
     for text in meta.title:
         g.add((subject, DCT.title, _lang(text)))

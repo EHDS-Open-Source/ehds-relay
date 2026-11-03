@@ -14,7 +14,7 @@ from rdflib.namespace import RDF
 
 from relay.dtos.dataset_metadata import DatasetMetadata
 from relay.rdf import add_dataset, dataset_graph, new_graph, to_turtle
-from relay.rdf.vocab import DCAT, PREFIXES
+from relay.rdf.vocab import DCAT, HEALTH_DATA_THEME, PREFIXES
 
 GOLDEN = Path(__file__).parent / "golden"
 BASE = "https://relay.example.org/datasets/"
@@ -75,7 +75,10 @@ def test_catalogue_graph_holds_several_datasets() -> None:
     assert_same_graph(g, expected)
 
 
-def test_empty_draft_maps_to_bare_dataset() -> None:
+def test_empty_draft_maps_to_dataset_with_fixed_theme() -> None:
     subject = URIRef(BASE + "empty")
     g = dataset_graph(subject, DatasetMetadata())
-    assert set(g) == {(subject, RDF.type, DCAT.Dataset)}
+    assert set(g) == {
+        (subject, RDF.type, DCAT.Dataset),
+        (subject, DCAT.theme, HEALTH_DATA_THEME),
+    }

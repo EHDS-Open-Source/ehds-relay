@@ -13,9 +13,10 @@ Requires-Dist: pydantic-settings~=2.16.2
 Requires-Dist: sqlalchemy~=2.1.6
 Requires-Dist: alembic~=1.20.1
 Requires-Dist: psycopg2~=2.9.13
+Requires-Dist: rdflib~=7.6.0
 Provides-Extra: dev
 Requires-Dist: pytest~=9.2.0; extra == "dev"
-Requires-Dist: httpx~=0.28.1; extra == "dev"
+Requires-Dist: httpx2~=2.16.0; extra == "dev"
 Requires-Dist: testcontainers~=4.15.0; extra == "dev"
 Requires-Dist: ruff~=0.17.3; extra == "dev"
 Requires-Dist: pyright~=1.1.414; extra == "dev"

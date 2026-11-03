@@ -18,6 +18,10 @@
   "health_category": [
     {"label": "Health system resources", "uri": "https://hdeu-dcat.data.health.europa.eu/resource/authority/healthcategories/HSRES"}
   ],
+  "health_data_access_body": {
+    "name": "Health Data Access Body NL",
+    "contact_point": {"name": "HDAB desk", "email": "hdab-contact@example.org"}
+  },
   "number_of_records": 0,
   "temporal_coverage": {"start": "2023-01-01"},
   "identifier": ["bed-occupancy"]

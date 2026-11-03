@@ -101,3 +101,8 @@ DATASET_ORGANISATION_FIELDS: dict[str, URIRef] = {
 
 # Classes whose labels are written with skos:prefLabel rather than rdfs:label
 CONCEPT_CLASSES = frozenset({SKOS.Concept})
+
+
+# Every Health DCAT-AP dataset must carry the EU data theme "Health" as dcat:theme; the
+# metadata form has no field for it, so the mapping always adds it.
+HEALTH_DATA_THEME = URIRef("http://publications.europa.eu/resource/authority/data-theme/HEAL")

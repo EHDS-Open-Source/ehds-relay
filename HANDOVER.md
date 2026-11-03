@@ -3,8 +3,8 @@
 Temporary file for picking up this branch; removed before merge.
 
 ## Status
-Core work done and verified: `make check` clean, `make test` 61 passed. Remaining: one-off
-SHACL check of the full golden example (release 8 shapes could not be downloaded here).
+Done and verified: `make check` clean, dataset/rdf tests pass, and both golden examples conform to
+the release 8 SHACL shapes (public shapes for the minimal one, non-public for the full one).
 
 ## Done
 - `rdflib` added (pyproject + pip-compile locks).
@@ -21,13 +21,22 @@ SHACL check of the full golden example (release 8 shapes could not be downloaded
   structured data, English title preferred for display).
 
 ## Next
-1. One-off pyshacl run of `tests/golden/non_public_full.ttl` against the release 8 shapes
-   (public/restricted/non-public) from a scratch venv; fix mapping gaps if any.
-2. Don't wire the HTTP export route here: `relay/api/export.py` holds 501 stubs that the
+1. Don't wire the HTTP export route here: `relay/api/export.py` holds 501 stubs that the
    validation/export work replaces (it should call `relay.rdf`).
-3. `AccessRights` stays in `relay/dtos/dataset.py` under that name.
+2. `AccessRights` stays in `relay/dtos/dataset.py` under that name.
+3. The form must collect the health data access body for every dataset, public ones included
+   (the public shapes require exactly one `healthdcatap:hdab` with a contact point).
+
+## SHACL check (one-off, not in the project)
+pyshacl run from a scratch venv against the release 8 public / restricted / non-public shapes.
+The upstream non-public and public shapes contain one property shape without a path (the
+hasStructuredData rule); the check script moves it up to its parent shape because pyshacl
+rejects it. No other changes to the shapes.
 
 ## Guessed properties (no exact spec property)
+- Every dataset gets `dcat:theme` = EU data theme HEAL (fixed, the form has no field): the
+  shapes require at least one theme and the vocabulary shape requires HEAL.
+- Health data access body is now required to publish at every access level (was: non-public only).
 - Personal data yes/no: release 8 has no boolean; "yes" is one blank `dpv:PersonalData`, "no" is omitted.
 - Organisation contact name: `rdfs:label` on `cv:ContactPoint`.
 - Variables group/table titles: derived from the dataset title.

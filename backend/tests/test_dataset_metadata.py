@@ -37,12 +37,14 @@ def test_variables_required_only_when_structured() -> None:
     assert DatasetMetadata.model_validate(doc).missing_for_publish() == []
 
 
-def test_hdab_not_required_for_public_data() -> None:
+def test_hdab_required_for_every_access_level() -> None:
     doc = full()
     del doc["health_data_access_body"]
-    assert DatasetMetadata.model_validate(doc).missing_for_publish() == ["health_data_access_body"]
-    doc["access_rights"] = "public"
-    assert DatasetMetadata.model_validate(doc).missing_for_publish() == []
+    for rights in ("public", "restricted", "non_public"):
+        doc["access_rights"] = rights
+        assert DatasetMetadata.model_validate(doc).missing_for_publish() == [
+            "health_data_access_body"
+        ]
 
 
 def test_unique_individuals_required_only_with_personal_data() -> None:
