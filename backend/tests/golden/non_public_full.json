@@ -1,0 +1,88 @@
+{
+  "title": [
+    {"lang": "en", "text": "Cross-border oncology EHR cohort 2024"},
+    {"lang": "fr", "text": "Cohorte oncologique transfrontalière DSE 2024"}
+  ],
+  "description": [
+    {"lang": "en", "text": "Non-public oncology cohort assembled from electronic health records and registries for secondary use."}
+  ],
+  "distributions": [
+    {
+      "title": "Secure CSV extract",
+      "description": "Primary tabular extract made available within a secure research environment.",
+      "access_url": "https://secure-access.example.org/requests/oncology-ehrs-2024/csv",
+      "format": {"label": "CSV", "uri": "http://publications.europa.eu/resource/authority/file-type/CSV"},
+      "applicable_legislation": [
+        {"label": "Data Governance Act", "uri": "http://data.europa.eu/eli/reg/2022/868/oj"}
+      ]
+    }
+  ],
+  "structured_data": true,
+  "variables": [
+    {
+      "name": "patientId",
+      "data_type": "string",
+      "definition": "Pseudonymised patient identifier used to link longitudinal care episodes."
+    },
+    {
+      "name": "primaryDiagnosisCode",
+      "data_type": "string",
+      "definition": "Primary diagnosis coded with ICD-10.",
+      "coding_system": "https://icd.who.int/browse10/2019/en"
+    }
+  ],
+  "provenance": "Derived from linked hospital EHR systems and oncology registries using pseudonymised patient linkage.",
+  "keyword": ["oncology", "electronic health records"],
+  "health_theme": [
+    {"label": "Health systems", "uri": "https://hdeu-dcat.data.health.europa.eu/resource/authority/health-theme/HEALTH_SYSTEMS"}
+  ],
+  "health_category": [
+    {"label": "Electronic health records", "uri": "https://hdeu-dcat.data.health.europa.eu/resource/authority/healthcategories/EHRS"}
+  ],
+  "coding_system": [
+    {"label": "SNOMED CT", "uri": "https://hdeu-dcat.data.health.europa.eu/resource/authority/coding-system/SNOMED-CT"}
+  ],
+  "has_personal_data": true,
+  "conforms_to": [
+    {"label": "FHIR", "uri": "https://hdeu-dcat.data.health.europa.eu/resource/authority/standard/FHIR"}
+  ],
+  "access_rights": "non_public",
+  "applicable_legislation": [
+    {"label": "Data Governance Act", "uri": "http://data.europa.eu/eli/reg/2022/868/oj"}
+  ],
+  "health_data_access_body": {
+    "name": "Belgian Health Data Access Body",
+    "type": {"label": "Non-governmental organisation", "uri": "https://hdeu-dcat.data.health.europa.eu/resource/authority/publisher-type/non-gov-org"},
+    "contact_point": {"name": "HDAB desk", "email": "hdab-contact@example.org"}
+  },
+  "geographical_coverage": [
+    {"label": "Belgium", "uri": "http://publications.europa.eu/resource/authority/country/BEL"}
+  ],
+  "type": [
+    {"label": "Statistical", "uri": "http://publications.europa.eu/resource/authority/dataset-type/STATISTICAL"}
+  ],
+  "number_of_records": 1850000,
+  "number_of_unique_individuals": 412000,
+  "language": [
+    {"label": "English", "uri": "http://publications.europa.eu/resource/authority/language/ENG"}
+  ],
+  "code_values": ["U07.1"],
+  "temporal_coverage": {"start": "2020-01-01", "end": "2024-12-31"},
+  "health_data_holder": {
+    "name": "National Hospital Data Custodian Service",
+    "contact_point": {"name": "Custodian desk", "email": "custodian-contact@example.org"}
+  },
+  "publisher": {
+    "name": "Belgian National Cancer Registry",
+    "type": {"label": "Public health registry", "uri": "https://hdeu-dcat.data.health.europa.eu/resource/authority/publisher-type/public-health-registry"},
+    "description": "Metadata is maintained by the registry metadata office.",
+    "contact_point": {"name": "Publisher desk", "email": "publisher-contact@example.org"}
+  },
+  "contact_points": [
+    {"name": "Dataset support", "email": "oncology-dataset-support@example.org"}
+  ],
+  "identifier": ["EU-HDCA-R7-ONCOLOGY-EHRS-2024"],
+  "generated_by": [
+    {"label": "Routine records", "uri": "https://hdeu-dcat.data.health.europa.eu/resource/authority/health-activity/ROUTINE_RECORDS"}
+  ]
+}
