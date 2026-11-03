@@ -14,6 +14,8 @@ export interface paths {
         /**
          * Auth Callback
          * @description Complete sign-in, set the session cookie and redirect into the app.
+         *
+         *     Any failure lands on the app's sign-in page with `?error=signin_failed`, never a raw error.
          */
         get: operations["auth_callback_api_v1_auth_callback_get"];
         put?: never;
@@ -55,7 +57,9 @@ export interface paths {
         put?: never;
         /**
          * Logout
-         * @description End the session. POST, so that following a link cannot sign anyone out.
+         * @description End the session and say where to send the browser to sign out of the provider too.
+         *
+         *     POST, so that following a link cannot sign anyone out. Succeeds without a session.
          */
         post: operations["logout_api_v1_auth_logout_post"];
         delete?: never;
@@ -113,6 +117,9 @@ export interface paths {
         /**
          * Accept Invitation
          * @description Join the organisation as the signed-in user, with the role given in the invitation.
+         *
+         *     The signed-in account must have the invited email address. Accepting again is harmless.
+         *     Someone who is already a member keeps their current role.
          */
         post: operations["accept_invitation_api_v1_invitations__token__accept_post"];
         delete?: never;
@@ -146,10 +153,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Organisations */
+        /**
+         * List Organisations
+         * @description The caller's organisations, each with the caller's role.
+         */
         get: operations["list_organisations_api_v1_organisations_get"];
         put?: never;
-        /** Create Organisation */
+        /**
+         * Create Organisation
+         * @description Create an organisation; the caller becomes its first Owner.
+         */
         post: operations["create_organisation_api_v1_organisations_post"];
         delete?: never;
         options?: never;
@@ -171,7 +184,10 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update Organisation */
+        /**
+         * Update Organisation
+         * @description Owners only. Updates the fields that were sent.
+         */
         patch: operations["update_organisation_api_v1_organisations__org_id__patch"];
         trace?: never;
     };
@@ -336,10 +352,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Invitations */
+        /**
+         * List Invitations
+         * @description Owners only. Newest first.
+         */
         get: operations["list_invitations_api_v1_organisations__org_id__invitations_get"];
         put?: never;
-        /** Create Invitation */
+        /**
+         * Create Invitation
+         * @description Owners only. Emails the invitee a link that is valid for 30 days.
+         */
         post: operations["create_invitation_api_v1_organisations__org_id__invitations_post"];
         delete?: never;
         options?: never;
@@ -376,7 +398,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Resend Invitation */
+        /**
+         * Resend Invitation
+         * @description Send a new link (the old one stops working) and restart the 30 days.
+         *
+         *     Works on pending and expired invitations.
+         */
         post: operations["resend_invitation_api_v1_organisations__org_id__invitations__invitation_id__resend_post"];
         delete?: never;
         options?: never;
@@ -391,7 +418,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Members */
+        /**
+         * List Members
+         * @description Owners only. Owners first, then by name.
+         */
         get: operations["list_members_api_v1_organisations__org_id__members_get"];
         put?: never;
         post?: never;
@@ -817,7 +847,10 @@ export interface components {
         };
         /** InvitationCreateDTO */
         InvitationCreateDTO: {
-            /** Email */
+            /**
+             * Email
+             * @description Compared and stored lower-cased
+             */
             email: string;
             /** @default standard */
             role: components["schemas"]["MemberRole"];
@@ -829,7 +862,10 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
-            /** Email */
+            /**
+             * Email
+             * @description Lower-cased
+             */
             email: string;
             /**
              * Expires At
@@ -847,11 +883,18 @@ export interface components {
              */
             invited_by: string | null;
             /**
+             * Last Sent At
+             * Format: date-time
+             * @description When the invitation email was last sent: on create and on every resend
+             */
+            last_sent_at: string;
+            /**
              * Org Id
              * Format: uuid
              */
             org_id: string;
             role: components["schemas"]["MemberRole"];
+            /** @description `expired` once `expires_at` has passed without the invitation being accepted */
             status: components["schemas"]["InvitationStatus"];
         };
         /**
@@ -878,6 +921,17 @@ export interface components {
          * @enum {string}
          */
         InvitationStatus: "pending" | "accepted" | "cancelled" | "expired";
+        /**
+         * LogoutDTO
+         * @description Where the browser goes next to finish signing out.
+         *
+         *     Usually the provider's end-session page, which ends its single sign-on session too and then
+         *     returns to the app's sign-in page.
+         */
+        LogoutDTO: {
+            /** Redirect Url */
+            redirect_url: string | null;
+        };
         /**
          * MeDTO
          * @description The signed-in user.
@@ -935,7 +989,7 @@ export interface components {
              * Country
              * @description ISO 3166-1 alpha-2 code
              */
-            country?: string | null;
+            country: string;
             /** Name */
             name: string;
         };
@@ -955,6 +1009,8 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /** @description The signed-in user's role in this organisation */
+            role: components["schemas"]["MemberRole"];
             status: components["schemas"]["OrganisationStatus"];
         };
         /**
@@ -964,7 +1020,7 @@ export interface components {
         OrganisationStatus: "active" | "suspended" | "deleted";
         /**
          * OrganisationUpdateDTO
-         * @description Partial update: fields left out stay unchanged.
+         * @description Partial update: fields left out stay unchanged. Neither field may be set to null.
          */
         OrganisationUpdateDTO: {
             /**
@@ -1065,6 +1121,8 @@ export interface operations {
             query?: {
                 code?: string | null;
                 state?: string | null;
+                error?: string | null;
+                error_description?: string | null;
             };
             header?: never;
             path?: never;
@@ -1095,6 +1153,8 @@ export interface operations {
             query?: {
                 /** @description Path to return to after signing in */
                 redirect?: string | null;
+                /** @description Open the provider's registration page instead */
+                signup?: boolean;
             };
             header?: never;
             path?: never;
@@ -1130,11 +1190,13 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LogoutDTO"];
+                };
             };
         };
     };
@@ -1178,6 +1240,13 @@ export interface operations {
                     "application/json": components["schemas"]["InvitationPreviewDTO"];
                 };
             };
+            /** @description Unknown link */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1208,6 +1277,27 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OrganisationDTO"];
                 };
+            };
+            /** @description The signed-in account's email is not the invited email */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown link */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The invitation was cancelled, has expired, or was used by someone else */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -1826,6 +1916,13 @@ export interface operations {
                     "application/json": components["schemas"]["InvitationDTO"];
                 };
             };
+            /** @description The person is already a member, or already has a pending invitation */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1842,8 +1939,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                org_id: string;
                 invitation_id: string;
+                org_id: string;
             };
             cookie?: never;
         };
@@ -1851,6 +1948,13 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The invitation is not pending */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1872,8 +1976,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                org_id: string;
                 invitation_id: string;
+                org_id: string;
             };
             cookie?: never;
         };
@@ -1887,6 +1991,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["InvitationDTO"];
                 };
+            };
+            /** @description The invitation was accepted or cancelled */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -1935,8 +2046,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                org_id: string;
                 user_id: string;
+                org_id: string;
             };
             cookie?: never;
         };
@@ -1965,8 +2076,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                org_id: string;
                 user_id: string;
+                org_id: string;
             };
             cookie?: never;
         };
