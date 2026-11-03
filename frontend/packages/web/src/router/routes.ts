@@ -9,6 +9,7 @@ import {
 
 import { validateCatalogueSearch } from "../pages/catalogue/search";
 import { isExportFormat, type ExportFormat } from "../datasets/download";
+import { AccountPage } from "../pages/AccountPage";
 import { CataloguePage } from "../pages/CataloguePage";
 import { AcceptInvitationPage } from "../pages/AcceptInvitationPage";
 import { DatasetDetailPage } from "../pages/DatasetDetailPage";
@@ -63,18 +64,35 @@ const invitationRoute = createRoute({
   component: AcceptInvitationPage,
 });
 
+/** Sends a signed-out visitor to /sign-in, coming back here afterwards. */
+async function requireSession({
+  context,
+  location,
+}: {
+  context: RouterContext;
+  location: { href: string };
+}) {
+  if (!(await context.session.load())) {
+    throw redirect({
+      to: "/sign-in",
+      search: { redirect: location.href },
+    });
+  }
+}
+
+// The user's own details. Outside any organisation, so it works without one.
+const accountRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "account",
+  beforeLoad: requireSession,
+  component: AccountPage,
+});
+
 // Everything below /orgs needs a signed-in user.
 const orgsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "orgs",
-  beforeLoad: async ({ context, location }) => {
-    if (!(await context.session.load())) {
-      throw redirect({
-        to: "/sign-in",
-        search: { redirect: location.href },
-      });
-    }
-  },
+  beforeLoad: requireSession,
   component: Outlet,
 });
 
@@ -184,6 +202,7 @@ export const routeTree = rootRoute.addChildren([
   homeRoute,
   signInRoute,
   invitationRoute,
+  accountRoute,
   orgsRoute.addChildren([
     orgPickerRoute,
     newOrgRoute,

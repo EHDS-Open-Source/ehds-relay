@@ -17,7 +17,11 @@ export const coreNavItems: readonly NavItem<OrgNavPath>[] = [
   { id: "settings", label: "Settings", to: "/orgs/$orgId/settings" },
 ];
 
-export const accountNavItems: readonly NavItem<"/orgs">[] = [
+/** Menu destinations outside any organisation. */
+export type RootNavPath = "/orgs" | "/account";
+
+export const accountNavItems: readonly NavItem<RootNavPath>[] = [
+  { id: "account", label: "Manage my account", to: "/account" },
   { id: "switch-organisation", label: "Switch organisation", to: "/orgs" },
 ];
 
