@@ -1,4 +1,5 @@
 import { createApiClient, type ApiClient } from "@ehds-relay/api-client";
+import createQueryClient from "openapi-react-query";
 
 type Middleware = Parameters<ApiClient["use"]>[0];
 
@@ -29,3 +30,6 @@ api.use(
     handleUnauthorized();
   }),
 );
+
+// The same client as typed TanStack Query hooks: `$api.useQuery("get", "/path", { params })`.
+export const $api = createQueryClient(api);

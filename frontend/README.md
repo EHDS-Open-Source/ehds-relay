@@ -56,7 +56,7 @@ Routes are org-scoped (`/orgs/$orgId/...`) and defined in code, not generated.
 3. For a menu entry, add an item to `packages/web/src/shell/nav.ts` (`requires: "owner"` hides it from other members).
 4. Build the page from the layout pieces in `@ehds-relay/ui` (`PageHeader`, `EmptyState`, ...). Those never import the router; the app passes links in through `renderLink`.
 
-Signed-in state comes from `packages/web/src/session/stub.ts`, a stand-in with one fake user and organisation until real sign-in exists.
+Signed-in state comes from the session store in `packages/web/src/session/` (see below).
 
 See `../AGENTS.md` for conventions.
 
@@ -70,3 +70,12 @@ there. `/orgs` forwards people with no organisation to `/orgs/new` and people wi
 its catalogue. Sign-out posts to `/api/v1/auth/logout` and goes to the sign-out address it returns;
 a 401 from any later call sends the user back to `/sign-in` with the current page as `redirect`.
 Tests use `session/testing.ts`, a store that never calls the API.
+
+## Queries
+
+`$api` in `packages/web/src/api.ts` wraps the same client as typed TanStack Query hooks
+([openapi-react-query](https://openapi-ts.dev/openapi-react-query/)), e.g.
+`$api.useQuery("get", "/api/v1/organisations/{org_id}/datasets", { params: { path: { org_id } } })`.
+After a save that changes the list, invalidate it with the matching key
+(`queryClient.invalidateQueries({ queryKey: ["get", "/api/v1/organisations/{org_id}/datasets"] })`).
+The catalogue searches and filters in the browser over the full list.
