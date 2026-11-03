@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -27,6 +27,8 @@ function stubApi(post: (request: Request) => Response) {
     }
     if (path === "/api/v1/organisations")
       return Promise.resolve(Response.json(orgs));
+    // The catalogue it opens is empty
+    if (path.endsWith("/datasets")) return Promise.resolve(Response.json([]));
     return Promise.resolve(Response.json({ status: "ok" }));
   });
   vi.stubGlobal("fetch", fetch);
@@ -34,12 +36,17 @@ function stubApi(post: (request: Request) => Response) {
 }
 
 function renderPage() {
+  const queryClient = new QueryClient();
   const router = createRelayRouter({
-    queryClient: new QueryClient(),
+    queryClient,
     session: createApiSessionStore(api),
     history: createMemoryHistory({ initialEntries: ["/orgs"] }),
   });
-  render(<RouterProvider router={router} />);
+  render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
   return router;
 }
 

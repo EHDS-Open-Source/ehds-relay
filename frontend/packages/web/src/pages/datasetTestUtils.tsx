@@ -6,10 +6,11 @@ import { vi } from "vitest";
 
 import { createRelayRouter } from "../router/router";
 import {
-  createStubSessionStore,
+  createTestSessionStore,
   demoSession,
-  type Session,
-} from "../session/stub";
+  makeOrg,
+} from "../session/testing";
+import type { Session } from "../session/types";
 
 export type Dataset = Schemas["DatasetDTO"];
 
@@ -84,7 +85,7 @@ export function renderApp(path: string, session: Session = demoSession) {
     queryClient: new QueryClient({
       defaultOptions: { queries: { retry: false } },
     }),
-    session: createStubSessionStore(session),
+    session: createTestSessionStore(session),
     history: createMemoryHistory({ initialEntries: [path] }),
   });
   render(
@@ -97,5 +98,5 @@ export function renderApp(path: string, session: Session = demoSession) {
 
 export const standardSession: Session = {
   ...demoSession,
-  orgs: [{ id: ORG, name: "Demo org", role: "standard" }],
+  orgs: [makeOrg({ id: ORG, role: "standard" })],
 };

@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createRelayRouter } from "../router/router";
-import { createStubSessionStore } from "../session/stub";
+import { createTestSessionStore } from "../session/testing";
 import { shellMessages } from "../shell/messages";
 
 const text = shellMessages.catalogue;
@@ -71,7 +71,7 @@ function renderAt(path: string) {
     queryClient: new QueryClient({
       defaultOptions: { queries: { retry: false } },
     }),
-    session: createStubSessionStore(),
+    session: createTestSessionStore(),
     history: createMemoryHistory({ initialEntries: [path] }),
   });
   render(

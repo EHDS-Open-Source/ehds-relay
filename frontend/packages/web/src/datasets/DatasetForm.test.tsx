@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createRelayRouter } from "../router/router";
-import { createStubSessionStore, demoSession } from "../session/stub";
+import { createTestSessionStore, demoSession } from "../session/testing";
 import { shellMessages } from "../shell/messages";
 import { createFakeServer } from "./fakeServer";
 import { fieldAnchorId, fieldKeys, fieldLabel } from "./fields";
@@ -27,7 +27,7 @@ function renderAt(path: string) {
     queryClient: new QueryClient({
       defaultOptions: { queries: { retry: false } },
     }),
-    session: createStubSessionStore(demoSession),
+    session: createTestSessionStore(demoSession),
     history: createMemoryHistory({ initialEntries: [path] }),
   });
   render(
