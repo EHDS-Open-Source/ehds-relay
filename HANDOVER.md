@@ -3,8 +3,8 @@
 Temporary file for picking up this branch; removed before merge.
 
 ## Status
-Paused (usage limit hit mid-session). Core work is committed; the last session was tidying tests.
-Not yet run: `make check` and the full `make test` on the final state.
+Core work done and verified: `make check` clean, `make test` 61 passed. Remaining: one-off
+SHACL check of the full golden example (release 8 shapes could not be downloaded here).
 
 ## Done
 - `rdflib` added (pyproject + pip-compile locks).
@@ -21,15 +21,17 @@ Not yet run: `make check` and the full `make test` on the final state.
   structured data, English title preferred for display).
 
 ## Next
-1. `cd backend && make check` — fix anything ruff/pyright report (a typing fix in
-   `tests/test_dataset_metadata.py` was the last edit).
-2. `make test` (needs docker) — the reshape touches dataset tests; make sure all pass.
-3. Re-check the mapping against the field list for the mandatory/conditional rules; record any
-   field whose property was a guess.
-4. Don't wire the HTTP export route here: `relay/api/export.py` holds 501 stubs that the
+1. One-off pyshacl run of `tests/golden/non_public_full.ttl` against the release 8 shapes
+   (public/restricted/non-public) from a scratch venv; fix mapping gaps if any.
+2. Don't wire the HTTP export route here: `relay/api/export.py` holds 501 stubs that the
    validation/export work replaces (it should call `relay.rdf`).
-5. `AccessRights` must stay in `relay/dtos/dataset.py` under that name (the stubs branch defines
-   it there too) so the merge into the integration branch is trivial.
+3. `AccessRights` stays in `relay/dtos/dataset.py` under that name.
+
+## Guessed properties (no exact spec property)
+- Personal data yes/no: release 8 has no boolean; "yes" is one blank `dpv:PersonalData`, "no" is omitted.
+- Organisation contact name: `rdfs:label` on `cv:ContactPoint`.
+- Variables group/table titles: derived from the dataset title.
+- Term labels: `skos:prefLabel` for concepts, `rdfs:label` otherwise.
 
 ## Verify
 - `pytest backend/tests/test_rdf.py backend/tests/test_dataset_metadata.py` (no docker needed).
