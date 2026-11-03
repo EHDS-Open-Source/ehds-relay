@@ -37,24 +37,6 @@ STUBS: list[tuple[str, str, str, Any]] = [
         f"{DATASET}/revalidate",
         None,
     ),
-    (
-        "get",
-        "/api/v1/organisations/{org_id}/datasets/{dataset_id}/export",
-        f"{DATASET}/export?format=jsonld",
-        None,
-    ),
-    (
-        "post",
-        "/api/v1/organisations/{org_id}/datasets/{dataset_id}/validate",
-        f"{DATASET}/validate",
-        None,
-    ),
-    (
-        "get",
-        "/api/v1/organisations/{org_id}/catalogue/export",
-        f"{ORG}/catalogue/export?format=rdfxml",
-        None,
-    ),
     ("get", "/api/v1/capabilities", "/api/v1/capabilities", None),
 ]
 

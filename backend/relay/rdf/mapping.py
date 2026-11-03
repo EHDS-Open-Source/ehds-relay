@@ -6,6 +6,7 @@ of their own (organisations, contact points, distributions, periods, variables) 
 blank nodes; vocabulary terms are their URIs.
 """
 
+from collections.abc import Iterable
 from datetime import date
 
 from pydantic import AnyUrl
@@ -36,6 +37,8 @@ from relay.rdf.vocab import (
     DCATAP,
     DCT,
     DPV,
+    EHDS_REGULATION,
+    ELI,
     FOAF,
     HEALTH_DATA_THEME,
     HEALTHDCATAP,
@@ -128,6 +131,31 @@ def add_dataset(g: Graph, subject: URIRef, meta: DatasetMetadata) -> None:
 
     for contact in meta.contact_points:
         g.add((subject, DCAT.contactPoint, _vcard(g, contact)))
+
+    # The QUANTUM label is Turtle written elsewhere; its triples go into the graph as they
+    # are. It was checked when it was saved. Each parse makes fresh blank nodes, so labels
+    # of different datasets in one catalogue never share one.
+    if meta.quantum_label and meta.quantum_label.strip():
+        g += Graph().parse(data=meta.quantum_label, format="turtle")
+
+
+def add_catalogue(g: Graph, subject: URIRef, title: str, datasets: Iterable[URIRef]) -> None:
+    """Add a dcat:Catalog listing `datasets` (already added to `g` with `add_dataset`).
+
+    The catalogue is published by the organisation it belongs to, under the EHDS
+    Regulation, which the catalogue shapes require.
+    """
+    g.add((subject, RDF.type, DCAT.Catalog))
+    g.add((subject, DCT.title, Literal(title)))
+    g.add((subject, DCT.description, Literal(f"Datasets published by {title}")))
+    publisher = BNode()
+    g.add((publisher, RDF.type, FOAF.Agent))
+    g.add((publisher, FOAF.name, Literal(title)))
+    g.add((subject, DCT.publisher, publisher))
+    g.add((EHDS_REGULATION, RDF.type, ELI.LegalResource))
+    g.add((subject, DCATAP.applicableLegislation, EHDS_REGULATION))
+    for dataset in datasets:
+        g.add((subject, DCAT.dataset, dataset))
 
 
 def _uri(url: AnyUrl) -> URIRef:

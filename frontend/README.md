@@ -85,5 +85,6 @@ Dataset query keys live in `packages/web/src/datasets/queries.ts` (`datasetKeys`
 `datasetKeys.list(orgId)` matches the catalogue's `$api` list query and `datasetKeys.detail(orgId, id)`
 holds one dataset. Every save (create, update, publish) goes through `useDatasetSave`, which puts
 the saved dataset under its detail key and invalidates the list; a delete drops the detail and
-invalidates the list too.
+invalidates the list too. A save also marks the dataset's output and its official-checks result
+(`datasetKeys.validation`) as stale.
 The catalogue searches and filters in the browser over the full list.

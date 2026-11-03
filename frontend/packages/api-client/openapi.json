@@ -1216,7 +1216,20 @@
       },
       "ValidationViolationDTO": {
         "properties": {
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Top-level form field key the result is about, e.g. distributions",
+            "title": "Field"
+          },
           "message": {
+            "description": "What is wrong, in plain words",
             "title": "Message",
             "type": "string"
           },
@@ -1807,7 +1820,7 @@
     },
     "/api/v1/organisations/{org_id}/catalogue/export": {
       "get": {
-        "description": "Every dataset in the organisation as one catalogue file.",
+        "description": "Every published dataset in the organisation as one catalogue file.\n\nDrafts are left out. A catalogue with no published datasets is still a valid file.",
         "operationId": "export_catalogue_api_v1_organisations__org_id__catalogue_export_get",
         "parameters": [
           {
@@ -2167,7 +2180,7 @@
     },
     "/api/v1/organisations/{org_id}/datasets/{dataset_id}/export": {
       "get": {
-        "description": "The dataset's record as a downloadable file. Incomplete records are refused with 422.",
+        "description": "The dataset's record as a downloadable file. Incomplete records are refused with 422.\n\nExport does not run the official checks; `validate` does.",
         "operationId": "export_dataset_api_v1_organisations__org_id__datasets__dataset_id__export_get",
         "parameters": [
           {
@@ -2409,6 +2422,7 @@
     },
     "/api/v1/organisations/{org_id}/datasets/{dataset_id}/validate": {
       "post": {
+        "description": "Check the record against the official Health DCAT-AP shapes for its access level.\n\n`conforms` is true only when nothing is missing and no rule is broken (warnings do not\ncount). Without an access level there is no shape set to check against, so only the\nmissing fields are reported.",
         "operationId": "validate_dataset_api_v1_organisations__org_id__datasets__dataset_id__validate_post",
         "parameters": [
           {

@@ -10,6 +10,7 @@ import { api } from "../api";
 import type { ExportFormat } from "./download";
 
 export type Dataset = Schemas["DatasetDTO"];
+export type ValidationReport = Schemas["ValidationReportDTO"];
 
 /**
  * Query keys for datasets. The list is the one the catalogue reads through `$api`, whose keys
@@ -28,6 +29,8 @@ export const datasetKeys = {
     [...datasetKeys.all, orgId, "detail", datasetId] as const,
   export: (orgId: string, datasetId: string, format: ExportFormat) =>
     [...datasetKeys.detail(orgId, datasetId), "export", format] as const,
+  validation: (orgId: string, datasetId: string) =>
+    [...datasetKeys.detail(orgId, datasetId), "validation"] as const,
 };
 
 /** A failed API call, keeping the HTTP status so screens can say what went wrong. */
@@ -69,7 +72,8 @@ export function useDataset(orgId: string, datasetId: string) {
 
 /**
  * After a create, update or publish: the saved dataset becomes the cached detail (so the
- * record and edit pages show it without loading it again), its output is stale, and the
+ * record and edit pages show it without loading it again), its output and check result are
+ * stale, and the
  * catalogue list is refreshed.
  */
 export async function refreshAfterSave(
@@ -81,6 +85,9 @@ export async function refreshAfterSave(
   await Promise.all([
     queryClient.invalidateQueries({
       queryKey: [...datasetKeys.detail(orgId, dataset.id), "export"],
+    }),
+    queryClient.invalidateQueries({
+      queryKey: datasetKeys.validation(orgId, dataset.id),
     }),
     queryClient.invalidateQueries({ queryKey: datasetKeys.list(orgId) }),
   ]);
@@ -133,6 +140,28 @@ export function useDatasetExport(
       if (!response.ok || typeof data !== "string") {
         throw new ApiError(response.status);
       }
+      return data;
+    },
+  });
+}
+
+/**
+ * The result of checking the record against the official Health DCAT-AP rules. A POST that
+ * changes nothing, so it is read like a query and cached with the dataset.
+ */
+export function useDatasetValidation(orgId: string, datasetId: string) {
+  return useQuery({
+    queryKey: datasetKeys.validation(orgId, datasetId),
+    retry: retryTransient,
+    queryFn: async ({ signal }) => {
+      const { data, response } = await api.POST(
+        "/api/v1/organisations/{org_id}/datasets/{dataset_id}/validate",
+        {
+          params: { path: { org_id: orgId, dataset_id: datasetId } },
+          signal,
+        },
+      );
+      if (!data) throw new ApiError(response.status);
       return data;
     },
   });

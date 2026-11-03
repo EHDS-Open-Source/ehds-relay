@@ -96,6 +96,26 @@ export const shellMessages = {
       downloadAs: "Download .{ext}",
       fallbackName: "dataset",
     },
+    validation: {
+      title: "Official checks",
+      checking: "Checking the record against the official rules",
+      passes: "Passes the official checks",
+      passesDetail:
+        "The record meets the Health DCAT-AP rules for its access level.",
+      fails: "Does not pass the official checks yet",
+      failsDetail:
+        "Fix these in the form, save, and come back here to check again.",
+      warnings: "Passes the official checks, with notes",
+      wholeRecord: "Whole record",
+      notFilledIn: "Not filled in yet.",
+      severity: {
+        violation: "Problem",
+        warning: "Note",
+        info: "Note",
+      },
+      unavailable: "The official checks are not available yet.",
+      failed: "The official checks could not be run. Try again in a moment.",
+    },
     save: {
       conflictTitle: "Someone else changed this dataset",
       conflictBody:

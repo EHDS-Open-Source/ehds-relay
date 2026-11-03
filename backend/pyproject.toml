@@ -26,6 +26,7 @@ dependencies = [
     "joserfc~=1.8.0",
     "requests~=2.34.2",
     "rdflib~=7.6.0",
+    "pyshacl~=0.40.2",
     "procrastinate~=3.10.0",
 ]
 
@@ -45,6 +46,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["relay*"]
+
+[tool.setuptools.package-data]
+"relay.rdf" = ["shapes/*.ttl", "shapes/*.md"]
 
 [tool.ruff]
 line-length = 100

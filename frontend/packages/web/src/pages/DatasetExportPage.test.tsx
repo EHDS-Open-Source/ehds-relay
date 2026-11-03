@@ -113,4 +113,93 @@ describe("dataset export", () => {
       await screen.findByRole("link", { name: m.backToRecord }),
     ).toHaveAttribute("href", `/orgs/${ORG}/datasets/${ID}`);
   });
+
+  describe("official checks", () => {
+    const v = m.validation;
+    const exportOk = () => new Response("@prefix a: <b> .", { status: 200 });
+
+    it("says the record passes", async () => {
+      const calls = stubApi({
+        [`GET ${base}`]: () => json(makeDataset()),
+        [`GET ${base}/export`]: exportOk,
+        [`POST ${base}/validate`]: () =>
+          json({ conforms: true, missing: [], violations: [] }),
+      });
+      renderApp(path);
+      expect(await screen.findByText(v.passes)).toBeVisible();
+      expect(
+        calls.filter((c) => c.method === "POST" && c.url.endsWith("/validate")),
+      ).toHaveLength(1);
+    });
+
+    it("lists problems in plain words, linked to their form fields", async () => {
+      stubApi({
+        [`GET ${base}`]: () => json(makeDataset()),
+        [`GET ${base}/export`]: exportOk,
+        [`POST ${base}/validate`]: () =>
+          json({
+            conforms: false,
+            missing: [],
+            violations: [
+              {
+                path: "dcatap:applicableLegislation",
+                field: "distributions",
+                message:
+                  "In a distribution: the applicable legislation is missing.",
+                severity: "violation",
+              },
+              {
+                path: null,
+                field: null,
+                message: "Something about the whole record.",
+                severity: "violation",
+              },
+            ],
+          }),
+      });
+      renderApp(path);
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent(v.fails);
+      const link = screen.getByRole("link", {
+        name: shellMessages.datasetForm.fields.distributions,
+      });
+      expect(link).toHaveAttribute(
+        "href",
+        `/orgs/${ORG}/datasets/${ID}/edit#field-distributions`,
+      );
+      expect(
+        screen.getByText(
+          "In a distribution: the applicable legislation is missing.",
+        ),
+      ).toBeVisible();
+      expect(screen.getByText(v.wholeRecord)).toBeVisible();
+      expect(
+        screen.getByText("Something about the whole record."),
+      ).toBeVisible();
+      // The output is still shown alongside
+      expect(await screen.findByText("@prefix a: <b> .")).toBeVisible();
+    });
+
+    it("says the checks are not available yet (501) and still shows the output", async () => {
+      stubApi({
+        [`GET ${base}`]: () => json(makeDataset()),
+        [`GET ${base}/export`]: exportOk,
+        [`POST ${base}/validate`]: () =>
+          json({ detail: "Not implemented yet" }, 501),
+      });
+      renderApp(path);
+      expect(await screen.findByText(v.unavailable)).toBeVisible();
+      expect(await screen.findByText("@prefix a: <b> .")).toBeVisible();
+    });
+
+    it("is not run for an incomplete record", async () => {
+      const calls = stubApi({
+        [`GET ${base}`]: () =>
+          json(makeDataset({ missing_for_publish: ["keyword"] })),
+      });
+      renderApp(path);
+      expect(await screen.findByText(m.output.incomplete)).toBeVisible();
+      expect(calls.filter((c) => c.url.endsWith("/validate"))).toHaveLength(0);
+    });
+  });
 });

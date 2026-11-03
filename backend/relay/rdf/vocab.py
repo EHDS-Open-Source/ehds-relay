@@ -106,3 +106,6 @@ CONCEPT_CLASSES = frozenset({SKOS.Concept})
 # Every Health DCAT-AP dataset must carry the EU data theme "Health" as dcat:theme; the
 # metadata form has no field for it, so the mapping always adds it.
 HEALTH_DATA_THEME = URIRef("http://publications.europa.eu/resource/authority/data-theme/HEAL")
+
+# The EHDS Regulation, (EU) 2025/327: the legislation every catalogue we export falls under
+EHDS_REGULATION = URIRef("http://data.europa.eu/eli/reg/2025/327/oj")

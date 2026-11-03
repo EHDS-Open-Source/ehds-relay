@@ -318,6 +318,7 @@ export const zValidationSeverity = z.enum([
  * ValidationViolationDTO
  */
 export const zValidationViolationDto = z.object({
+    field: z.string().nullish(),
     message: z.string(),
     path: z.string().nullable(),
     severity: zValidationSeverity
