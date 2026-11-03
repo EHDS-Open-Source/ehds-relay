@@ -3,6 +3,20 @@
 Temporary file for picking up this work; it is not part of any pull request and should be deleted when
 the integration branch is retired.
 
+## This branch: member and invitation screens
+Done: the Members page (owners only) lists members with role change and removal (with a confirmation),
+and below it the invitations: invite form (email and role), status filter, date sent, resend, and cancel
+(with a confirmation). Server answers (last owner, already a member, already invited, not pending, not
+allowed) are shown as plain sentences. A new public page `/invitations/<token>` (the link in the
+invitation email) shows the organisation, who invited you and the role; signed-out visitors get "Sign in"
+and "Create an account" (back to the same link afterwards), signed-in ones get "Accept", after which the
+organisation list is reloaded and its catalogue opens. Wrong account (403), unknown link (404) and
+cancelled, expired or used invitations (410) each have their own message.
+Notes: the server lets only owners list members, so a standard member sees a short "only owners manage
+members" note and has no Members menu item. Frontend check, tests and build pass. Not yet done: a manual
+browser run through invite, email, accept. The shared test setup (`vitest.setup.ts`) now also answers
+member and invitation lists with an empty list.
+
 ## What this branch is
 `mvp-integration` holds everything built so far, merged together and tested as one. It has no pull
 request. The work is split into pull requests against `main`; the human merges them.
@@ -49,7 +63,6 @@ arrives in Mailpit. `tilt down` removes the dev database, so seeded data is lost
 - Restarting Keycloak re-imports the realm with new user ids, so the API creates a second user with no
   organisations. Fix is to run the realm like the federated node does (persistent data, idempotent
   account creation, partial import, ordered migrations); it is tracked in the team vault.
-- The invitation email links to `/invitations/<token>`, but the web app has no route for it yet.
 - On an edit conflict the edit page shows two messages (the editor's banner and the form's line).
 - The production build warns the bundle is about 640 kB; lazy-loading the dataset pages would fix it.
 - Individual merge commits on this branch are not guaranteed to build on their own, only the tip.
