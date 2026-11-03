@@ -1,0 +1,18 @@
+# Local environment (copy .dev.env.example to .dev.env)
+*.env
+!.dev.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Helm dependencies (restored by `helm dependency build`)
+deploy/helm/*/charts/
+
+# Tilt
+tilt_modules/

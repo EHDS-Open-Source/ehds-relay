@@ -1,0 +1,74 @@
+{{- if .Values.api.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ehds-relay.fullname" . }}-api
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels:
+      {{- include "ehds-relay.apiSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ehds-relay.apiSelectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+      {{- if .Values.api.migrations.enabled }}
+      initContainers:
+        - name: migrations
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          # Retry until the database accepts connections
+          command:
+            - /bin/sh
+            - -c
+            - |
+              for i in $(seq 1 60); do
+                alembic upgrade head && exit 0
+                echo "migrations failed, retrying in 2s ($i/60)"; sleep 2
+              done
+              exit 1
+          env:
+            {{- include "ehds-relay.dbEnv" . | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+      {{- end }}
+      containers:
+        - name: api
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          {{- if .Values.api.reload }}
+          # Appended to the image's uvicorn ENTRYPOINT (dev only, used by Tilt)
+          args: ["--reload"]
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            {{- include "ehds-relay.dbEnv" . | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+{{- end }}
