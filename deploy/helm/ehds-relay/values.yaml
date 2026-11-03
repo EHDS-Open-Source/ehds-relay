@@ -1,0 +1,49 @@
+api:
+  enabled: true
+  replicas: 1
+  image:
+    repository: localhost:5001/ehds-relay-api
+    tag: dev
+    pullPolicy: IfNotPresent
+  logLevel: info
+  # uvicorn --reload, for the Tilt live-update loop only
+  reload: false
+  service:
+    port: 8000
+  resources: {}
+  # Run `alembic upgrade head` in an init container before the API starts
+  migrations:
+    enabled: true
+
+# Connection settings for the application database. host defaults to the bundled
+# postgres subchart (<release>-postgres); set it when postgres.enabled=false.
+database:
+  host: ""
+  port: 5432
+  name: relay
+  # Secret holding USERDB_USER / USERDB_PASSWORD / POSTGRES_PASSWORD. Created by this
+  # chart from the values below unless existingSecret is set.
+  existingSecret: ""
+  user: relay
+  password: relay
+  superuserPassword: postgres
+
+# groundhog2k/postgres subchart (official postgres image). Off when using managed Postgres.
+postgres:
+  enabled: true
+  image:
+    tag: "17"
+  settings:
+    existingSecret: ehds-relay-db
+    superuserPassword:
+      secretKey: POSTGRES_PASSWORD
+  userDatabase:
+    existingSecret: ehds-relay-db
+    name:
+      secretKey: POSTGRES_DB
+    user:
+      secretKey: USERDB_USER
+    password:
+      secretKey: USERDB_PASSWORD
+  storage:
+    requestedSize: 1Gi

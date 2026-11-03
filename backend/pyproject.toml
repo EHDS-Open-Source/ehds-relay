@@ -1,0 +1,58 @@
+[project]
+name = "ehds-relay"
+description = "EHDS Relay backend API"
+version = "0.1.0"
+requires-python = ">=3.13"
+readme = "README.md"
+
+authors = [
+    {name = "George Eddie", email = "george.eddie@aridhia.com"},
+    {name = "Liam Smith", email = "liam.smith@aridhia.com"},
+]
+maintainers = [
+    {name = "George Eddie", email = "george.eddie@aridhia.com"},
+    {name = "Liam Smith", email = "liam.smith@aridhia.com"},
+]
+
+dependencies = [
+    "fastapi~=0.162.0",
+    "uvicorn[standard]~=0.54.0",
+    "pydantic~=2.14.2",
+    "pydantic-settings~=2.16.2",
+    "sqlalchemy~=2.1.6",
+    "alembic~=1.20.1",
+    "psycopg2~=2.9.13",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest~=9.2.0",
+    "httpx2~=2.16.0",
+    "testcontainers~=4.15.0",
+    "ruff~=0.17.3",
+    "pyright~=1.1.414",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["relay*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF"]
+
+[tool.pyright]
+include = ["relay", "tests"]
+pythonVersion = "3.13"
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

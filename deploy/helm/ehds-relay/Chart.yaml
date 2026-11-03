@@ -1,0 +1,11 @@
+apiVersion: v2
+name: ehds-relay
+description: EHDS Relay - umbrella chart (API + optional supporting components)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+dependencies:
+  - name: postgres
+    version: 1.6.8
+    repository: https://groundhog2k.github.io/helm-charts/
+    condition: postgres.enabled
