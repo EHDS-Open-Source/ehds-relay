@@ -1,0 +1,156 @@
+# Expected Health DCAT-AP (release 8) output for non_public_full.json.
+# Written by hand from the specification's example dataset, trimmed to the fields the
+# form collects. Blank nodes are compared structurally, so their labels do not matter.
+
+@prefix csvw: <http://www.w3.org/ns/csvw#> .
+@prefix cv: <http://data.europa.eu/m8g/> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dcatap: <http://data.europa.eu/r5r/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix dpv: <https://w3id.org/dpv#> .
+@prefix eli: <http://data.europa.eu/eli/ontology#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix geodcatap: <http://data.europa.eu/930/> .
+@prefix healthdcatap: <http://healthdataportal.eu/ns/health#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://relay.example.org/datasets/oncology-ehrs-2024>
+    a dcat:Dataset ;
+    dct:title "Cross-border oncology EHR cohort 2024"@en ,
+        "Cohorte oncologique transfrontalière DSE 2024"@fr ;
+    dct:description "Non-public oncology cohort assembled from electronic health records and registries for secondary use."@en ;
+    dct:identifier "EU-HDCA-R7-ONCOLOGY-EHRS-2024" ;
+    dct:accessRights <http://publications.europa.eu/resource/authority/access-right/NON_PUBLIC> ;
+    dcatap:applicableLegislation <http://data.europa.eu/eli/reg/2022/868/oj> ;
+    dct:type <http://publications.europa.eu/resource/authority/dataset-type/STATISTICAL> ;
+    dct:language <http://publications.europa.eu/resource/authority/language/ENG> ;
+    dct:conformsTo <https://hdeu-dcat.data.health.europa.eu/resource/authority/standard/FHIR> ;
+    dct:spatial <http://publications.europa.eu/resource/authority/country/BEL> ;
+    dct:temporal [
+        a dct:PeriodOfTime ;
+        dcat:startDate "2020-01-01"^^xsd:date ;
+        dcat:endDate "2024-12-31"^^xsd:date
+    ] ;
+    dct:provenance [
+        a dct:ProvenanceStatement ;
+        rdfs:label "Derived from linked hospital EHR systems and oncology registries using pseudonymised patient linkage."
+    ] ;
+    dcat:keyword "oncology" , "electronic health records" ;
+    dcat:contactPoint [
+        a vcard:Kind ;
+        vcard:fn "Dataset support" ;
+        vcard:hasEmail <mailto:oncology-dataset-support@example.org>
+    ] ;
+    dcat:distribution [
+        a dcat:Distribution ;
+        dct:title "Secure CSV extract" ;
+        dct:description "Primary tabular extract made available within a secure research environment." ;
+        dcat:accessURL <https://secure-access.example.org/requests/oncology-ehrs-2024/csv> ;
+        dct:format <http://publications.europa.eu/resource/authority/file-type/CSV> ;
+        dcatap:applicableLegislation <http://data.europa.eu/eli/reg/2022/868/oj>
+    ] ;
+    dct:publisher [
+        a foaf:Agent ;
+        foaf:name "Belgian National Cancer Registry" ;
+        dct:type <https://hdeu-dcat.data.health.europa.eu/resource/authority/publisher-type/public-health-registry> ;
+        dct:description "Metadata is maintained by the registry metadata office." ;
+        cv:contactPoint [
+            a cv:ContactPoint ;
+            rdfs:label "Publisher desk" ;
+            cv:email "publisher-contact@example.org"
+        ]
+    ] ;
+    healthdcatap:hdab [
+        a foaf:Agent ;
+        foaf:name "Belgian Health Data Access Body" ;
+        dct:type <https://hdeu-dcat.data.health.europa.eu/resource/authority/publisher-type/non-gov-org> ;
+        cv:contactPoint [
+            a cv:ContactPoint ;
+            rdfs:label "HDAB desk" ;
+            cv:email "hdab-contact@example.org"
+        ]
+    ] ;
+    geodcatap:custodian [
+        a foaf:Agent ;
+        foaf:name "National Hospital Data Custodian Service" ;
+        cv:contactPoint [
+            a cv:ContactPoint ;
+            rdfs:label "Custodian desk" ;
+            cv:email "custodian-contact@example.org"
+        ]
+    ] ;
+    healthdcatap:healthCategory <https://hdeu-dcat.data.health.europa.eu/resource/authority/healthcategories/EHRS> ;
+    healthdcatap:healthTheme <https://hdeu-dcat.data.health.europa.eu/resource/authority/health-theme/HEALTH_SYSTEMS> ;
+    dpv:hasPersonalData [ a dpv:PersonalData ] ;
+    healthdcatap:hasStructuredData true ;
+    healthdcatap:hasVariables [
+        a csvw:TableGroup ;
+        dct:title "Variables of Cross-border oncology EHR cohort 2024" ;
+        csvw:table [
+            a csvw:Table ;
+            dct:title "Cross-border oncology EHR cohort 2024" ;
+            csvw:column [
+                a csvw:Column ;
+                csvw:name "patientId" ;
+                csvw:title "patientId" ;
+                csvw:datatype "string" ;
+                dct:description "Pseudonymised patient identifier used to link longitudinal care episodes."
+            ] , [
+                a csvw:Column ;
+                csvw:name "primaryDiagnosisCode" ;
+                csvw:title "primaryDiagnosisCode" ;
+                csvw:datatype "string" ;
+                dct:description "Primary diagnosis coded with ICD-10." ;
+                csvw:propertyUrl <https://icd.who.int/browse10/2019/en>
+            ]
+        ]
+    ] ;
+    healthdcatap:hasCodeValues "U07.1" ;
+    healthdcatap:hasCodingSystem <https://hdeu-dcat.data.health.europa.eu/resource/authority/coding-system/SNOMED-CT> ;
+    healthdcatap:numberOfRecords "1850000"^^xsd:nonNegativeInteger ;
+    healthdcatap:numberOfUniqueIndividuals "412000"^^xsd:nonNegativeInteger ;
+    prov:wasGeneratedBy <https://hdeu-dcat.data.health.europa.eu/resource/authority/health-activity/ROUTINE_RECORDS> .
+
+# Vocabulary terms carry their class (the specification's range) and the label chosen in the form
+
+<http://publications.europa.eu/resource/authority/access-right/NON_PUBLIC> a dct:RightsStatement .
+
+<http://data.europa.eu/eli/reg/2022/868/oj> a eli:LegalResource ;
+    rdfs:label "Data Governance Act" .
+
+<http://publications.europa.eu/resource/authority/dataset-type/STATISTICAL> a skos:Concept ;
+    skos:prefLabel "Statistical" .
+
+<http://publications.europa.eu/resource/authority/language/ENG> a dct:LinguisticSystem ;
+    rdfs:label "English" .
+
+<https://hdeu-dcat.data.health.europa.eu/resource/authority/standard/FHIR> a dct:Standard ;
+    rdfs:label "FHIR" .
+
+<http://publications.europa.eu/resource/authority/country/BEL> a dct:Location ;
+    rdfs:label "Belgium" .
+
+<http://publications.europa.eu/resource/authority/file-type/CSV> a dct:MediaTypeOrExtent ;
+    rdfs:label "CSV" .
+
+<https://hdeu-dcat.data.health.europa.eu/resource/authority/publisher-type/public-health-registry> a skos:Concept ;
+    skos:prefLabel "Public health registry" .
+
+<https://hdeu-dcat.data.health.europa.eu/resource/authority/publisher-type/non-gov-org> a skos:Concept ;
+    skos:prefLabel "Non-governmental organisation" .
+
+<https://hdeu-dcat.data.health.europa.eu/resource/authority/healthcategories/EHRS> a skos:Concept ;
+    skos:prefLabel "Electronic health records" .
+
+<https://hdeu-dcat.data.health.europa.eu/resource/authority/health-theme/HEALTH_SYSTEMS> a skos:Concept ;
+    skos:prefLabel "Health systems" .
+
+<https://hdeu-dcat.data.health.europa.eu/resource/authority/coding-system/SNOMED-CT> a dct:Standard ;
+    rdfs:label "SNOMED CT" .
+
+<https://hdeu-dcat.data.health.europa.eu/resource/authority/health-activity/ROUTINE_RECORDS> a prov:Activity ;
+    rdfs:label "Routine records" .
