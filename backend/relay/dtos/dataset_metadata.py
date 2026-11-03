@@ -12,7 +12,15 @@ The mapping to RDF lives in `relay.rdf`.
 from datetime import date
 from typing import Annotated, Self
 
-from pydantic import AnyUrl, BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 from rdflib import Graph
 
 from relay.domain.datasets import AccessRights
@@ -147,14 +155,16 @@ class DatasetMetadata(_Meta):
     # Optional QUANTUM data quality and utility label, pasted as Turtle
     quantum_label: str | None = None
 
-    @model_validator(mode="after")
-    def _quantum_label_is_turtle(self) -> Self:
-        if self.quantum_label is not None and self.quantum_label.strip():
+    # A field validator, so a 422 points at the quantum_label field rather than the whole record
+    @field_validator("quantum_label")
+    @classmethod
+    def _quantum_label_is_turtle(cls, value: str | None) -> str | None:
+        if value is not None and value.strip():
             try:
-                Graph().parse(data=self.quantum_label, format="turtle")
+                Graph().parse(data=value, format="turtle")
             except Exception as exc:
                 raise ValueError(f"quantum_label is not valid Turtle: {exc}") from exc
-        return self
+        return value
 
     def display_title(self) -> str | None:
         """Title for lists and search: the English one, else the first."""

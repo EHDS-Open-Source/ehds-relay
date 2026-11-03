@@ -7,3 +7,9 @@ export type { components, operations, paths } from "./generated/schema";
 
 /** Request and response bodies, e.g. `Schemas["HealthDTO"]`. */
 export type Schemas = components["schemas"];
+
+/**
+ * Zod schemas for the same bodies, e.g. `zDatasetMetadata`, so forms validate with the
+ * backend's own rules (URLs, emails, number ranges, language tags).
+ */
+export * from "./generated/zod/zod.gen";

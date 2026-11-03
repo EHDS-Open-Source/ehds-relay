@@ -135,6 +135,13 @@ const datasetDetailRoute = createRoute({
 const datasetEditRoute = createRoute({
   getParentRoute: () => orgRoute,
   path: "datasets/$datasetId/edit",
+  // Set after the first save of a new dataset, so the edit page says how it went
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { saved?: "draft" | "incomplete" } =>
+    search.saved === "draft" || search.saved === "incomplete"
+      ? { saved: search.saved }
+      : {},
   component: DatasetEditPage,
 });
 

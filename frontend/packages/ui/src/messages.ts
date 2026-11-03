@@ -8,4 +8,6 @@ export const messages = {
   menuTitle: "Menu",
   search: { label: "Search" },
   datasetCard: { draft: "Draft" },
+  tagInput: { remove: "Remove" },
+  repeatableList: { add: "Add", remove: "Remove" },
 } as const;

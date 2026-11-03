@@ -27,7 +27,7 @@ test:
 build:
 	$(PNPM) build
 
-# Regenerate packages/api-client/src/generated from the committed openapi.json
+# Regenerate packages/api-client/src/generated (TypeScript types and Zod schemas) from the committed openapi.json
 api_client:
 	$(PNPM) --filter @ehds-relay/api-client generate
 

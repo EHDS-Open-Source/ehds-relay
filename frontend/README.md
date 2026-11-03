@@ -20,7 +20,7 @@ make check      # eslint + prettier --check + tsc
 make test       # vitest
 make format     # eslint --fix + prettier --write
 make build      # production build into packages/web/dist
-make api_client # regenerate packages/api-client/src/generated from openapi.json
+make api_client # regenerate packages/api-client/src/generated (types and Zod) from openapi.json
 ```
 
 The dev server proxies `/api`, `/healthz` and `/readyz` to
@@ -38,6 +38,11 @@ import { createApiClient } from "@ehds-relay/api-client";
 const api = createApiClient(); // relative URLs, cookies same-origin, X-Requested-By header set
 const { data, error } = await api.GET("/healthz"); // data: { status: string }
 ```
+
+The same spec also gives Zod schemas for every body (`zDatasetMetadata`, `zTerm`, ...), written
+by the zod plugin of [@hey-api/openapi-ts](https://heyapi.dev/) into `src/generated/zod/` and
+exported from the package. Forms validate with them, so rules such as URL, email, number range
+and language-code formats are defined once, in the backend models.
 
 `openapi.json` and `src/generated/` are generated and committed; never edit them by hand. After
 changing a route or DTO in the backend, run `make api_client` from the repo root (it dumps the

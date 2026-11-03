@@ -65,7 +65,9 @@ Before finishing a change run `make check` and `make test`.
   `frontend/packages/ui` with `pnpm dlx shadcn@latest add <name>`.
 - `ui` and `api-client` are TypeScript source with no build step, linked via `workspace:*`.
 - Never hand-edit `packages/api-client/openapi.json` or `packages/api-client/src/generated/`; run
-  `make api_client` after changing routes or DTOs and commit both.
+  `make api_client` after changing routes or DTOs and commit both. `src/generated/` holds the
+  TypeScript types (`schema.ts`) and Zod schemas (`zod/zod.gen.ts`, exported as `zDatasetMetadata`
+  etc.). Validate form input with those schemas rather than re-writing backend rules by hand.
 - Call the API through the typed client (`createApiClient()` from `@ehds-relay/api-client`, shared
   as `api` in `packages/web/src/api.ts`), keyed by path, e.g. `api.GET("/healthz")`. No hand-written
   `fetch`. Requests are same-origin (relative URLs); the Vite dev server proxies them to the API.
