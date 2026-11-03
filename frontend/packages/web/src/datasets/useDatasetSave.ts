@@ -4,6 +4,7 @@ import { useCallback } from "react";
 
 import { api } from "../api";
 import type { DatasetMetadata } from "./formValues";
+import { refreshAfterSave } from "./queries";
 import type { ServerIssue } from "./validate";
 
 export type DatasetDTO = Schemas["DatasetDTO"];
@@ -20,17 +21,8 @@ export type SaveResult =
   | { kind: "saved"; dataset: DatasetDTO }
   | { kind: "invalid"; issues: ServerIssue[] }
   | { kind: "conflict" }
-  | { kind: "failed" };
-
-/** Query key of one dataset. */
-export function datasetQueryKey(orgId: string, datasetId: string) {
-  return ["datasets", orgId, datasetId] as const;
-}
-
-/** Query key prefix of an organisation's datasets (lists and single ones). */
-export function datasetsQueryKey(orgId: string) {
-  return ["datasets", orgId] as const;
-}
+  /** Any other failure; `status` is the HTTP status when there was a response. */
+  | { kind: "failed"; status?: number };
 
 async function request(
   orgId: string,
@@ -51,8 +43,8 @@ async function request(
 
 /**
  * Saves a dataset: creates it when there is no `dataset` yet, otherwise updates it with the
- * version that was read (a stale version is a conflict). The saved dataset is put in the
- * query cache, so the edit page shows it without loading it again.
+ * version that was read (a stale version is a conflict). This is the one save path for the
+ * add and edit pages; see `refreshAfterSave` for what it updates in the query cache.
  */
 export function useDatasetSave(
   orgId: string,
@@ -64,11 +56,7 @@ export function useDatasetSave(
       try {
         const { data, error, response } = await request(orgId, dataset, input);
         if (data) {
-          queryClient.setQueryData(datasetQueryKey(orgId, data.id), data);
-          void queryClient.invalidateQueries({
-            queryKey: datasetsQueryKey(orgId),
-            predicate: (query) => query.queryKey[2] !== data.id,
-          });
+          await refreshAfterSave(queryClient, orgId, data);
           return { kind: "saved", dataset: data };
         }
         if (response.status === 409) return { kind: "conflict" };
@@ -79,7 +67,7 @@ export function useDatasetSave(
             issues: Array.isArray(detail) ? (detail as ServerIssue[]) : [],
           };
         }
-        return { kind: "failed" };
+        return { kind: "failed", status: response.status };
       } catch {
         return { kind: "failed" };
       }

@@ -11,10 +11,19 @@ import type { ExportFormat } from "./download";
 
 export type Dataset = Schemas["DatasetDTO"];
 
-/** Query keys for datasets. Other pages (such as the catalogue) use these to refresh lists. */
+/**
+ * Query keys for datasets. The list is the one the catalogue reads through `$api`, whose keys
+ * are `[method, path, init]`; this key matches it as a prefix, so invalidating it refreshes the
+ * catalogue. A single dataset (and its output) lives under `["datasets", orgId, "detail", id]`.
+ */
 export const datasetKeys = {
   all: ["datasets"] as const,
-  lists: (orgId: string) => [...datasetKeys.all, orgId, "list"] as const,
+  list: (orgId: string) =>
+    [
+      "get",
+      "/api/v1/organisations/{org_id}/datasets",
+      { params: { path: { org_id: orgId } } },
+    ] as const,
   detail: (orgId: string, datasetId: string) =>
     [...datasetKeys.all, orgId, "detail", datasetId] as const,
   export: (orgId: string, datasetId: string, format: ExportFormat) =>
@@ -58,40 +67,23 @@ export function useDataset(orgId: string, datasetId: string) {
   });
 }
 
-export interface SaveDatasetInput {
-  metadata: Schemas["DatasetMetadata"];
-  publish: boolean;
-  /** The version that was read; the server refuses a stale one with 409. */
-  version: number;
-}
-
-function refreshLists(queryClient: QueryClient, orgId: string) {
-  return queryClient.invalidateQueries({ queryKey: datasetKeys.lists(orgId) });
-}
-
-export function useUpdateDataset(orgId: string, datasetId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: SaveDatasetInput) => {
-      const { data, response } = await api.PUT(
-        "/api/v1/organisations/{org_id}/datasets/{dataset_id}",
-        {
-          params: { path: { org_id: orgId, dataset_id: datasetId } },
-          body: input,
-        },
-      );
-      if (!data) throw new ApiError(response.status);
-      return data;
-    },
-    onSuccess: async (dataset) => {
-      queryClient.setQueryData(datasetKeys.detail(orgId, datasetId), dataset);
-      // The exported text is out of date now
-      await queryClient.invalidateQueries({
-        queryKey: [...datasetKeys.detail(orgId, datasetId), "export"],
-      });
-      await refreshLists(queryClient, orgId);
-    },
-  });
+/**
+ * After a create, update or publish: the saved dataset becomes the cached detail (so the
+ * record and edit pages show it without loading it again), its output is stale, and the
+ * catalogue list is refreshed.
+ */
+export async function refreshAfterSave(
+  queryClient: QueryClient,
+  orgId: string,
+  dataset: Dataset,
+) {
+  queryClient.setQueryData(datasetKeys.detail(orgId, dataset.id), dataset);
+  await Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: [...datasetKeys.detail(orgId, dataset.id), "export"],
+    }),
+    queryClient.invalidateQueries({ queryKey: datasetKeys.list(orgId) }),
+  ]);
 }
 
 export function useDeleteDataset(orgId: string, datasetId: string) {
@@ -108,7 +100,9 @@ export function useDeleteDataset(orgId: string, datasetId: string) {
       queryClient.removeQueries({
         queryKey: datasetKeys.detail(orgId, datasetId),
       });
-      await refreshLists(queryClient, orgId);
+      await queryClient.invalidateQueries({
+        queryKey: datasetKeys.list(orgId),
+      });
     },
   });
 }

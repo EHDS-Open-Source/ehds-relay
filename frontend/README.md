@@ -81,6 +81,9 @@ Tests use `session/testing.ts`, a store that never calls the API.
 `$api` in `packages/web/src/api.ts` wraps the same client as typed TanStack Query hooks
 ([openapi-react-query](https://openapi-ts.dev/openapi-react-query/)), e.g.
 `$api.useQuery("get", "/api/v1/organisations/{org_id}/datasets", { params: { path: { org_id } } })`.
-After a save that changes the list, invalidate it with the matching key
-(`queryClient.invalidateQueries({ queryKey: ["get", "/api/v1/organisations/{org_id}/datasets"] })`).
+Dataset query keys live in `packages/web/src/datasets/queries.ts` (`datasetKeys`):
+`datasetKeys.list(orgId)` matches the catalogue's `$api` list query and `datasetKeys.detail(orgId, id)`
+holds one dataset. Every save (create, update, publish) goes through `useDatasetSave`, which puts
+the saved dataset under its detail key and invalidates the list; a delete drops the detail and
+invalidates the list too.
 The catalogue searches and filters in the browser over the full list.
