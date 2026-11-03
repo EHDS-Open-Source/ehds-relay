@@ -1,15 +1,10 @@
 import uuid
 from datetime import datetime
-from enum import StrEnum
 
+from relay.domain.memberships import MemberRole
 from relay.dtos.base import DTO, RequestDTO
 
-
-class MemberRole(StrEnum):
-    """A user's role in one organisation; the same user can hold different roles elsewhere."""
-
-    OWNER = "owner"
-    STANDARD = "standard"
+__all__ = ["MemberDTO", "MemberRole", "MemberUpdateDTO"]
 
 
 class MemberDTO(DTO):
