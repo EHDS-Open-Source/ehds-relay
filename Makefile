@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 
-.PHONY: cluster up down deploy tilt web install pip_compile pip_compile_dev test check
+.PHONY: cluster up down deploy tilt web install pip_compile pip_compile_dev api_client test check
 
 # make cluster up | make cluster down [--remove-registries]
 cluster:
@@ -28,6 +28,11 @@ pip_compile:
 
 pip_compile_dev:
 	$(MAKE) -C backend pip_compile_dev
+
+# Dump the OpenAPI spec from the backend and regenerate the typed frontend client
+api_client:
+	$(MAKE) -C backend openapi
+	$(MAKE) -C frontend api_client
 
 test:
 	$(MAKE) -C backend test
