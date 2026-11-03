@@ -8,10 +8,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 
 from relay.api.stubs import not_implemented
+from relay.auth.authz import require_member
 from relay.auth.deps import current_user
 from relay.db import get_session
 from relay.domain.datasets import CURRENT_SCHEMA_VERSION, Dataset, DatasetStatus
-from relay.domain.organisations import Organisation
 from relay.dtos.dataset import (
     AccessRights,
     DatasetCreateDTO,
@@ -25,19 +25,14 @@ from relay.dtos.dataset_metadata import DatasetMetadata
 router = APIRouter(
     prefix="/api/v1/organisations/{org_id}/datasets",
     tags=["datasets"],
-    dependencies=[Depends(current_user)],
+    # Every dataset route is for members of the organisation only; others get 404
+    dependencies=[Depends(current_user), Depends(require_member)],
 )
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
-def _require_org(session: Session, org_id: uuid.UUID) -> None:
-    if session.get(Organisation, org_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="organisation not found")
-
-
 def _get_dataset(session: Session, org_id: uuid.UUID, dataset_id: uuid.UUID) -> Dataset:
-    _require_org(session, org_id)
     ds = session.get(Dataset, dataset_id)
     if ds is None or ds.org_id != org_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="dataset not found")
@@ -74,7 +69,6 @@ def _commit(session: Session, ds: Dataset) -> None:
 
 @router.post("", response_model=DatasetDTO, status_code=status.HTTP_201_CREATED)
 def create_dataset(org_id: uuid.UUID, body: DatasetCreateDTO, session: SessionDep) -> Dataset:
-    _require_org(session, org_id)
     ds = Dataset(org_id=org_id, status=DatasetStatus.DRAFT.value)
     _apply_metadata(ds, body.metadata)
     session.add(ds)
@@ -97,7 +91,6 @@ def list_datasets(
         AccessRights | None, Query(description="Only datasets with this access level")
     ] = None,
 ) -> Sequence[Dataset]:
-    _require_org(session, org_id)
     stmt = select(Dataset).where(Dataset.org_id == org_id).order_by(Dataset.created_at)
     if dataset_status is not None:
         stmt = stmt.where(Dataset.status == dataset_status.value)

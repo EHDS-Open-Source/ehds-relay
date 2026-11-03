@@ -6,11 +6,15 @@ from typing import Annotated, NoReturn
 from fastapi import APIRouter, Depends, Query, Response
 
 from relay.api.stubs import not_implemented
+from relay.auth.authz import require_member
 from relay.auth.deps import current_user
 from relay.dtos.export import EXPORT_RESPONSES, ExportFormat, ValidationReportDTO
 
+# Members of the organisation only; others get 404
 router = APIRouter(
-    prefix="/api/v1/organisations/{org_id}", tags=["export"], dependencies=[Depends(current_user)]
+    prefix="/api/v1/organisations/{org_id}",
+    tags=["export"],
+    dependencies=[Depends(current_user), Depends(require_member)],
 )
 
 FormatQuery = Annotated[ExportFormat, Query(alias="format")]
