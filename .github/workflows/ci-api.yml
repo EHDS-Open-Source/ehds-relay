@@ -20,7 +20,8 @@ permissions:
 
 concurrency:
   group: ci-api-${{ github.ref }}
-  cancel-in-progress: true
+  # Only cancel superseded PR runs; keep every run on main and mvp-integration
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   backend:
