@@ -14,3 +14,11 @@ export {
 export type { NavItem, NavLinkProps, RenderNavLink } from "./layout/types";
 export { cn } from "./lib/utils";
 export { messages } from "./messages";
+export { CardGrid } from "./patterns/CardGrid";
+export { DatasetCard, type DatasetCardProps } from "./patterns/DatasetCard";
+export {
+  FilterChips,
+  type FilterChipOption,
+  type FilterChipsProps,
+} from "./patterns/FilterChips";
+export { SearchField, type SearchFieldProps } from "./patterns/SearchField";

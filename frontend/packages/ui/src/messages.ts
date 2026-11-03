@@ -6,4 +6,6 @@ export const messages = {
   openMenu: "Open menu",
   closeMenu: "Close menu",
   menuTitle: "Menu",
+  search: { label: "Search" },
+  datasetCard: { draft: "Draft" },
 } as const;
