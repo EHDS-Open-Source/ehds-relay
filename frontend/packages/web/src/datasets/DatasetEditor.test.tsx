@@ -26,19 +26,20 @@ const m = shellMessages.datasets;
 
 // A stand-in for the dataset form with the same contract: initial values in, a submit out.
 function FakeForm({ initialValues, onSubmit }: DatasetFormRenderProps) {
+  const metadata = makeDataset().metadata;
   return (
     <div>
-      <p>form: {initialValues.title?.[0]?.text}</p>
+      <p>form: {initialValues.title[0]?.text}</p>
       <button
         onClick={() => {
-          onSubmit({ metadata: initialValues, publish: false });
+          void onSubmit({ metadata, publish: false });
         }}
       >
         Save draft
       </button>
       <button
         onClick={() => {
-          onSubmit({ metadata: initialValues, publish: true });
+          void onSubmit({ metadata, publish: true });
         }}
       >
         Save and Publish
