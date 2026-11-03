@@ -77,4 +77,21 @@ describe("DatasetCard", () => {
       "/x",
     );
   });
+
+  it("EDIT-14 shows the Overdue chip only for overdue datasets", () => {
+    render(
+      <CardGrid>
+        <DatasetCard title="Old" overdue renderLink={renderLink} />
+        <DatasetCard title="Draft one" draft overdue renderLink={renderLink} />
+        <DatasetCard title="Fresh" renderLink={renderLink} />
+      </CardGrid>,
+    );
+    expect(screen.getAllByText("Overdue")).toHaveLength(2);
+    expect(screen.getByRole("link", { name: /Old/ })).toHaveTextContent(
+      "Overdue",
+    );
+    expect(screen.getByRole("link", { name: /Fresh/ })).not.toHaveTextContent(
+      "Overdue",
+    );
+  });
 });

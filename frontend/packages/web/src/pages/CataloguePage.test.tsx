@@ -4,6 +4,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { noRevalidationData } from "../datasets/fakeServer";
 import { createRelayRouter } from "../router/router";
 import { createTestSessionStore } from "../session/testing";
 import { shellMessages } from "../shell/messages";
@@ -11,8 +12,15 @@ import { shellMessages } from "../shell/messages";
 const text = shellMessages.catalogue;
 const original = globalThis.fetch;
 
-function dataset(id: string, metadata: object, status = "published") {
+function dataset(
+  id: string,
+  metadata: object,
+  status = "published",
+  overdue = false,
+) {
   return {
+    ...noRevalidationData,
+    overdue,
     id,
     org_id: "demo",
     title: null,
@@ -38,10 +46,15 @@ const sample = [
     },
     "draft",
   ),
-  dataset("d2", {
-    title: [{ lang: "en", text: "Cancer Cohort" }],
-    access_rights: "restricted",
-  }),
+  dataset(
+    "d2",
+    {
+      title: [{ lang: "en", text: "Cancer Cohort" }],
+      access_rights: "restricted",
+    },
+    "published",
+    true,
+  ),
   dataset("d3", { title: [{ lang: "en", text: "Unlabelled" }] }),
 ];
 
@@ -137,6 +150,44 @@ describe("catalogue", () => {
     expect(screen.getByRole("searchbox")).toHaveValue("cohort");
     expect(
       screen.getByRole("button", { name: text.access.restricted }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("EDIT-14 shows the Overdue chip on overdue cards only", async () => {
+    stubDatasets(() => json(sample));
+    renderAt("/orgs/demo/catalogue");
+    await screen.findByText("Diabetes Registry");
+    expect(screen.getAllByText(text.overdue)).toHaveLength(1);
+    expect(
+      screen.getByRole("link", { name: /Cancer Cohort/ }),
+    ).toHaveTextContent(text.overdue);
+  });
+
+  it("EDIT-14 filters to overdue datasets and keeps it in the URL", async () => {
+    stubDatasets(() => json(sample));
+    const router = renderAt("/orgs/demo/catalogue");
+    await screen.findByText("Diabetes Registry");
+    await userEvent.click(
+      screen.getByRole("button", { name: text.revalidation.overdue }),
+    );
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    expect(screen.getByText("Cancer Cohort")).toBeVisible();
+    await waitFor(() =>
+      expect(router.state.location.search).toEqual({ overdue: true }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: text.revalidation.any }),
+    );
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+  });
+
+  it("EDIT-14 restores the overdue filter from the URL", async () => {
+    stubDatasets(() => json(sample));
+    renderAt("/orgs/demo/catalogue?overdue=true");
+    expect(await screen.findByText("Cancer Cohort")).toBeVisible();
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    expect(
+      screen.getByRole("button", { name: text.revalidation.overdue }),
     ).toHaveAttribute("aria-pressed", "true");
   });
 

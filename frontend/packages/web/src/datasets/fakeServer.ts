@@ -8,6 +8,19 @@ import type { DatasetMetadata } from "./formValues";
 
 type DatasetDTO = Schemas["DatasetDTO"];
 
+/** The app-data fields of a dataset with no reminder that was never published. */
+export const noRevalidationData = {
+  reminder_date: null,
+  reminder_set_by: null,
+  reminder_set_by_name: null,
+  reminder_set_at: null,
+  reminder_sent_at: null,
+  published_at: null,
+  last_revalidated_at: null,
+  last_validated_at: null,
+  overdue: false,
+} satisfies Partial<DatasetDTO>;
+
 export interface RecordedRequest {
   method: string;
   path: string;
@@ -81,6 +94,7 @@ export function createFakeServer(seed: DatasetDTO[] = []) {
   ): DatasetDTO {
     const missing = missingForPublish(metadata);
     const dataset: DatasetDTO = {
+      ...noRevalidationData,
       id: previous?.id ?? `00000000-0000-4000-8000-00000000000${nextId++}`,
       org_id: orgId,
       status: publish && !missing.length ? "published" : "draft",

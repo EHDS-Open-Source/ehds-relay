@@ -7,7 +7,7 @@ export const messages = {
   closeMenu: "Close menu",
   menuTitle: "Menu",
   search: { label: "Search" },
-  datasetCard: { draft: "Draft" },
+  datasetCard: { draft: "Draft", overdue: "Overdue" },
   tagInput: { remove: "Remove" },
   repeatableList: { add: "Add", remove: "Remove" },
   copy: "Copy",

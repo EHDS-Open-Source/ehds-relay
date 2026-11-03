@@ -69,6 +69,37 @@ export const shellMessages = {
       complete:
         "Nothing is missing. Choose Edit, then Save and Publish, to publish it.",
     },
+    overdue: "Overdue",
+    overdueHint:
+      "Not revalidated within a year of its last validation. Check the metadata is still right, then save and publish it again.",
+    lastValidated: "Last validated",
+    reminder: {
+      button: "Set reminder",
+      fact: "Revalidation reminder",
+      none: "None set",
+      passed: "date passed",
+      setBy: "set by {name}",
+      dialogTitle: "Revalidation reminder",
+      dialogDescription:
+        "Choose when to be reminded to check this dataset's metadata is still right. The reminder is kept in EHDS Relay and is not part of the published record.",
+      dateLabel: "Reminder date",
+      dateHint: "After today and no more than 5 years ahead.",
+      save: "Save reminder",
+      clear: "Remove reminder",
+      cancel: "Cancel",
+      problems: {
+        required: "Choose a date.",
+        invalid: "Enter a real date.",
+        notFuture: "Choose a date after today.",
+        tooFar: "Choose a date no more than 5 years ahead.",
+      },
+      errors: {
+        invalid:
+          "That date could not be saved. Choose a date after today and no more than 5 years ahead.",
+        notFound: "This dataset no longer exists.",
+        failed: "The reminder could not be saved. Try again in a moment.",
+      },
+    },
     deleteDialog: {
       title: "Delete this dataset?",
       description:
@@ -138,6 +169,13 @@ export const shellMessages = {
       restricted: "Restricted",
       non_public: "Non-public",
     },
+    revalidationLabel: "Revalidation",
+    revalidation: {
+      any: "Any",
+      overdue: "Overdue only",
+    },
+    draft: "Draft",
+    overdue: "Overdue",
     untitled: "Untitled dataset",
     loading: "Loading datasets...",
     error: "The datasets could not be loaded.",
@@ -148,7 +186,7 @@ export const shellMessages = {
     },
     noMatch: {
       title: "No datasets match",
-      description: "Try different words or another access level.",
+      description: "Try different words or other filters.",
       clear: "Clear search and filters",
     },
   },

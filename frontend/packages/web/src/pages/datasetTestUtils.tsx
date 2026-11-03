@@ -4,6 +4,7 @@ import { RouterProvider, createMemoryHistory } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
 import { vi } from "vitest";
 
+import { noRevalidationData } from "../datasets/fakeServer";
 import { createRelayRouter } from "../router/router";
 import {
   createTestSessionStore,
@@ -25,6 +26,9 @@ const term = (label: string) => ({
 
 export function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
   return {
+    ...noRevalidationData,
+    published_at: "2026-01-20T09:00:00Z",
+    last_validated_at: "2026-01-20T09:00:00Z",
     id: ID,
     org_id: ORG,
     status: "published",

@@ -11,6 +11,13 @@ export const accessFilters: readonly AccessFilter[] = [
   "non_public",
 ];
 
+/** The revalidation chip: every dataset, or only those overdue for revalidation. */
+export type RevalidationFilter = "any" | "overdue";
+export const revalidationFilters: readonly RevalidationFilter[] = [
+  "any",
+  "overdue",
+];
+
 export function isAccessFilter(value: unknown): value is AccessFilter {
   return accessFilters.includes(value as AccessFilter);
 }
@@ -23,6 +30,8 @@ export interface CatalogueFields {
   categories: string[];
   access: AccessRights | null;
   draft: boolean;
+  /** Published and not validated for a year. */
+  overdue: boolean;
   /** Every title and description text, for matching. */
   searchable: string;
 }
@@ -83,20 +92,26 @@ export function readCatalogueFields(dataset: Dataset): CatalogueFields {
     categories,
     access,
     draft: dataset.status === "draft",
+    overdue: dataset.overdue === true,
     searchable,
   };
 }
 
-/** Case-insensitive search plus the access chip. Datasets without an access level only match "all". */
+/**
+ * Case-insensitive search plus the access and revalidation chips. Datasets without an access
+ * level only match "all".
+ */
 export function filterDatasets(
   datasets: readonly CatalogueFields[],
   query: string,
   access: AccessFilter,
+  revalidation: RevalidationFilter = "any",
 ): CatalogueFields[] {
   const needle = query.trim().toLowerCase();
   return datasets.filter(
     (d) =>
       (access === "all" || d.access === access) &&
+      (revalidation === "any" || d.overdue) &&
       (needle === "" || d.searchable.includes(needle)),
   );
 }

@@ -166,3 +166,30 @@ export function useDatasetValidation(orgId: string, datasetId: string) {
     },
   });
 }
+
+/**
+ * Set, change or clear (`null`) the revalidation reminder date. It is not metadata, so only the
+ * cached record and the catalogue list (which shows it) are refreshed.
+ */
+export function useSetReminder(orgId: string, datasetId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (reminderDate: string | null) => {
+      const { data, response } = await api.PUT(
+        "/api/v1/organisations/{org_id}/datasets/{dataset_id}/revalidation-reminder",
+        {
+          params: { path: { org_id: orgId, dataset_id: datasetId } },
+          body: { reminder_date: reminderDate },
+        },
+      );
+      if (!data) throw new ApiError(response.status);
+      return data;
+    },
+    onSuccess: async (dataset) => {
+      queryClient.setQueryData(datasetKeys.detail(orgId, datasetId), dataset);
+      await queryClient.invalidateQueries({
+        queryKey: datasetKeys.list(orgId),
+      });
+    },
+  });
+}
