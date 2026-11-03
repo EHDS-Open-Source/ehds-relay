@@ -216,6 +216,30 @@ export const shellMessages = {
     nameTooLong: "Use 200 characters or fewer.",
     invalid: "Check your name and try again.",
     failed: "Your name could not be saved. Try again in a moment.",
+    orgs: {
+      title: "My organisations",
+      none: "You do not belong to any organisation yet.",
+      name: "Organisation",
+      country: "Country",
+      role: "Your role",
+      unknownCountry: "Not set",
+    },
+    notifications: {
+      title: "Notifications",
+      description: "Choose which emails you receive from EHDS Relay.",
+      loading: "Loading your notification settings...",
+      loadFailed:
+        "Your notification settings could not be loaded. Try again in a moment.",
+      retry: "Try again",
+      saved: "Your notification settings have been saved.",
+      failed: "That change could not be saved. Try again in a moment.",
+      kinds: {
+        revalidation_reminder: {
+          label: "Revalidation reminders",
+          hint: "A reminder when a dataset is due to be checked again.",
+        },
+      } as Record<string, { label: string; hint: string }>,
+    },
   },
   serviceError: {
     title: "Something went wrong",
