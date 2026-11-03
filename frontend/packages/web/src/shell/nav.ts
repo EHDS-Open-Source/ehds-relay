@@ -14,7 +14,12 @@ export const coreNavItems: readonly NavItem<OrgNavPath>[] = [
     to: "/orgs/$orgId/members",
     requires: "owner",
   },
-  { id: "settings", label: "Settings", to: "/orgs/$orgId/settings" },
+  {
+    id: "settings",
+    label: "Settings",
+    to: "/orgs/$orgId/settings",
+    requires: "owner",
+  },
 ];
 
 export const accountNavItems: readonly NavItem<"/orgs">[] = [
