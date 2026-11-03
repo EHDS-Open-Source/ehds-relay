@@ -24,6 +24,24 @@ export default defineConfig([
     },
   },
   {
+    // The router uses thrown values for control flow: `throw redirect(...)`, `throw notFound()`.
+    files: ["packages/web/src/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/only-throw-error": [
+        "error",
+        {
+          allow: [
+            {
+              from: "package",
+              package: "@tanstack/router-core",
+              name: ["Redirect", "NotFoundError"],
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Fast refresh only matters for the app; shared packages may export helpers next to components.
     files: ["packages/web/src/**/*.tsx"],
     extends: [reactRefresh.configs.vite()],
