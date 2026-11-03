@@ -6,4 +6,6 @@ export const messages = {
   openMenu: "Open menu",
   closeMenu: "Close menu",
   menuTitle: "Menu",
+  tagInput: { remove: "Remove" },
+  repeatableList: { add: "Add", remove: "Remove" },
 } as const;
