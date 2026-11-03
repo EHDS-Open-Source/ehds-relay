@@ -10,7 +10,7 @@ Root `Makefile` (delegates to `backend/Makefile` and `frontend/Makefile`):
 | Target | What |
 |---|---|
 | `make cluster up` / `make cluster down [--remove-registries]` | Create/delete the kind cluster `ehds-relay` and local registries (`scripts/cluster.sh`) |
-| `make tilt` | `tilt up`: postgres + api with live reload |
+| `make tilt` | `tilt up`: postgres, api, worker, Keycloak, Mailpit and the web dev server, with live reload |
 | `make deploy` | Build, push and `helm upgrade --install` without Tilt |
 | `make install` | Create `backend/.venv` (Python 3.13) and install `requirements-dev.txt` + the package editable; `pnpm install --frozen-lockfile` in `frontend/` |
 | `make web` | Vite dev server on `${WEB_PORT:-5173}`, proxying `/api`, `/healthz`, `/readyz` to `localhost:${API_LOCAL_PORT:-8000}` |
