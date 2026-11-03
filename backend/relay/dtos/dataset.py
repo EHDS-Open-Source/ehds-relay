@@ -4,9 +4,17 @@ from typing import Any
 
 from pydantic import Field, computed_field
 
-from relay.domain.datasets import DatasetStatus
+from relay.domain.datasets import AccessRights, DatasetStatus
 from relay.dtos.base import DTO, RequestDTO
 from relay.dtos.dataset_metadata import DatasetMetadata
+
+__all__ = [
+    "AccessRights",
+    "DatasetCreateDTO",
+    "DatasetDTO",
+    "DatasetPublishDTO",
+    "DatasetUpdateDTO",
+]
 
 
 class DatasetCreateDTO(RequestDTO):
