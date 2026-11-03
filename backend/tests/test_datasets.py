@@ -22,7 +22,7 @@ def complete_metadata() -> dict[str, Any]:
 
 @pytest.fixture
 def org_id(client: TestClient) -> str:
-    return client.post("/api/v1/organisations", json={"name": "Acme"}).json()["id"]
+    return client.post("/api/v1/organisations", json={"name": "Acme", "country": "NL"}).json()["id"]
 
 
 def url(org_id: str, *parts: str) -> str:
@@ -57,7 +57,9 @@ def test_unknown_org_and_dataset_404(client: TestClient, org_id: str) -> None:
 
 def test_dataset_not_visible_via_other_org(client: TestClient, org_id: str) -> None:
     ds = client.post(url(org_id), json={}).json()
-    other = client.post("/api/v1/organisations", json={"name": "Other"}).json()["id"]
+    other = client.post("/api/v1/organisations", json={"name": "Other", "country": "NL"}).json()[
+        "id"
+    ]
     assert client.get(url(other, ds["id"])).status_code == 404
 
 

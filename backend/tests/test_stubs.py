@@ -1,7 +1,7 @@
 """Routes whose shape is defined but whose logic has not landed yet.
 
 These need no database: stubs take no session, and the sign-in check is replaced by a
-dummy user so protected stubs still reach their handler.
+dummy user (an Owner of every organisation) so protected stubs still reach their handler.
 When a route gets real logic, move its case out of STUBS into that area's tests.
 """
 
@@ -12,8 +12,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from relay.app import create_app
+from relay.auth.authz import require_member
 from relay.auth.csrf import CSRF_HEADER, CSRF_HEADER_VALUE
 from relay.auth.deps import current_user
+from relay.domain.memberships import MemberRole, Membership
 from relay.domain.users import AppUser
 
 ORG = f"/api/v1/organisations/{uuid.uuid4()}"
@@ -24,20 +26,6 @@ INVITATION_ID = uuid.uuid4()
 # (method, path template as in the OpenAPI spec, concrete URL, JSON body)
 STUBS: list[tuple[str, str, str, Any]] = [
     ("patch", "/api/v1/me", "/api/v1/me", {"name": "Ada"}),
-    ("patch", "/api/v1/organisations/{org_id}", ORG, {"name": "Acme"}),
-    ("get", "/api/v1/organisations/{org_id}/members", f"{ORG}/members", None),
-    (
-        "patch",
-        "/api/v1/organisations/{org_id}/members/{user_id}",
-        f"{ORG}/members/{USER_ID}",
-        {"role": "owner"},
-    ),
-    (
-        "delete",
-        "/api/v1/organisations/{org_id}/members/{user_id}",
-        f"{ORG}/members/{USER_ID}",
-        None,
-    ),
     (
         "get",
         "/api/v1/organisations/{org_id}/invitations",
@@ -102,8 +90,10 @@ STUBS: list[tuple[str, str, str, Any]] = [
 @pytest.fixture(scope="module")
 def stub_client() -> TestClient:
     app = create_app()
-    app.dependency_overrides[current_user] = lambda: AppUser(
-        id=uuid.uuid4(), email="ada@example.org", name="Ada"
+    user = AppUser(id=uuid.uuid4(), email="ada@example.org", name="Ada")
+    app.dependency_overrides[current_user] = lambda: user
+    app.dependency_overrides[require_member] = lambda: Membership(
+        org_id=uuid.uuid4(), user_id=user.id, role=MemberRole.OWNER.value
     )
     return TestClient(app, headers={CSRF_HEADER: CSRF_HEADER_VALUE}, follow_redirects=False)
 

@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import Callable, Iterator
 
 import pytest
@@ -13,6 +14,7 @@ from relay.app import create_app
 from relay.auth.csrf import CSRF_HEADER, CSRF_HEADER_VALUE
 from relay.auth.sessions import create_session
 from relay.db import Base, get_session
+from relay.domain.memberships import Membership
 from relay.domain.users import AppUser
 from relay.settings import get_settings
 
@@ -112,3 +114,62 @@ def client(app: FastAPI, user: AppUser, sign_in: SignIn) -> Iterator[TestClient]
     with _client(app) as c:
         sign_in(c, user)
         yield c
+
+
+# Organisations and roles. `owner` is the same person as `user`, so `client` acts as the Owner.
+
+AsUser = Callable[[AppUser], TestClient]
+AddMember = Callable[[str, AppUser, str], None]
+
+
+@pytest.fixture
+def as_user(app: FastAPI, sign_in: SignIn) -> Iterator[AsUser]:
+    """A factory for clients signed in as a given user, each with its own cookies."""
+    clients: list[TestClient] = []
+
+    def make(member: AppUser) -> TestClient:
+        c = _client(app)
+        sign_in(c, member)
+        clients.append(c)
+        return c
+
+    yield make
+    for c in clients:
+        c.close()
+
+
+@pytest.fixture
+def owner(user: AppUser) -> AppUser:
+    return user
+
+
+@pytest.fixture
+def standard(make_user: MakeUser) -> AppUser:
+    return make_user("standard@example.org", "Sam Standard")
+
+
+@pytest.fixture
+def outsider(make_user: MakeUser) -> AppUser:
+    return make_user("outsider@example.org", "Otto Outsider")
+
+
+@pytest.fixture
+def add_member(db: sessionmaker[Session]) -> AddMember:
+    """Insert a membership directly, as accepting an invitation would."""
+
+    def add(org_id: str, member: AppUser, role: str = "standard") -> None:
+        with db() as session:
+            session.add(Membership(org_id=uuid.UUID(org_id), user_id=member.id, role=role))
+            session.commit()
+
+    return add
+
+
+@pytest.fixture
+def org(client: TestClient, standard: AppUser, add_member: AddMember) -> str:
+    """Id of an organisation created by `owner`, with `standard` as a Standard member."""
+    res = client.post("/api/v1/organisations", json={"name": "Acme", "country": "NL"})
+    assert res.status_code == 201, res.text
+    org_id: str = res.json()["id"]
+    add_member(org_id, standard, "standard")
+    return org_id
