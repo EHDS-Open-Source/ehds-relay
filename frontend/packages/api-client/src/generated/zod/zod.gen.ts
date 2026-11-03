@@ -45,23 +45,6 @@ export const zDatasetPublishDto = z.object({
 export const zDatasetStatus = z.enum(['draft', 'published']);
 
 /**
- * DatasetDTO
- */
-export const zDatasetDto = z.object({
-    created_at: z.iso.datetime(),
-    description: z.string().nullable(),
-    id: z.uuid(),
-    metadata: z.record(z.string(), z.unknown()),
-    missing_for_publish: z.array(z.string()).readonly(),
-    org_id: z.uuid(),
-    schema_version: z.string(),
-    status: zDatasetStatus,
-    title: z.string().nullable(),
-    updated_at: z.iso.datetime(),
-    version: z.int()
-});
-
-/**
  * Edition
  */
 export const zEdition = z.enum(['open-source', 'hosted']);
@@ -406,6 +389,23 @@ export const zDatasetCreateDto = z.object({
 });
 
 /**
+ * DatasetDTO
+ */
+export const zDatasetDto = z.object({
+    created_at: z.iso.datetime(),
+    description: z.string().nullable(),
+    id: z.uuid(),
+    metadata: zDatasetMetadata,
+    missing_for_publish: z.array(z.string()).readonly(),
+    org_id: z.uuid(),
+    schema_version: z.string(),
+    status: zDatasetStatus,
+    title: z.string().nullable(),
+    updated_at: z.iso.datetime(),
+    version: z.int()
+});
+
+/**
  * DatasetUpdateDTO
  */
 export const zDatasetUpdateDto = z.object({
@@ -421,7 +421,7 @@ export const zDatasetDtoWritable = z.object({
     created_at: z.iso.datetime(),
     description: z.string().nullable(),
     id: z.uuid(),
-    metadata: z.record(z.string(), z.unknown()),
+    metadata: zDatasetMetadata,
     org_id: z.uuid(),
     schema_version: z.string(),
     status: zDatasetStatus,
