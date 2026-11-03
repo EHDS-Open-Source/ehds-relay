@@ -4,19 +4,42 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-LEGISLATION = "http://data.europa.eu/eli/reg/2025/327/oj"
+LEGISLATION = {
+    "label": "EHDS Regulation",
+    "uri": "http://data.europa.eu/eli/reg/2025/327/oj",
+}
+CONTACT = {"name": "Data desk", "email": "data@example.org"}
+
+
+def term(label: str) -> dict[str, str]:
+    return {"label": label, "uri": f"http://example.org/{label.lower().replace(' ', '-')}"}
 
 
 def complete_metadata() -> dict[str, Any]:
+    org = {"name": "Registry", "contact_point": CONTACT}
     return {
-        "title": "Diabetes registry",
-        "description": "Pseudonymised diabetes cohort",
-        "identifier": ["reg-001"],
-        "access_rights": "http://publications.europa.eu/resource/authority/access-right/NON_PUBLIC",
-        "applicable_legislation": [LEGISLATION],
-        "health_category": ["http://example.org/health-category/registry"],
-        "health_data_access_body": {"name": "HDAB NL", "email": "hdab@example.org"},
+        "title": [{"lang": "en", "text": "Diabetes registry"}],
+        "description": [{"text": "Pseudonymised diabetes cohort"}],
+        "distributions": [
+            {"access_url": "https://example.org/access", "applicable_legislation": [LEGISLATION]}
+        ],
         "structured_data": False,
+        "provenance": "Collected from hospital records",
+        "keyword": ["diabetes"],
+        "health_theme": [term("Diabetes")],
+        "health_category": [term("Registry")],
+        "has_personal_data": False,
+        "conforms_to": [term("OMOP")],
+        "access_rights": "non_public",
+        "applicable_legislation": [LEGISLATION],
+        "health_data_access_body": {"name": "HDAB NL", "contact_point": CONTACT},
+        "type": [term("Registry type")],
+        "language": [term("English")],
+        "health_data_holder": org,
+        "publisher": org,
+        "contact_points": [CONTACT],
+        "identifier": ["reg-001"],
+        "generated_by": [term("Routine records")],
     }
 
 
@@ -67,44 +90,34 @@ def test_rejects_unknown_and_invalid_metadata(client: TestClient, org_id: str) -
     assert client.post(url(org_id), json={"metadata": {"nope": 1}}).status_code == 422
     bad_contact = {"contact_points": [{"name": "x"}]}
     assert client.post(url(org_id), json={"metadata": bad_contact}).status_code == 422
-    ages = {"minimum_typical_age": 50, "maximum_typical_age": 10}
-    assert client.post(url(org_id), json={"metadata": ages}).status_code == 422
+    backwards = {"temporal_coverage": {"start": "2024-01-01", "end": "2020-01-01"}}
+    assert client.post(url(org_id), json={"metadata": backwards}).status_code == 422
 
 
 def test_repeatable_groups_roundtrip(client: TestClient, org_id: str) -> None:
     meta = complete_metadata() | {
         "structured_data": True,
-        "contact_points": [{"email": "a@example.org"}, {"contact_page": "https://example.org/c"}],
+        "contact_points": [CONTACT, {"name": "Second", "email": "b@example.org"}],
         "distributions": [
             {
-                "access_url": ["https://example.org/d"],
+                "access_url": "https://example.org/d",
                 "applicable_legislation": [LEGISLATION],
-                "byte_size": 10,
+                "format": term("CSV"),
             }
         ],
-        "variables": {
-            "title": ["Vars"],
-            "table": [
-                {
-                    "title": ["t"],
-                    "column": [
-                        {"name": "age", "titles": ["Age"], "description": ["d"], "datatype": "int"}
-                    ],
-                }
-            ],
-        },
+        "variables": [{"name": "age", "data_type": "integer", "definition": "Age in years"}],
     }
     res = client.post(url(org_id), json={"metadata": meta})
     assert res.status_code == 201
     doc = res.json()["metadata"]
     assert len(doc["contact_points"]) == 2
-    assert doc["distributions"][0]["byte_size"] == 10
-    assert doc["variables"]["table"][0]["column"][0]["name"] == "age"
+    assert doc["distributions"][0]["format"]["label"] == "CSV"
+    assert doc["variables"][0]["name"] == "age"
 
 
 def test_update_and_stale_version_409(client: TestClient, org_id: str) -> None:
     ds = client.post(url(org_id), json={"metadata": complete_metadata()}).json()
-    meta = complete_metadata() | {"title": "Renamed"}
+    meta = complete_metadata() | {"title": [{"lang": "en", "text": "Renamed"}]}
 
     res = client.put(url(org_id, ds["id"]), json={"metadata": meta, "version": 1})
     assert res.status_code == 200
@@ -129,7 +142,7 @@ def test_publish(client: TestClient, org_id: str) -> None:
 
 
 def test_publish_requires_mandatory_fields(client: TestClient, org_id: str) -> None:
-    ds = client.post(url(org_id), json={"metadata": {"title": "t"}}).json()
+    ds = client.post(url(org_id), json={"metadata": {"title": [{"text": "t"}]}}).json()
     res = client.post(url(org_id, ds["id"], "publish"), json={"version": 1})
     assert res.status_code == 422
     assert "description" in res.json()["detail"]
@@ -146,7 +159,7 @@ def test_publish_requires_variables_when_structured(client: TestClient, org_id: 
 def test_published_update_must_stay_publishable(client: TestClient, org_id: str) -> None:
     ds = client.post(url(org_id), json={"metadata": complete_metadata()}).json()
     pub = client.post(url(org_id, ds["id"], "publish"), json={"version": 1}).json()
-    body = {"metadata": {"title": "x"}, "version": pub["version"]}
+    body = {"metadata": {"title": [{"text": "x"}]}, "version": pub["version"]}
     res = client.put(url(org_id, ds["id"]), json=body)
     assert res.status_code == 422
 
@@ -177,21 +190,35 @@ def test_published_update_must_stay_publishable(client: TestClient, org_id: str)
     ],
 )
 def test_email_characters(client: TestClient, org_id: str, email: str, ok: bool) -> None:
-    meta = {"contact_points": [{"email": email}]}
+    meta = {"contact_points": [{"name": "Desk", "email": email}]}
     res = client.post(url(org_id), json={"metadata": meta})
     assert res.status_code == (201 if ok else 422), email
 
 
 def test_missing_for_publish_reported(client: TestClient, org_id: str) -> None:
-    ds = client.post(url(org_id), json={"metadata": {"title": "t", "structured_data": True}}).json()
+    ds = client.post(
+        url(org_id), json={"metadata": {"title": [{"text": "t"}], "structured_data": True}}
+    ).json()
     assert ds["missing_for_publish"] == [
         "description",
-        "identifier",
+        "distributions",
+        "variables",
+        "provenance",
+        "keyword",
+        "health_theme",
+        "health_category",
+        "has_personal_data",
+        "conforms_to",
         "access_rights",
         "applicable_legislation",
-        "health_category",
         "health_data_access_body",
-        "variables",
+        "type",
+        "language",
+        "health_data_holder",
+        "publisher",
+        "contact_points",
+        "identifier",
+        "generated_by",
     ]
     assert client.get(url(org_id)).json()[0]["missing_for_publish"] == ds["missing_for_publish"]
 
