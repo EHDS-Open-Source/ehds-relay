@@ -28,6 +28,19 @@ worker:
   reload: false
   resources: {}
 
+# Where the user's browser reaches the web app. The browser talks to the API through this
+# origin, so sign-in redirects, the session cookie and invitation links all use it.
+web:
+  url: http://localhost:5173
+
+# Browser sessions issued by the API after sign-in
+session:
+  # Cookies ignore the port, so releases sharing a host name need different names.
+  cookieName: relay_session
+  # A session ends after this long without a request, and after maxHours regardless.
+  idleMinutes: 60
+  maxHours: 12
+
 # How the API talks to the OpenID Connect provider (the app is only an OIDC client).
 # Defaults point at the bundled Keycloak below.
 oidc:
@@ -56,8 +69,9 @@ keycloak:
   # Where the user's browser reaches Keycloak (e.g. a port-forward). Tokens carry this as
   # their issuer, so it must be what the browser actually uses.
   hostname: http://localhost:8080
-  # Browser-facing URLs of the web app and the API, allowed as redirect targets
-  webUrl: http://localhost:5173
+  # Browser-facing URLs of the web app and the API, allowed as redirect targets.
+  # Empty webUrl: web.url.
+  webUrl: ""
   apiUrl: http://localhost:8000
   # Dev-only throwaway admin login for the Keycloak console
   admin:

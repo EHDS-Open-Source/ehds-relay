@@ -51,7 +51,7 @@ spec:
               value: "true"
             # Filled into the ${RELAY_*} placeholders of the realm JSON
             - name: RELAY_WEB_URL
-              value: {{ trimSuffix "/" .Values.keycloak.webUrl | quote }}
+              value: {{ trimSuffix "/" (.Values.keycloak.webUrl | default (include "ehds-relay.webUrl" .)) | quote }}
             - name: RELAY_API_URL
               value: {{ trimSuffix "/" .Values.keycloak.apiUrl | quote }}
             - name: RELAY_OIDC_CLIENT_SECRET

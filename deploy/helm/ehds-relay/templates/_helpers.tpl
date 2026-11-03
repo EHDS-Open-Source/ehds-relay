@@ -102,6 +102,23 @@ app.kubernetes.io/component: {{ .component }}
       key: OIDC_CLIENT_SECRET
 {{- end -}}
 
+{{/* The web app's browser-facing origin, without a trailing slash */}}
+{{- define "ehds-relay.webUrl" -}}
+{{- trimSuffix "/" .Values.web.url -}}
+{{- end -}}
+
+{{/* Sign-in and session settings for the API: where the browser comes back to, and the cookie */}}
+{{- define "ehds-relay.webEnv" -}}
+- name: RELAY_WEB_URL
+  value: {{ include "ehds-relay.webUrl" . | quote }}
+- name: RELAY_SESSION_COOKIE_NAME
+  value: {{ .Values.session.cookieName | quote }}
+- name: RELAY_SESSION_IDLE_MINUTES
+  value: {{ .Values.session.idleMinutes | quote }}
+- name: RELAY_SESSION_MAX_HOURS
+  value: {{ .Values.session.maxHours | quote }}
+{{- end -}}
+
 {{/* SMTP host: explicit value, else the bundled Mailpit */}}
 {{- define "ehds-relay.smtpHost" -}}
 {{- if .Values.smtp.host -}}

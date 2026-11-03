@@ -24,6 +24,7 @@ KEYCLOAK_LOCAL_PORT = os.getenv('KEYCLOAK_LOCAL_PORT', '8080')
 MAILPIT_UI_LOCAL_PORT = os.getenv('MAILPIT_UI_LOCAL_PORT', '8025')
 MAILPIT_SMTP_LOCAL_PORT = os.getenv('MAILPIT_SMTP_LOCAL_PORT', '1025')
 WEB_PORT = os.getenv('WEB_PORT', '5173')
+SESSION_COOKIE_NAME = os.getenv('RELAY_SESSION_COOKIE_NAME', 'relay_session')
 KUBE_CONTEXT = 'kind-' + CLUSTER_NAME
 DOCKER_REGISTRY = 'localhost:5001'
 CHART_DIR = 'deploy/helm/ehds-relay'
@@ -56,10 +57,12 @@ k8s_yaml(helm(
     'api.reload=true',
     'worker.reload=true',
     'mailpit.enabled=true',
-    # Browser-facing addresses: Keycloak's issuer, and where it may redirect to after sign-in.
-    # They follow the local ports below so several checkouts can run side by side.
+    # Browser-facing addresses: the web app (sign-in redirects, the session cookie and
+    # invitation links), Keycloak's issuer, and where Keycloak may redirect to after sign-in.
+    # They follow the local ports so several checkouts can run side by side.
+    'web.url=http://localhost:{}'.format(WEB_PORT),
+    'session.cookieName={}'.format(SESSION_COOKIE_NAME),
     'keycloak.hostname=http://localhost:{}'.format(KEYCLOAK_LOCAL_PORT),
-    'keycloak.webUrl=http://localhost:{}'.format(WEB_PORT),
     'keycloak.apiUrl=http://localhost:{}'.format(API_LOCAL_PORT),
   ],
 ))
