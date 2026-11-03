@@ -15,6 +15,91 @@ api:
   migrations:
     enabled: true
 
+# Background worker: same image as the API, different command.
+worker:
+  enabled: true
+  replicas: 1
+  # Defaults to the API image
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: ""
+  # Restart the worker on code changes (watchfiles), for the Tilt live-update loop only
+  reload: false
+  resources: {}
+
+# Where the user's browser reaches the web app. The browser talks to the API through this
+# origin, so sign-in redirects, the session cookie and invitation links all use it.
+web:
+  url: http://localhost:5173
+
+# Browser sessions issued by the API after sign-in
+session:
+  # Cookies ignore the port, so releases sharing a host name need different names.
+  cookieName: relay_session
+  # A session ends after this long without a request, and after maxHours regardless.
+  idleMinutes: 60
+  maxHours: 12
+
+# How the API talks to the OpenID Connect provider (the app is only an OIDC client).
+# Defaults point at the bundled Keycloak below.
+oidc:
+  # Where the API fetches the discovery document, signing keys and tokens from.
+  # Empty: the bundled Keycloak's in-cluster URL.
+  internalUrl: ""
+  # The issuer as browsers and tokens see it. Empty: keycloak.hostname + the realm path.
+  issuerUrl: ""
+  clientId: ehds-relay-bff
+  # Dev-only throwaway default. Override it, or point existingSecret at a secret with the
+  # key OIDC_CLIENT_SECRET, for anything but a local cluster.
+  clientSecret: ehds-relay-dev-secret
+  existingSecret: ""
+
+# Bundled Keycloak in dev mode (in-memory H2, realm imported from files/ehds-relay-realm.json
+# on every start). For local development and evaluation only: nothing is persisted.
+keycloak:
+  enabled: true
+  image:
+    repository: keycloak/keycloak
+    tag: "26.8.1"
+    pullPolicy: IfNotPresent
+  realm: ehds-relay
+  service:
+    port: 8080
+  # Where the user's browser reaches Keycloak (e.g. a port-forward). Tokens carry this as
+  # their issuer, so it must be what the browser actually uses.
+  hostname: http://localhost:8080
+  # Browser-facing URLs of the web app and the API, allowed as redirect targets.
+  # Empty webUrl: web.url.
+  webUrl: ""
+  apiUrl: http://localhost:8000
+  # Dev-only throwaway admin login for the Keycloak console
+  admin:
+    user: admin
+    password: admin
+  resources:
+    requests:
+      memory: 512Mi
+
+# Mail server for outgoing email. Defaults to the bundled Mailpit when it is enabled.
+smtp:
+  host: ""
+  port: 1025
+  from: ehds-relay@example.org
+
+# Mailpit: catches all outgoing email in development (SMTP 1025, web UI and API 8025).
+# Off by default; Tilt and scripts/deploy.sh switch it on.
+mailpit:
+  enabled: false
+  image:
+    repository: axllent/mailpit
+    tag: v1.33.0
+    pullPolicy: IfNotPresent
+  # SMTP is served on smtp.port
+  service:
+    uiPort: 8025
+  resources: {}
+
 # Connection settings for the application database. host defaults to the bundled
 # postgres subchart (<release>-postgres); set it when postgres.enabled=false.
 database:
