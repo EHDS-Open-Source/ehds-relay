@@ -15,6 +15,8 @@ import {
 } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { HealthStatus } from "../HealthStatus";
+
 import { useSession, useSessionStore } from "../session/useSession";
 import { shellMessages } from "./messages";
 import { accountNavItems, activeNavId, coreNavItems, navLabels } from "./nav";
@@ -59,6 +61,7 @@ export function OrgLayout() {
             </Link>
           }
           orgName={org.name}
+          actions={<HealthStatus />}
           menuOpen={menuOpen}
           onMenuClick={() => {
             setMenuOpen(true);
