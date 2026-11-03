@@ -92,6 +92,13 @@ describe("signed out", () => {
     expect(screen.queryByRole("banner")).not.toBeInTheDocument();
   });
 
+  it("redirects the account page to /sign-in", async () => {
+    const router = renderApp("/account", null);
+    await screen.findByRole("heading", { name: "Sign in" });
+    expect(router.state.location.pathname).toBe("/sign-in");
+    expect(router.state.location.search).toEqual({ redirect: "/account" });
+  });
+
   it("redirects the site root to /sign-in", async () => {
     const router = renderApp("/", null);
     await screen.findByRole("heading", { name: "Sign in" });
@@ -310,6 +317,21 @@ describe("menu", () => {
     );
     await screen.findByRole("heading", { name: "Select your organisation" });
     expect(router.state.location.pathname).toBe("/orgs");
+  });
+
+  it("opens the account page from Manage my account", async () => {
+    const router = renderApp("/orgs/demo/catalogue");
+    await screen.findByRole("heading", { name: "Dataset Catalogue" });
+    await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    await userEvent.click(
+      screen.getByRole("link", { name: "Manage my account" }),
+    );
+    await screen.findByRole("heading", {
+      level: 1,
+      name: shellMessages.account.title,
+    });
+    expect(router.state.location.pathname).toBe("/account");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("signs out to the address the API returns", async () => {

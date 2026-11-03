@@ -200,6 +200,23 @@ export const shellMessages = {
     },
   },
   loading: "Loading...",
+  account: {
+    eyebrow: "Account",
+    title: "Manage my account",
+    description: "Your name as the other members of your organisations see it.",
+    back: "Back to my organisations",
+    nameLabel: "Full name",
+    emailLabel: "Email address",
+    emailHint:
+      "Your email address comes from your sign-in account and cannot be changed here.",
+    save: "Save changes",
+    saving: "Saving...",
+    saved: "Your name has been saved.",
+    nameRequired: "Enter your name.",
+    nameTooLong: "Use 200 characters or fewer.",
+    invalid: "Check your name and try again.",
+    failed: "Your name could not be saved. Try again in a moment.",
+  },
   serviceError: {
     title: "Something went wrong",
     description: "The service could not be reached. Try again in a moment.",

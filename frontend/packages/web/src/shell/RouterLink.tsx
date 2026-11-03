@@ -1,7 +1,7 @@
 import type { RenderNavLink } from "@ehds-relay/ui";
 import { Link } from "@tanstack/react-router";
 
-import type { OrgNavPath } from "./nav";
+import type { OrgNavPath, RootNavPath } from "./nav";
 
 /** Renders a menu item as a router link inside the given organisation. */
 export function renderOrgLink(orgId: string): RenderNavLink<OrgNavPath> {
@@ -19,7 +19,7 @@ export function renderOrgLink(orgId: string): RenderNavLink<OrgNavPath> {
 }
 
 /** Renders a menu item that goes to a page outside any organisation. */
-export const renderRootLink: RenderNavLink<"/orgs"> = ({
+export const renderRootLink: RenderNavLink<RootNavPath> = ({
   item,
   children,
   className,

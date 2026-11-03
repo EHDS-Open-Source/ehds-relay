@@ -54,7 +54,8 @@ Add a shadcn component to `ui` with `pnpm dlx shadcn@latest add <name>` from `pa
 
 ## Adding a screen
 
-Routes are org-scoped (`/orgs/$orgId/...`) and defined in code, not generated.
+Routes are org-scoped (`/orgs/$orgId/...`) and defined in code, not generated. The exception is
+`/account`, the signed-in user's own details, which needs a session but no organisation.
 
 1. Write the page component in `packages/web/src/pages/`. Page text goes in `packages/web/src/shell/messages.ts`.
 2. Add a route for it in `packages/web/src/router/routes.ts`, under `orgRoute` for screens that live inside an organisation.

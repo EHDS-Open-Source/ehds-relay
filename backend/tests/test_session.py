@@ -14,7 +14,7 @@ from relay.auth.oidc import get_oidc_client
 from relay.auth.sessions import hash_token
 from relay.domain.users import AppUser, UserSession
 from relay.settings import get_settings
-from tests.conftest import MakeUser
+from tests.conftest import AddMember, AsUser, MakeUser
 from tests.fake_oidc import AUTHORIZATION_ENDPOINT, END_SESSION_ENDPOINT, FAKE_ISSUER, FakeOIDC
 
 
@@ -393,3 +393,106 @@ def test_logout_needs_csrf_header(client: TestClient, fake_oidc: FakeOIDC) -> No
     del client.headers[CSRF_HEADER]
     assert client.post("/api/v1/auth/logout").status_code == 403
     assert client.get("/api/v1/me").status_code == 200
+
+
+# Changing your own name
+
+
+def test_update_me_changes_name(
+    client: TestClient, user: AppUser, db: sessionmaker[Session]
+) -> None:
+    res = client.patch("/api/v1/me", json={"name": "  Olivia Owner  "})
+    assert res.status_code == 200, res.text
+    assert res.json() == {"id": str(user.id), "name": "Olivia Owner", "email": user.email}
+    assert client.get("/api/v1/me").json()["name"] == "Olivia Owner"
+    [row] = _users(db)
+    assert (row.name, row.name_set_by_user, row.email) == ("Olivia Owner", True, user.email)
+
+
+def test_update_me_requires_session(anon_client: TestClient) -> None:
+    assert anon_client.patch("/api/v1/me", json={"name": "Ada"}).status_code == 401
+
+
+def test_update_me_needs_csrf_header(client: TestClient, db: sessionmaker[Session]) -> None:
+    del client.headers[CSRF_HEADER]
+    assert client.patch("/api/v1/me", json={"name": "Ada"}).status_code == 403
+    [row] = _users(db)
+    assert (row.name, row.name_set_by_user) == ("Olive Owner", False)
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {},
+        {"name": ""},
+        {"name": "   "},
+        {"name": "x" * 201},
+        {"name": None},
+        {"name": "Ada", "email": "ada@example.org"},
+    ],
+    ids=["missing", "empty", "blank", "too-long", "null", "email-not-editable"],
+)
+def test_update_me_rejects_bad_body(
+    client: TestClient, db: sessionmaker[Session], body: dict[str, Any]
+) -> None:
+    assert client.patch("/api/v1/me", json=body).status_code == 422
+    [row] = _users(db)
+    assert (row.name, row.email, row.name_set_by_user) == (
+        "Olive Owner",
+        "owner@example.org",
+        False,
+    )
+
+
+def test_update_me_accepts_200_characters(client: TestClient) -> None:
+    res = client.patch("/api/v1/me", json={"name": "x" * 200})
+    assert res.status_code == 200
+    assert res.json()["name"] == "x" * 200
+
+
+def test_name_set_in_app_survives_sign_in(
+    client: TestClient, fake_oidc: FakeOIDC, user: AppUser, db: sessionmaker[Session]
+) -> None:
+    assert client.patch("/api/v1/me", json={"name": "Olivia Owner"}).status_code == 200
+    assert client.post("/api/v1/auth/logout").status_code == 200
+    assert client.get("/api/v1/me").status_code == 401
+
+    res = _sign_in_via_provider(
+        client, fake_oidc, sub=user.oidc_subject, email="olivia@example.org", name="Olive Owner"
+    )
+    assert res.status_code == 302
+    me = client.get("/api/v1/me").json()
+    # The name the user chose stays; the email still follows the provider
+    assert (me["name"], me["email"]) == ("Olivia Owner", "olivia@example.org")
+    [row] = _users(db)
+    assert row.id == user.id and row.name_set_by_user
+
+
+def test_name_not_set_in_app_follows_provider(
+    anon_client: TestClient, fake_oidc: FakeOIDC, db: sessionmaker[Session]
+) -> None:
+    _sign_in_via_provider(anon_client, fake_oidc, name="Olive Owner")
+    _sign_in_via_provider(anon_client, fake_oidc, name="Olive Renamed")
+    [row] = _users(db)
+    assert (row.name, row.name_set_by_user) == ("Olive Renamed", False)
+    assert anon_client.get("/api/v1/me").json()["name"] == "Olive Renamed"
+
+
+def test_new_name_shows_in_every_members_list(
+    client: TestClient, org: str, make_user: MakeUser, add_member: AddMember, as_user: AsUser
+) -> None:
+    res = client.post("/api/v1/organisations", json={"name": "Beta", "country": "FR"})
+    assert res.status_code == 201, res.text
+    other_org = res.json()["id"]
+
+    assert client.patch("/api/v1/me", json={"name": "Olivia Owner"}).status_code == 200
+
+    for org_id in (org, other_org):
+        listed = client.get(f"/api/v1/organisations/{org_id}/members").json()
+        assert "Olivia Owner" in [m["name"] for m in listed], org_id
+        assert "Olive Owner" not in [m["name"] for m in listed]
+    # Colleagues see it too (only Owners may list members)
+    colleague = make_user("co-owner@example.org", "Cora Colleague")
+    add_member(org, colleague, "owner")
+    listed = as_user(colleague).get(f"/api/v1/organisations/{org}/members").json()
+    assert {m["name"] for m in listed} == {"Olivia Owner", "Sam Standard", "Cora Colleague"}

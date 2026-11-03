@@ -11,14 +11,13 @@ import logging
 import secrets
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
-from typing import Annotated, NoReturn
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, Response, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from relay.api.stubs import not_implemented
 from relay.auth.deps import CurrentUserDep
 from relay.auth.oidc import IdentityClaims, OIDCClient, OIDCError, get_oidc_client
 from relay.auth.sessions import create_session, pop_session
@@ -113,9 +112,10 @@ def _upsert_user(db: Session, identity: IdentityClaims) -> AppUser:
     if user is None:
         user = AppUser(oidc_issuer=identity.issuer, oidc_subject=identity.subject)
         db.add(user)
-    # The provider owns the profile for now
+    # The provider owns the email; the name only until the user sets their own in the app
     user.email = identity.email
-    user.name = identity.name
+    if not user.name_set_by_user:
+        user.name = identity.name
     user.last_login_at = datetime.now(UTC)
     db.flush()
     return user
@@ -127,8 +127,12 @@ def get_me(user: CurrentUserDep) -> AppUser:
 
 
 @router.patch("/me", response_model=MeDTO)
-def update_me(body: MeUpdateDTO, user: CurrentUserDep) -> NoReturn:
-    not_implemented()
+def update_me(body: MeUpdateDTO, user: CurrentUserDep, db: DbDep) -> AppUser:
+    """Change the signed-in user's name, as shown to the other members of their organisations."""
+    user.name = body.name
+    user.name_set_by_user = True
+    db.commit()
+    return user
 
 
 @router.get(

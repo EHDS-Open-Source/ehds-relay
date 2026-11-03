@@ -1,6 +1,6 @@
 import uuid
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from relay.dtos.base import DTO, RequestDTO
 
@@ -14,7 +14,18 @@ class MeDTO(DTO):
 
 
 class MeUpdateDTO(RequestDTO):
+    """Change the signed-in user's name. Once set here, signing in no longer replaces it.
+
+    The email address belongs to the identity provider and cannot be changed here.
+    """
+
     name: str = Field(min_length=1, max_length=200)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _strip(cls, value: object) -> object:
+        # Leading and trailing spaces are dropped, so a name of only spaces counts as empty
+        return value.strip() if isinstance(value, str) else value
 
 
 class LogoutDTO(DTO):

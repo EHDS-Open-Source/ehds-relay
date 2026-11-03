@@ -1,7 +1,17 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, Text, UniqueConstraint, func, text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Text,
+    UniqueConstraint,
+    false,
+    func,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from relay.db import Base
@@ -10,7 +20,8 @@ from relay.db import Base
 class AppUser(Base):
     """A person known to the identity provider who has signed in at least once.
 
-    Looked up by issuer and subject. Email and name are copied from the provider at each sign-in.
+    Looked up by issuer and subject. The email is copied from the provider at each sign-in, and so
+    is the name until the user sets their own in the app.
     """
 
     __tablename__ = "app_user"
@@ -26,6 +37,10 @@ class AppUser(Base):
     oidc_subject: Mapped[str] = mapped_column(Text, nullable=False)
     email: Mapped[str] = mapped_column(Text, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
+    # True once the user has changed their name in the app; sign-in then leaves it alone.
+    name_set_by_user: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

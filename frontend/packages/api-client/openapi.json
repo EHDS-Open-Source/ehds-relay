@@ -792,6 +792,7 @@
       },
       "MeUpdateDTO": {
         "additionalProperties": false,
+        "description": "Change the signed-in user's name. Once set here, signing in no longer replaces it.\n\nThe email address belongs to the identity provider and cannot be changed here.",
         "properties": {
           "name": {
             "maxLength": 200,
@@ -1618,6 +1619,7 @@
         ]
       },
       "patch": {
+        "description": "Change the signed-in user's name, as shown to the other members of their organisations.",
         "operationId": "update_me_api_v1_me_patch",
         "requestBody": {
           "content": {

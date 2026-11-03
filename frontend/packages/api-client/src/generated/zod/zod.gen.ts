@@ -122,6 +122,10 @@ export const zMeDto = z.object({
 
 /**
  * MeUpdateDTO
+ *
+ * Change the signed-in user's name. Once set here, signing in no longer replaces it.
+ *
+ * The email address belongs to the identity provider and cannot be changed here.
  */
 export const zMeUpdateDto = z.object({
     name: z.string().min(1).max(200)
