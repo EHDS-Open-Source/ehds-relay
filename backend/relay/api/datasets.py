@@ -32,7 +32,8 @@ router = APIRouter(
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
-def _get_dataset(session: Session, org_id: uuid.UUID, dataset_id: uuid.UUID) -> Dataset:
+def get_org_dataset(session: Session, org_id: uuid.UUID, dataset_id: uuid.UUID) -> Dataset:
+    """The dataset if it belongs to `org_id`, else 404 (as if it did not exist)."""
     ds = session.get(Dataset, dataset_id)
     if ds is None or ds.org_id != org_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="dataset not found")
@@ -110,14 +111,14 @@ def list_datasets(
 
 @router.get("/{dataset_id}", response_model=DatasetDTO)
 def get_dataset(org_id: uuid.UUID, dataset_id: uuid.UUID, session: SessionDep) -> Dataset:
-    return _get_dataset(session, org_id, dataset_id)
+    return get_org_dataset(session, org_id, dataset_id)
 
 
 @router.put("/{dataset_id}", response_model=DatasetDTO)
 def update_dataset(
     org_id: uuid.UUID, dataset_id: uuid.UUID, body: DatasetUpdateDTO, session: SessionDep
 ) -> Dataset:
-    ds = _get_dataset(session, org_id, dataset_id)
+    ds = get_org_dataset(session, org_id, dataset_id)
     _check_version(ds, body.version)
     _apply_metadata(ds, body.metadata)
     _apply_status(ds, body.publish, body.metadata)
@@ -129,7 +130,7 @@ def update_dataset(
 def publish_dataset(
     org_id: uuid.UUID, dataset_id: uuid.UUID, body: DatasetPublishDTO, session: SessionDep
 ) -> Dataset:
-    ds = _get_dataset(session, org_id, dataset_id)
+    ds = get_org_dataset(session, org_id, dataset_id)
     _check_version(ds, body.version)
     if ds.status == DatasetStatus.PUBLISHED:
         raise HTTPException(status.HTTP_409_CONFLICT, detail="dataset is already published")
@@ -150,7 +151,7 @@ def delete_dataset(
     org_id: uuid.UUID, dataset_id: uuid.UUID, _owner: OwnerDep, session: SessionDep
 ) -> None:
     """Delete the dataset for good. Owners only."""
-    session.delete(_get_dataset(session, org_id, dataset_id))
+    session.delete(get_org_dataset(session, org_id, dataset_id))
     session.commit()
 
 

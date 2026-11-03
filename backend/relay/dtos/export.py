@@ -20,6 +20,13 @@ EXPORT_MEDIA_TYPES: dict[ExportFormat, str] = {
     ExportFormat.RDFXML: "application/rdf+xml",
 }
 
+# File extension for downloads, the same the web app uses
+EXPORT_EXTENSIONS: dict[ExportFormat, str] = {
+    ExportFormat.TTL: "ttl",
+    ExportFormat.JSONLD: "jsonld",
+    ExportFormat.RDFXML: "rdf",
+}
+
 EXPORT_RESPONSES: dict[int | str, dict[str, object]] = {
     200: {
         "description": "The record in the requested serialisation",
@@ -36,7 +43,11 @@ class ValidationSeverity(StrEnum):
 
 class ValidationViolationDTO(DTO):
     path: str | None = Field(description="Property the result is about, e.g. dct:title")
-    message: str
+    field: str | None = Field(
+        default=None,
+        description="Top-level form field key the result is about, e.g. distributions",
+    )
+    message: str = Field(description="What is wrong, in plain words")
     severity: ValidationSeverity
 
 

@@ -200,7 +200,9 @@ export interface paths {
         };
         /**
          * Export Catalogue
-         * @description Every dataset in the organisation as one catalogue file.
+         * @description Every published dataset in the organisation as one catalogue file.
+         *
+         *     Drafts are left out. A catalogue with no published datasets is still a valid file.
          */
         get: operations["export_catalogue_api_v1_organisations__org_id__catalogue_export_get"];
         put?: never;
@@ -261,6 +263,8 @@ export interface paths {
         /**
          * Export Dataset
          * @description The dataset's record as a downloadable file. Incomplete records are refused with 422.
+         *
+         *     Export does not run the official checks; `validate` does.
          */
         get: operations["export_dataset_api_v1_organisations__org_id__datasets__dataset_id__export_get"];
         put?: never;
@@ -337,7 +341,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Validate Dataset */
+        /**
+         * Validate Dataset
+         * @description Check the record against the official Health DCAT-AP shapes for its access level.
+         *
+         *     `conforms` is true only when nothing is missing and no rule is broken (warnings do not
+         *     count). Without an access level there is no shape set to check against, so only the
+         *     missing fields are reported.
+         */
         post: operations["validate_dataset_api_v1_organisations__org_id__datasets__dataset_id__validate_post"];
         delete?: never;
         options?: never;
@@ -988,7 +999,15 @@ export interface components {
         ValidationSeverity: "violation" | "warning" | "info";
         /** ValidationViolationDTO */
         ValidationViolationDTO: {
-            /** Message */
+            /**
+             * Field
+             * @description Top-level form field key the result is about, e.g. distributions
+             */
+            field?: string | null;
+            /**
+             * Message
+             * @description What is wrong, in plain words
+             */
             message: string;
             /**
              * Path
