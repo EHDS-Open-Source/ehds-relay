@@ -12,6 +12,8 @@
   "dependencies": {
     "@ehds-relay/api-client": "workspace:*",
     "@ehds-relay/ui": "workspace:*",
+    "@tanstack/react-query": "^5.105.1",
+    "@tanstack/react-router": "^1.170.46",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

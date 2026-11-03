@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     # ...and after this long regardless of activity.
     session_max_hours: int = 12
 
+    # Outgoing email (Mailpit in development, which accepts anything on its SMTP port)
+    smtp_host: str = "localhost"
+    smtp_port: int = 1025
+    smtp_from: str = "ehds-relay@example.org"
+
     @property
     def oidc_discovery_url(self) -> str:
         """Where the API fetches the OIDC discovery document from."""

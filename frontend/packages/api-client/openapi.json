@@ -1,0 +1,2906 @@
+{
+  "components": {
+    "schemas": {
+      "AccessRights": {
+        "description": "Access level of a dataset, mapped to the EU access-right authority table.",
+        "enum": [
+          "public",
+          "restricted",
+          "non_public"
+        ],
+        "title": "AccessRights",
+        "type": "string"
+      },
+      "Agent": {
+        "additionalProperties": false,
+        "description": "foaf:Agent (publisher, creator, health data access body).",
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "pattern": "^(?:\"[^\"]+\"|[^\\s@\"][^\\s@]*)@[^@\\s]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Agent",
+        "type": "object"
+      },
+      "CapabilitiesDTO": {
+        "description": "What this deployment offers, so the UI can show or hide features.",
+        "properties": {
+          "edition": {
+            "$ref": "#/components/schemas/Edition"
+          },
+          "features": {
+            "$ref": "#/components/schemas/CapabilityFeaturesDTO"
+          }
+        },
+        "required": [
+          "edition",
+          "features"
+        ],
+        "title": "CapabilitiesDTO",
+        "type": "object"
+      },
+      "CapabilityFeaturesDTO": {
+        "description": "Hosted-service features. All false in the open-source edition.",
+        "properties": {
+          "subscription": {
+            "description": "Subscriptions, trials and seat limits",
+            "title": "Subscription",
+            "type": "boolean"
+          },
+          "support_access": {
+            "description": "Support staff can open a session in an organisation",
+            "title": "Support Access",
+            "type": "boolean"
+          },
+          "vocabulary_lookup": {
+            "description": "Vocabulary fields pick from official term lists instead of manual entry",
+            "title": "Vocabulary Lookup",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "subscription",
+          "vocabulary_lookup",
+          "support_access"
+        ],
+        "title": "CapabilityFeaturesDTO",
+        "type": "object"
+      },
+      "Column": {
+        "additionalProperties": false,
+        "description": "csvw:Column.",
+        "properties": {
+          "datatype": {
+            "description": "csvw:datatype",
+            "minLength": 1,
+            "title": "Datatype",
+            "type": "string"
+          },
+          "description": {
+            "description": "dct:description",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Description",
+            "type": "array"
+          },
+          "name": {
+            "description": "csvw:name",
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "property_url": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "csvw:propertyUrl",
+            "title": "Property Url"
+          },
+          "titles": {
+            "description": "csvw:titles",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Titles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "titles",
+          "description",
+          "datatype"
+        ],
+        "title": "Column",
+        "type": "object"
+      },
+      "ContactPoint": {
+        "additionalProperties": false,
+        "description": "vcard:Kind. At least one of email or contact_page is required.",
+        "properties": {
+          "contact_page": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "vcard:hasURL",
+            "title": "Contact Page"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "pattern": "^(?:\"[^\"]+\"|[^\\s@\"][^\\s@]*)@[^@\\s]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "vcard:hasEmail",
+            "title": "Email"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "ContactPoint",
+        "type": "object"
+      },
+      "DatasetCreateDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/DatasetMetadata"
+          }
+        },
+        "title": "DatasetCreateDTO",
+        "type": "object"
+      },
+      "DatasetDTO": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "title": "Metadata",
+            "type": "object"
+          },
+          "missing_for_publish": {
+            "description": "Mandatory fields still missing before this can be published",
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true,
+            "title": "Missing For Publish",
+            "type": "array"
+          },
+          "org_id": {
+            "format": "uuid",
+            "title": "Org Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DatasetStatus"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "org_id",
+          "status",
+          "title",
+          "description",
+          "metadata",
+          "schema_version",
+          "version",
+          "created_at",
+          "updated_at",
+          "missing_for_publish"
+        ],
+        "title": "DatasetDTO",
+        "type": "object"
+      },
+      "DatasetMetadata": {
+        "additionalProperties": false,
+        "properties": {
+          "access_rights": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dct:accessRights",
+            "title": "Access Rights"
+          },
+          "applicable_legislation": {
+            "description": "r5r:applicableLegislation",
+            "items": {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Applicable Legislation",
+            "type": "array"
+          },
+          "contact_points": {
+            "description": "dcat:contactPoint",
+            "items": {
+              "$ref": "#/components/schemas/ContactPoint"
+            },
+            "title": "Contact Points",
+            "type": "array"
+          },
+          "creator": {
+            "description": "dct:creator",
+            "items": {
+              "$ref": "#/components/schemas/Agent"
+            },
+            "title": "Creator",
+            "type": "array"
+          },
+          "dataset_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dcat:version",
+            "title": "Dataset Version"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dct:description",
+            "title": "Description"
+          },
+          "distributions": {
+            "description": "dcat:distribution",
+            "items": {
+              "$ref": "#/components/schemas/Distribution"
+            },
+            "title": "Distributions",
+            "type": "array"
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dct:accrualPeriodicity",
+            "title": "Frequency"
+          },
+          "geographical_coverage": {
+            "description": "dct:spatial",
+            "items": {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Geographical Coverage",
+            "type": "array"
+          },
+          "health_category": {
+            "items": {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Health Category",
+            "type": "array"
+          },
+          "health_data_access_body": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Agent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "health_theme": {
+            "items": {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Health Theme",
+            "type": "array"
+          },
+          "identifier": {
+            "description": "dct:identifier",
+            "items": {
+              "type": "string"
+            },
+            "title": "Identifier",
+            "type": "array"
+          },
+          "keyword": {
+            "description": "dcat:keyword",
+            "items": {
+              "type": "string"
+            },
+            "title": "Keyword",
+            "type": "array"
+          },
+          "language": {
+            "description": "dct:language",
+            "items": {
+              "type": "string"
+            },
+            "title": "Language",
+            "type": "array"
+          },
+          "maximum_typical_age": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Typical Age"
+          },
+          "minimum_typical_age": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Typical Age"
+          },
+          "modification_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dct:modified",
+            "title": "Modification Date"
+          },
+          "number_of_records": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Number Of Records"
+          },
+          "number_of_unique_individuals": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Number Of Unique Individuals"
+          },
+          "population_coverage": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Population Coverage",
+            "type": "array"
+          },
+          "publisher": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Agent"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dct:publisher"
+          },
+          "release_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dct:issued",
+            "title": "Release Date"
+          },
+          "structured_data": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "healthdcatap:hasStructuredData",
+            "title": "Structured Data"
+          },
+          "temporal_coverage": {
+            "description": "dct:temporal, e.g. 2020-01-01/2022-12-31",
+            "items": {
+              "type": "string"
+            },
+            "title": "Temporal Coverage",
+            "type": "array"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dct:title",
+            "title": "Title"
+          },
+          "variables": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Variables"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "healthdcatap:hasVariables"
+          }
+        },
+        "title": "DatasetMetadata",
+        "type": "object"
+      },
+      "DatasetPublishDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "description": "Version last read by the client; 409 if stale",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "DatasetPublishDTO",
+        "type": "object"
+      },
+      "DatasetStatus": {
+        "enum": [
+          "draft",
+          "published"
+        ],
+        "title": "DatasetStatus",
+        "type": "string"
+      },
+      "DatasetUpdateDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/DatasetMetadata"
+          },
+          "version": {
+            "description": "Version last read by the client; 409 if stale",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "metadata",
+          "version"
+        ],
+        "title": "DatasetUpdateDTO",
+        "type": "object"
+      },
+      "Distribution": {
+        "additionalProperties": false,
+        "description": "dcat:Distribution.",
+        "properties": {
+          "access_url": {
+            "description": "dcat:accessURL",
+            "items": {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Access Url",
+            "type": "array"
+          },
+          "applicable_legislation": {
+            "description": "r5r:applicableLegislation",
+            "items": {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Applicable Legislation",
+            "type": "array"
+          },
+          "byte_size": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dcat:byteSize",
+            "title": "Byte Size"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dct:description",
+            "title": "Description"
+          },
+          "download_url": {
+            "description": "dcat:downloadURL",
+            "items": {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Download Url",
+            "type": "array"
+          },
+          "format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dct:format",
+            "title": "Format"
+          },
+          "licence": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dct:license",
+            "title": "Licence"
+          },
+          "media_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dcat:mediaType",
+            "title": "Media Type"
+          },
+          "modification_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modification Date"
+          },
+          "release_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Date"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dct:title",
+            "title": "Title"
+          }
+        },
+        "required": [
+          "access_url",
+          "applicable_legislation"
+        ],
+        "title": "Distribution",
+        "type": "object"
+      },
+      "Edition": {
+        "enum": [
+          "open-source",
+          "hosted"
+        ],
+        "title": "Edition",
+        "type": "string"
+      },
+      "ExportFormat": {
+        "description": "RDF serialisation of a Health DCAT-AP record.",
+        "enum": [
+          "ttl",
+          "jsonld",
+          "rdfxml"
+        ],
+        "title": "ExportFormat",
+        "type": "string"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthDTO": {
+        "properties": {
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HealthDTO",
+        "type": "object"
+      },
+      "InvitationCreateDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "pattern": "^(?:\"[^\"]+\"|[^\\s@\"][^\\s@]*)@[^@\\s]+$",
+            "title": "Email",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MemberRole",
+            "default": "standard"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "InvitationCreateDTO",
+        "type": "object"
+      },
+      "InvitationDTO": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "invited_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User who sent the invitation",
+            "title": "Invited By"
+          },
+          "org_id": {
+            "format": "uuid",
+            "title": "Org Id",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MemberRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InvitationStatus"
+          }
+        },
+        "required": [
+          "id",
+          "org_id",
+          "email",
+          "role",
+          "status",
+          "invited_by",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "InvitationDTO",
+        "type": "object"
+      },
+      "InvitationPreviewDTO": {
+        "description": "What an invitee sees when opening the link, before signing in to accept.",
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "invited_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invited By Name"
+          },
+          "organisation_name": {
+            "title": "Organisation Name",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MemberRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InvitationStatus"
+          }
+        },
+        "required": [
+          "organisation_name",
+          "invited_by_name",
+          "email",
+          "role",
+          "status",
+          "expires_at"
+        ],
+        "title": "InvitationPreviewDTO",
+        "type": "object"
+      },
+      "InvitationStatus": {
+        "enum": [
+          "pending",
+          "accepted",
+          "cancelled",
+          "expired"
+        ],
+        "title": "InvitationStatus",
+        "type": "string"
+      },
+      "MeDTO": {
+        "description": "The signed-in user.",
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email"
+        ],
+        "title": "MeDTO",
+        "type": "object"
+      },
+      "MeUpdateDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "MeUpdateDTO",
+        "type": "object"
+      },
+      "MemberDTO": {
+        "description": "A member of an organisation, as listed on its members screen.",
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "joined_at": {
+            "format": "date-time",
+            "title": "Joined At",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MemberRole"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "name",
+          "email",
+          "role",
+          "joined_at"
+        ],
+        "title": "MemberDTO",
+        "type": "object"
+      },
+      "MemberRole": {
+        "description": "A user's role in one organisation; the same user can hold different roles elsewhere.",
+        "enum": [
+          "owner",
+          "standard"
+        ],
+        "title": "MemberRole",
+        "type": "string"
+      },
+      "MemberUpdateDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/MemberRole"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "MemberUpdateDTO",
+        "type": "object"
+      },
+      "OrganisationCreateDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "country": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ISO 3166-1 alpha-2 code",
+            "title": "Country"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "OrganisationCreateDTO",
+        "type": "object"
+      },
+      "OrganisationDTO": {
+        "properties": {
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrganisationStatus"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "country",
+          "status",
+          "created_at"
+        ],
+        "title": "OrganisationDTO",
+        "type": "object"
+      },
+      "OrganisationStatus": {
+        "enum": [
+          "active",
+          "suspended",
+          "deleted"
+        ],
+        "title": "OrganisationStatus",
+        "type": "string"
+      },
+      "OrganisationUpdateDTO": {
+        "additionalProperties": false,
+        "description": "Partial update: fields left out stay unchanged.",
+        "properties": {
+          "country": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ISO 3166-1 alpha-2 code",
+            "title": "Country"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "OrganisationUpdateDTO",
+        "type": "object"
+      },
+      "RevalidationReminderUpdateDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When to remind members to revalidate the metadata; null clears it",
+            "title": "Due Date"
+          }
+        },
+        "required": [
+          "due_date"
+        ],
+        "title": "RevalidationReminderUpdateDTO",
+        "type": "object"
+      },
+      "Table": {
+        "additionalProperties": false,
+        "description": "csvw:Table.",
+        "properties": {
+          "column": {
+            "items": {
+              "$ref": "#/components/schemas/Column"
+            },
+            "minItems": 1,
+            "title": "Column",
+            "type": "array"
+          },
+          "keyword": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keyword",
+            "type": "array"
+          },
+          "title": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Title",
+            "type": "array"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "title",
+          "column"
+        ],
+        "title": "Table",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "ValidationReportDTO": {
+        "description": "Outcome of validating a dataset's record against the Health DCAT-AP shapes.",
+        "properties": {
+          "conforms": {
+            "title": "Conforms",
+            "type": "boolean"
+          },
+          "missing": {
+            "description": "Mandatory fields not filled in yet, by form field key",
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "violations": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationViolationDTO"
+            },
+            "title": "Violations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "conforms",
+          "missing",
+          "violations"
+        ],
+        "title": "ValidationReportDTO",
+        "type": "object"
+      },
+      "ValidationSeverity": {
+        "enum": [
+          "violation",
+          "warning",
+          "info"
+        ],
+        "title": "ValidationSeverity",
+        "type": "string"
+      },
+      "ValidationViolationDTO": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Property the result is about, e.g. dct:title",
+            "title": "Path"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/ValidationSeverity"
+          }
+        },
+        "required": [
+          "path",
+          "message",
+          "severity"
+        ],
+        "title": "ValidationViolationDTO",
+        "type": "object"
+      },
+      "Variables": {
+        "additionalProperties": false,
+        "description": "csvw:TableGroup: the variables of a structured dataset.",
+        "properties": {
+          "table": {
+            "items": {
+              "$ref": "#/components/schemas/Table"
+            },
+            "minItems": 1,
+            "title": "Table",
+            "type": "array"
+          },
+          "title": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Title",
+            "type": "array"
+          }
+        },
+        "required": [
+          "title",
+          "table"
+        ],
+        "title": "Variables",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "EHDS Relay API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/auth/callback": {
+      "get": {
+        "description": "Complete sign-in, set the session cookie and redirect into the app.",
+        "operationId": "auth_callback_api_v1_auth_callback_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Auth Callback",
+        "tags": [
+          "session"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "get": {
+        "description": "Redirect to the identity provider's sign-in page.",
+        "operationId": "login_api_v1_auth_login_get",
+        "parameters": [
+          {
+            "description": "Path to return to after signing in",
+            "in": "query",
+            "name": "redirect",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Path to return to after signing in",
+              "title": "Redirect"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login",
+        "tags": [
+          "session"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "description": "End the session. POST, so that following a link cannot sign anyone out.",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Logout",
+        "tags": [
+          "session"
+        ]
+      }
+    },
+    "/api/v1/capabilities": {
+      "get": {
+        "operationId": "get_capabilities_api_v1_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilitiesDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Capabilities",
+        "tags": [
+          "capabilities"
+        ]
+      }
+    },
+    "/api/v1/invitations/{token}": {
+      "get": {
+        "description": "Readable without signing in, so the invitee knows what they are joining.",
+        "operationId": "get_invitation_api_v1_invitations__token__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationPreviewDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Invitation",
+        "tags": [
+          "invitations"
+        ]
+      }
+    },
+    "/api/v1/invitations/{token}/accept": {
+      "post": {
+        "description": "Join the organisation as the signed-in user, with the role given in the invitation.",
+        "operationId": "accept_invitation_api_v1_invitations__token__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Invitation",
+        "tags": [
+          "invitations"
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "get_me_api_v1_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Me",
+        "tags": [
+          "session"
+        ]
+      },
+      "patch": {
+        "operationId": "update_me_api_v1_me_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeUpdateDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Me",
+        "tags": [
+          "session"
+        ]
+      }
+    },
+    "/api/v1/organisations": {
+      "get": {
+        "operationId": "list_organisations_api_v1_organisations_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OrganisationDTO"
+                  },
+                  "title": "Response List Organisations Api V1 Organisations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Organisations",
+        "tags": [
+          "organisations"
+        ]
+      },
+      "post": {
+        "operationId": "create_organisation_api_v1_organisations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganisationCreateDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Organisation",
+        "tags": [
+          "organisations"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}": {
+      "get": {
+        "operationId": "get_organisation_api_v1_organisations__org_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Organisation",
+        "tags": [
+          "organisations"
+        ]
+      },
+      "patch": {
+        "operationId": "update_organisation_api_v1_organisations__org_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganisationUpdateDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Organisation",
+        "tags": [
+          "organisations"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/catalogue/export": {
+      "get": {
+        "description": "Every dataset in the organisation as one catalogue file.",
+        "operationId": "export_catalogue_api_v1_organisations__org_id__catalogue_export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ExportFormat",
+              "default": "ttl"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/ld+json": {},
+              "application/rdf+xml": {},
+              "text/turtle": {}
+            },
+            "description": "The record in the requested serialisation"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Catalogue",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/datasets": {
+      "get": {
+        "operationId": "list_datasets_api_v1_organisations__org_id__datasets_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dataset_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DatasetStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dataset Status"
+            }
+          },
+          {
+            "description": "Search title, description, keywords and health data category",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search title, description, keywords and health data category",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "Only datasets with this access level",
+            "in": "query",
+            "name": "access_rights",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AccessRights"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only datasets with this access level",
+              "title": "Access Rights"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DatasetDTO"
+                  },
+                  "title": "Response List Datasets Api V1 Organisations  Org Id  Datasets Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Datasets",
+        "tags": [
+          "datasets"
+        ]
+      },
+      "post": {
+        "operationId": "create_dataset_api_v1_organisations__org_id__datasets_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasetCreateDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Dataset",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/datasets/{dataset_id}": {
+      "delete": {
+        "description": "Owners only.",
+        "operationId": "delete_dataset_api_v1_organisations__org_id__datasets__dataset_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Dataset",
+        "tags": [
+          "datasets"
+        ]
+      },
+      "get": {
+        "operationId": "get_dataset_api_v1_organisations__org_id__datasets__dataset_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dataset",
+        "tags": [
+          "datasets"
+        ]
+      },
+      "put": {
+        "operationId": "update_dataset_api_v1_organisations__org_id__datasets__dataset_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasetUpdateDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Dataset",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/datasets/{dataset_id}/export": {
+      "get": {
+        "description": "The dataset's record as a downloadable file. Incomplete records are refused with 422.",
+        "operationId": "export_dataset_api_v1_organisations__org_id__datasets__dataset_id__export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ExportFormat",
+              "default": "ttl"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/ld+json": {},
+              "application/rdf+xml": {},
+              "text/turtle": {}
+            },
+            "description": "The record in the requested serialisation"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Dataset",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/datasets/{dataset_id}/publish": {
+      "post": {
+        "operationId": "publish_dataset_api_v1_organisations__org_id__datasets__dataset_id__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasetPublishDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publish Dataset",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/datasets/{dataset_id}/revalidate": {
+      "post": {
+        "description": "Record that the metadata was checked today and move the next reminder a year ahead.",
+        "operationId": "revalidate_dataset_api_v1_organisations__org_id__datasets__dataset_id__revalidate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revalidate Dataset",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/datasets/{dataset_id}/revalidation-reminder": {
+      "put": {
+        "description": "Set or clear the date members are reminded to revalidate the metadata.",
+        "operationId": "set_revalidation_reminder_api_v1_organisations__org_id__datasets__dataset_id__revalidation_reminder_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevalidationReminderUpdateDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Revalidation Reminder",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/datasets/{dataset_id}/validate": {
+      "post": {
+        "operationId": "validate_dataset_api_v1_organisations__org_id__datasets__dataset_id__validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationReportDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate Dataset",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/invitations": {
+      "get": {
+        "operationId": "list_invitations_api_v1_organisations__org_id__invitations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/InvitationStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InvitationDTO"
+                  },
+                  "title": "Response List Invitations Api V1 Organisations  Org Id  Invitations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Invitations",
+        "tags": [
+          "invitations"
+        ]
+      },
+      "post": {
+        "operationId": "create_invitation_api_v1_organisations__org_id__invitations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationCreateDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Invitation",
+        "tags": [
+          "invitations"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/invitations/{invitation_id}": {
+      "delete": {
+        "description": "Cancel a pending invitation; its link stops working.",
+        "operationId": "cancel_invitation_api_v1_organisations__org_id__invitations__invitation_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Invitation",
+        "tags": [
+          "invitations"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/invitations/{invitation_id}/resend": {
+      "post": {
+        "operationId": "resend_invitation_api_v1_organisations__org_id__invitations__invitation_id__resend_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resend Invitation",
+        "tags": [
+          "invitations"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/members": {
+      "get": {
+        "operationId": "list_members_api_v1_organisations__org_id__members_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberDTO"
+                  },
+                  "title": "Response List Members Api V1 Organisations  Org Id  Members Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Members",
+        "tags": [
+          "members"
+        ]
+      }
+    },
+    "/api/v1/organisations/{org_id}/members/{user_id}": {
+      "delete": {
+        "description": "Remove a member; their datasets stay. Removing the last owner is refused.",
+        "operationId": "remove_member_api_v1_organisations__org_id__members__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Member",
+        "tags": [
+          "members"
+        ]
+      },
+      "patch": {
+        "description": "Change a member's role. Demoting the last owner is refused.",
+        "operationId": "update_member_api_v1_organisations__org_id__members__user_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberUpdateDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Member",
+        "tags": [
+          "members"
+        ]
+      }
+    },
+    "/healthz": {
+      "get": {
+        "description": "Liveness: the process is up.",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Healthz",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/readyz": {
+      "get": {
+        "description": "Readiness: the database is reachable.",
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Readyz",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  }
+}
