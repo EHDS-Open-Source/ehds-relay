@@ -4,4 +4,7 @@ export const messages = {
   appTitle: "EHDS Relay",
   welcome: "The relay web app is under construction.",
   getStarted: "Get started",
+  healthChecking: "Checking the API...",
+  healthStatus: (status: string) => `API status: ${status}`,
+  healthUnavailable: "The API is unavailable.",
 } as const;

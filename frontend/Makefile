@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 PNPM ?= pnpm
 
-.PHONY: install dev lint format typecheck test check build
+.PHONY: install dev lint format typecheck test check build api_client
 
 install:
 	$(PNPM) install --frozen-lockfile
@@ -26,5 +26,9 @@ test:
 
 build:
 	$(PNPM) build
+
+# Regenerate packages/api-client/src/generated from the committed openapi.json
+api_client:
+	$(PNPM) --filter @ehds-relay/api-client generate
 
 check: lint typecheck

@@ -17,12 +17,15 @@ Root `Makefile` (delegates to `backend/Makefile` and `frontend/Makefile`):
 | `make test` | pytest (uses a throwaway Postgres via testcontainers, so docker must be running) and vitest |
 | `make check` | ruff (lint + format check) and pyright; eslint, prettier --check and tsc |
 | `make pip_compile` / `make pip_compile_dev` | Re-lock `requirements.txt` / `requirements-dev.txt` |
+| `make api_client` | Dump the OpenAPI spec from the backend (no database or server needed) and regenerate the typed client in `frontend/packages/api-client`. Run it after changing routes or DTOs and commit the result; CI fails if it is out of date |
 
 Backend-only extras (run from `backend/`): `make format` (ruff fix + format), `make lint`,
-`make typecheck`, `make migrate` (alembic upgrade head against a local DB), `make run`.
+`make typecheck`, `make migrate` (alembic upgrade head against a local DB), `make run`,
+`make openapi` (just the spec dump).
 
 Frontend extras (run from `frontend/`): `make dev`, `make format` (eslint --fix + prettier),
-`make lint`, `make typecheck`, `make build`.
+`make lint`, `make typecheck`, `make build`, `make api_client` (just the client generation from the
+committed spec).
 
 Before finishing a change run `make check` and `make test`.
 
@@ -61,7 +64,11 @@ Before finishing a change run `make check` and `make test`.
   Components that another app could reuse go in `ui`, not `web`. Add shadcn components from
   `frontend/packages/ui` with `pnpm dlx shadcn@latest add <name>`.
 - `ui` and `api-client` are TypeScript source with no build step, linked via `workspace:*`.
-- Never hand-edit `packages/api-client/src/generated/`; regenerate it.
+- Never hand-edit `packages/api-client/openapi.json` or `packages/api-client/src/generated/`; run
+  `make api_client` after changing routes or DTOs and commit both.
+- Call the API through the typed client (`createApiClient()` from `@ehds-relay/api-client`, shared
+  as `api` in `packages/web/src/api.ts`), keyed by path, e.g. `api.GET("/healthz")`. No hand-written
+  `fetch`. Requests are same-origin (relative URLs); the Vite dev server proxies them to the API.
 - TypeScript is strict. Keep user-facing strings in each package's `src/messages.ts`, not inline
   in components, so they can be translated later.
 - Tests sit next to the code as `*.test.ts(x)` (vitest + Testing Library).

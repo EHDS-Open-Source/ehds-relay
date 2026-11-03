@@ -1,5 +1,6 @@
 import { Button } from "@ehds-relay/ui";
 
+import { HealthStatus } from "./HealthStatus";
 import { messages } from "./messages";
 
 export function App() {
@@ -8,6 +9,7 @@ export function App() {
       <h1 className="text-2xl font-semibold">{messages.appTitle}</h1>
       <p className="text-muted-foreground">{messages.welcome}</p>
       <Button>{messages.getStarted}</Button>
+      <HealthStatus />
     </main>
   );
 }

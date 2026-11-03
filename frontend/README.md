@@ -20,10 +20,30 @@ make check      # eslint + prettier --check + tsc
 make test       # vitest
 make format     # eslint --fix + prettier --write
 make build      # production build into packages/web/dist
+make api_client # regenerate packages/api-client/src/generated from openapi.json
 ```
 
 The dev server proxies `/api`, `/healthz` and `/readyz` to
 `http://localhost:${API_LOCAL_PORT:-8000}` (the API port-forward from Tilt).
+
+## API client
+
+`packages/api-client` wraps [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) around types
+that [openapi-typescript](https://openapi-ts.dev/) generates from `openapi.json`, the backend's
+OpenAPI spec. Paths, params and bodies are type-checked:
+
+```ts
+import { createApiClient } from "@ehds-relay/api-client";
+
+const api = createApiClient(); // relative URLs, cookies same-origin, X-Requested-By header set
+const { data, error } = await api.GET("/healthz"); // data: { status: string }
+```
+
+`openapi.json` and `src/generated/` are generated and committed; never edit them by hand. After
+changing a route or DTO in the backend, run `make api_client` from the repo root (it dumps the
+spec with `python -m relay.openapi`, which needs no database, then regenerates the types) and
+commit the result. CI fails if they are out of date. From `frontend/`, `make api_client` only
+regenerates the types from the committed spec.
 
 Add a shadcn component to `ui` with `pnpm dlx shadcn@latest add <name>` from `packages/ui`.
 
