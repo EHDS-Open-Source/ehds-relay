@@ -238,7 +238,7 @@ export const zOrganisationUpdateDto = z.object({
  * RevalidationReminderUpdateDTO
  */
 export const zRevalidationReminderUpdateDto = z.object({
-    due_date: z.iso.date().nullable()
+    reminder_date: z.iso.date().nullable()
 });
 
 /**
@@ -400,9 +400,18 @@ export const zDatasetDto = z.object({
     created_at: z.iso.datetime(),
     description: z.string().nullable(),
     id: z.uuid(),
+    last_revalidated_at: z.iso.datetime().nullable(),
+    last_validated_at: z.iso.datetime().nullable(),
     metadata: zDatasetMetadata,
     missing_for_publish: z.array(z.string()).readonly(),
     org_id: z.uuid(),
+    overdue: z.boolean(),
+    published_at: z.iso.datetime().nullable(),
+    reminder_date: z.iso.date().nullable(),
+    reminder_sent_at: z.iso.datetime().nullable(),
+    reminder_set_at: z.iso.datetime().nullable(),
+    reminder_set_by: z.uuid().nullable(),
+    reminder_set_by_name: z.string().nullable(),
     schema_version: z.string(),
     status: zDatasetStatus,
     title: z.string().nullable(),
@@ -426,8 +435,17 @@ export const zDatasetDtoWritable = z.object({
     created_at: z.iso.datetime(),
     description: z.string().nullable(),
     id: z.uuid(),
+    last_revalidated_at: z.iso.datetime().nullable(),
+    last_validated_at: z.iso.datetime().nullable(),
     metadata: zDatasetMetadata,
     org_id: z.uuid(),
+    overdue: z.boolean(),
+    published_at: z.iso.datetime().nullable(),
+    reminder_date: z.iso.date().nullable(),
+    reminder_sent_at: z.iso.datetime().nullable(),
+    reminder_set_at: z.iso.datetime().nullable(),
+    reminder_set_by: z.uuid().nullable(),
+    reminder_set_by_name: z.string().nullable(),
     schema_version: z.string(),
     status: zDatasetStatus,
     title: z.string().nullable(),

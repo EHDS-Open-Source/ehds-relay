@@ -8,6 +8,9 @@ export interface DatasetCardProps {
   /** Shows the Draft chip. */
   draft?: boolean;
   draftLabel?: string;
+  /** Shows the Overdue chip: the dataset is due for revalidation. */
+  overdue?: boolean;
+  overdueLabel?: string;
   /**
    * Renders the link around the card content, so the app picks the router.
    * Receives the class names to put on the link.
@@ -21,6 +24,8 @@ export function DatasetCard({
   description,
   draft = false,
   draftLabel = messages.datasetCard.draft,
+  overdue = false,
+  overdueLabel = messages.datasetCard.overdue,
   renderLink,
 }: DatasetCardProps) {
   return (
@@ -34,9 +39,18 @@ export function DatasetCard({
               <span className="text-base font-semibold tracking-tight">
                 {title}
               </span>
-              {draft ? (
-                <span className="shrink-0 rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
-                  {draftLabel}
+              {draft || overdue ? (
+                <span className="flex shrink-0 gap-1.5">
+                  {draft ? (
+                    <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
+                      {draftLabel}
+                    </span>
+                  ) : null}
+                  {overdue ? (
+                    <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-semibold text-destructive">
+                      {overdueLabel}
+                    </span>
+                  ) : null}
                 </span>
               ) : null}
             </span>

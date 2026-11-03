@@ -11,6 +11,8 @@ import { ConfirmDialog } from "@ehds-relay/ui";
 
 import { DatasetRecord } from "../datasets/DatasetRecord";
 import { MissingFields } from "../datasets/MissingFields";
+import { ReminderDialog } from "../datasets/ReminderDialog";
+import { formatIsoDate, todayIso } from "../datasets/reminderDates";
 import { errorStatus, useDataset, useDeleteDataset } from "../datasets/queries";
 import { useDatasetRoute } from "../datasets/useDatasetRoute";
 import { shellMessages } from "../shell/messages";
@@ -41,6 +43,7 @@ export function DatasetDetailPage() {
   const remove = useDeleteDataset(orgId, datasetId);
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
+  const [reminderOpen, setReminderOpen] = useState(false);
 
   const catalogueLink = (
     <Link
@@ -107,6 +110,13 @@ export function DatasetDetailPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {catalogueLink}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setReminderOpen(true)}
+            >
+              {m.reminder.button}
+            </Button>
             <Link
               to="/orgs/$orgId/datasets/$datasetId/export"
               params={{ orgId, datasetId }}
@@ -140,8 +150,16 @@ export function DatasetDetailPage() {
       <dl className="mb-8 flex flex-wrap items-center gap-x-8 gap-y-3">
         <div className="flex items-center gap-2">
           <dt className="text-sm text-muted-foreground">{m.status}</dt>
-          <dd>
+          <dd className="flex items-center gap-2">
             <StatusBadge status={dataset.status} />
+            {dataset.overdue ? (
+              <span
+                title={m.overdueHint}
+                className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-semibold text-destructive"
+              >
+                {m.overdue}
+              </span>
+            ) : null}
           </dd>
         </div>
         {accessRights ? (
@@ -158,7 +176,32 @@ export function DatasetDetailPage() {
             </time>
           </dd>
         </div>
+        {dataset.last_validated_at ? (
+          <div className="flex items-center gap-2">
+            <dt className="text-sm text-muted-foreground">{m.lastValidated}</dt>
+            <dd>
+              <time dateTime={dataset.last_validated_at}>
+                {dateFormat.format(new Date(dataset.last_validated_at))}
+              </time>
+            </dd>
+          </div>
+        ) : null}
+        <div className="flex items-center gap-2">
+          <dt className="text-sm text-muted-foreground">{m.reminder.fact}</dt>
+          <dd>
+            <ReminderFact
+              date={dataset.reminder_date}
+              setBy={dataset.reminder_set_by_name}
+            />
+          </dd>
+        </div>
       </dl>
+
+      {dataset.overdue ? (
+        <p className="mb-8 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm">
+          {m.overdueHint}
+        </p>
+      ) : null}
 
       {dataset.status === "draft" ? (
         <section
@@ -184,6 +227,14 @@ export function DatasetDetailPage() {
 
       <DatasetRecord metadata={metadata} />
 
+      <ReminderDialog
+        orgId={orgId}
+        datasetId={datasetId}
+        current={dataset.reminder_date}
+        open={reminderOpen}
+        onOpenChange={setReminderOpen}
+      />
+
       {isOwner ? (
         <ConfirmDialog
           open={confirming}
@@ -196,6 +247,29 @@ export function DatasetDetailPage() {
           error={remove.isError ? deleteErrorMessage(remove.error) : undefined}
           onConfirm={confirmDelete}
         />
+      ) : null}
+    </>
+  );
+}
+
+function ReminderFact({
+  date,
+  setBy,
+}: {
+  date: string | null;
+  setBy: string | null;
+}) {
+  if (!date) return <>{m.reminder.none}</>;
+  const passed = date <= todayIso();
+  return (
+    <>
+      <time dateTime={date}>{formatIsoDate(date)}</time>
+      {passed ? ` (${m.reminder.passed})` : null}
+      {setBy ? (
+        <span className="text-muted-foreground">
+          {" "}
+          {m.reminder.setBy.replace("{name}", setBy)}
+        </span>
       ) : null}
     </>
   );

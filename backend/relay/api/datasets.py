@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import Sequence
+from datetime import UTC, date, datetime
 from typing import Annotated, NoReturn
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -9,10 +10,12 @@ from sqlalchemy.orm.exc import StaleDataError
 
 from relay.api.stubs import not_implemented
 from relay.auth.authz import OwnerDep, require_member
-from relay.auth.deps import current_user
+from relay.auth.deps import CurrentUserDep, current_user
 from relay.db import get_session
 from relay.domain.datasets import CURRENT_SCHEMA_VERSION, Dataset, DatasetStatus
+from relay.domain.reminders import set_reminder
 from relay.dtos.dataset import (
+    REMINDER_MAX_YEARS_AHEAD,
     AccessRights,
     DatasetCreateDTO,
     DatasetDTO,
@@ -56,6 +59,13 @@ def _apply_status(ds: Dataset, publish: bool, meta: DatasetMetadata) -> None:
     """
     complete = not meta.missing_for_publish()
     ds.status = (DatasetStatus.PUBLISHED if publish and complete else DatasetStatus.DRAFT).value
+    if ds.status == DatasetStatus.PUBLISHED:
+        _mark_published(ds)
+
+
+def _mark_published(ds: Dataset) -> None:
+    """The record just passed the publish checks: that counts as its latest validation."""
+    ds.published_at = func.now()  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def _check_version(ds: Dataset, version: int) -> None:
@@ -141,6 +151,7 @@ def publish_dataset(
             detail=f"cannot publish, missing: {', '.join(missing)}",
         )
     ds.status = DatasetStatus.PUBLISHED.value
+    _mark_published(ds)
     ds.updated_at = func.now()  # pyright: ignore[reportAttributeAccessIssue]
     _commit(session, ds)
     return ds
@@ -157,10 +168,41 @@ def delete_dataset(
 
 @router.put("/{dataset_id}/revalidation-reminder", response_model=DatasetDTO)
 def set_revalidation_reminder(
-    org_id: uuid.UUID, dataset_id: uuid.UUID, body: RevalidationReminderUpdateDTO
-) -> NoReturn:
-    """Set or clear the date members are reminded to revalidate the metadata."""
-    not_implemented()
+    org_id: uuid.UUID,
+    dataset_id: uuid.UUID,
+    body: RevalidationReminderUpdateDTO,
+    user: CurrentUserDep,
+    session: SessionDep,
+) -> Dataset:
+    """Set, change or clear the date the caller is reminded to revalidate the metadata.
+
+    Any member can do this. It does not change the metadata, so the dataset's version and
+    last-changed time stay as they are.
+    """
+    ds = get_org_dataset(session, org_id, dataset_id)
+    if body.reminder_date is not None:
+        today = datetime.now(UTC).date()
+        if body.reminder_date <= today:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="the reminder date must be in the future",
+            )
+        if body.reminder_date > _years_ahead(today, REMINDER_MAX_YEARS_AHEAD):
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=(
+                    f"the reminder date must be at most {REMINDER_MAX_YEARS_AHEAD} years ahead"
+                ),
+            )
+    set_reminder(session, ds, body.reminder_date, user.id)
+    return ds
+
+
+def _years_ahead(day: date, years: int) -> date:
+    try:
+        return day.replace(year=day.year + years)
+    except ValueError:  # 29 February
+        return day.replace(year=day.year + years, day=28)
 
 
 @router.post("/{dataset_id}/revalidate", response_model=DatasetDTO)

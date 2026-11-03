@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { noRevalidationData } from "../../datasets/fakeServer";
 import {
   filterDatasets,
   readCatalogueFields,
@@ -12,6 +13,7 @@ function ds(
   extra = {},
 ): Dataset {
   return {
+    ...noRevalidationData,
     id,
     org_id: "o",
     title: null,
@@ -38,10 +40,14 @@ const all = [
     health_category: [{ label: "Cardiology", uri: "x" }],
     access_rights: "public",
   }),
-  ds("b", {
-    title: [{ lang: "en", text: "Cancer" }],
-    access_rights: "restricted",
-  }),
+  ds(
+    "b",
+    {
+      title: [{ lang: "en", text: "Cancer" }],
+      access_rights: "restricted",
+    },
+    { status: "published", overdue: true },
+  ),
   ds("c", { title: [{ lang: "en", text: "Other" }] }),
   ds("d", "weird" as never, { title: "Old shape", description: "legacy text" }),
 ].map(readCatalogueFields);
@@ -67,6 +73,16 @@ describe("filterDatasets", () => {
     expect(ids("", "public")).toEqual(["a"]);
     expect(ids("cancer", "public")).toEqual([]);
     expect(ids("cancer", "restricted")).toEqual(["b"]);
+  });
+  it("EDIT-14 reads the overdue flag and filters on it", () => {
+    expect(all.map((d) => d.overdue)).toEqual([false, true, false, false]);
+    expect(filterDatasets(all, "", "all", "overdue").map((d) => d.id)).toEqual([
+      "b",
+    ]);
+    expect(
+      filterDatasets(all, "cancer", "public", "overdue").map((d) => d.id),
+    ).toEqual([]);
+    expect(filterDatasets(all, "", "all", "any")).toHaveLength(4);
   });
   it("keeps datasets without an access level under All only", () => {
     expect(ids("", "non_public")).toEqual([]);

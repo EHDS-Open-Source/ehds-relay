@@ -325,7 +325,10 @@ export interface paths {
         get?: never;
         /**
          * Set Revalidation Reminder
-         * @description Set or clear the date members are reminded to revalidate the metadata.
+         * @description Set, change or clear the date the caller is reminded to revalidate the metadata.
+         *
+         *     Any member can do this. It does not change the metadata, so the dataset's version and
+         *     last-changed time stay as they are.
          */
         put: operations["set_revalidation_reminder_api_v1_organisations__org_id__datasets__dataset_id__revalidation_reminder_put"];
         post?: never;
@@ -579,6 +582,16 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Last Revalidated At
+             * @description When a member last confirmed the metadata is still right
+             */
+            last_revalidated_at: string | null;
+            /**
+             * Last Validated At
+             * @description The later of published_at and last_revalidated_at
+             */
+            last_validated_at: string | null;
             metadata: components["schemas"]["DatasetMetadata"];
             /**
              * Missing For Publish
@@ -590,6 +603,35 @@ export interface components {
              * Format: uuid
              */
             org_id: string;
+            /**
+             * Overdue
+             * @description Published and not validated for a year since last_validated_at
+             */
+            overdue: boolean;
+            /**
+             * Published At
+             * @description When a save last passed the publish checks and left the dataset published
+             */
+            published_at: string | null;
+            /**
+             * Reminder Date
+             * @description When the revalidation reminder is due
+             */
+            reminder_date: string | null;
+            /**
+             * Reminder Sent At
+             * @description When the reminder email went out
+             */
+            reminder_sent_at: string | null;
+            /** Reminder Set At */
+            reminder_set_at: string | null;
+            /**
+             * Reminder Set By
+             * @description Who set the reminder date, and so who it is for
+             */
+            reminder_set_by: string | null;
+            /** Reminder Set By Name */
+            reminder_set_by_name: string | null;
             /** Schema Version */
             schema_version: string;
             status: components["schemas"]["DatasetStatus"];
@@ -947,10 +989,10 @@ export interface components {
         /** RevalidationReminderUpdateDTO */
         RevalidationReminderUpdateDTO: {
             /**
-             * Due Date
-             * @description When to remind members to revalidate the metadata; null clears it
+             * Reminder Date
+             * @description When to remind the member who sets it to revalidate the metadata. Must be after today and at most 5 years ahead; null clears it
              */
-            due_date: string | null;
+            reminder_date: string | null;
         };
         /** TemporalCoverage */
         TemporalCoverage: {

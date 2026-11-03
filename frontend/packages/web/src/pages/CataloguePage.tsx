@@ -16,7 +16,9 @@ import {
   accessFilters,
   filterDatasets,
   readCatalogueFields,
+  revalidationFilters,
   type AccessFilter,
+  type RevalidationFilter,
 } from "./catalogue/filterDatasets";
 import { useOrgName } from "./useOrgName";
 
@@ -26,7 +28,8 @@ const text = shellMessages.catalogue;
 export function CataloguePage() {
   const orgName = useOrgName();
   const { orgId } = route.useParams();
-  const { q = "", access = "all" } = route.useSearch();
+  const { q = "", access = "all", overdue = false } = route.useSearch();
+  const revalidation: RevalidationFilter = overdue ? "overdue" : "any";
   const navigate = useNavigate({ from: route.id });
 
   // Typing is kept locally so the cursor never waits on the router; the URL follows.
@@ -39,7 +42,11 @@ export function CataloguePage() {
   }
   const deferredQuery = useDeferredValue(typed);
 
-  const setSearch = (next: { q?: string; access?: AccessFilter }) =>
+  const setSearch = (next: {
+    q?: string;
+    access?: AccessFilter;
+    overdue?: boolean;
+  }) =>
     void navigate({
       replace: true,
       search: (prev) => {
@@ -47,6 +54,7 @@ export function CataloguePage() {
         return {
           q: merged.q ? merged.q : undefined,
           access: merged.access === "all" ? undefined : merged.access,
+          overdue: merged.overdue ? (true as const) : undefined,
         };
       },
     });
@@ -60,8 +68,8 @@ export function CataloguePage() {
     [list.data],
   );
   const visible = useMemo(
-    () => filterDatasets(cards, deferredQuery, access),
-    [cards, deferredQuery, access],
+    () => filterDatasets(cards, deferredQuery, access, revalidation),
+    [cards, deferredQuery, access, revalidation],
   );
 
   const addButton = (
@@ -113,6 +121,15 @@ export function CataloguePage() {
             label: text.access[value],
           }))}
         />
+        <FilterChips
+          label={text.revalidationLabel}
+          value={revalidation}
+          onChange={(value) => setSearch({ overdue: value === "overdue" })}
+          options={revalidationFilters.map((value) => ({
+            value,
+            label: text.revalidation[value],
+          }))}
+        />
         {visible.length === 0 ? (
           <EmptyState
             title={text.noMatch.title}
@@ -122,7 +139,7 @@ export function CataloguePage() {
                 variant="outline"
                 onClick={() => {
                   setTyped("");
-                  setSearch({ q: "", access: "all" });
+                  setSearch({ q: "", access: "all", overdue: false });
                 }}
               >
                 {text.noMatch.clear}
@@ -137,6 +154,9 @@ export function CataloguePage() {
                 title={d.title || text.untitled}
                 description={d.description}
                 draft={d.draft}
+                overdue={d.overdue}
+                draftLabel={text.draft}
+                overdueLabel={text.overdue}
                 renderLink={({ className, children }) => (
                   <Link
                     to="/orgs/$orgId/datasets/$datasetId"

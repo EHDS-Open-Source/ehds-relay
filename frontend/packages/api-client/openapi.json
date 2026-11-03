@@ -119,6 +119,32 @@
             "title": "Id",
             "type": "string"
           },
+          "last_revalidated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When a member last confirmed the metadata is still right",
+            "title": "Last Revalidated At"
+          },
+          "last_validated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The later of published_at and last_revalidated_at",
+            "title": "Last Validated At"
+          },
           "metadata": {
             "$ref": "#/components/schemas/DatasetMetadata"
           },
@@ -135,6 +161,86 @@
             "format": "uuid",
             "title": "Org Id",
             "type": "string"
+          },
+          "overdue": {
+            "description": "Published and not validated for a year since last_validated_at",
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When a save last passed the publish checks and left the dataset published",
+            "title": "Published At"
+          },
+          "reminder_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the revalidation reminder is due",
+            "title": "Reminder Date"
+          },
+          "reminder_sent_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the reminder email went out",
+            "title": "Reminder Sent At"
+          },
+          "reminder_set_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder Set At"
+          },
+          "reminder_set_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Who set the reminder date, and so who it is for",
+            "title": "Reminder Set By"
+          },
+          "reminder_set_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder Set By Name"
           },
           "schema_version": {
             "title": "Schema Version",
@@ -175,6 +281,15 @@
           "version",
           "created_at",
           "updated_at",
+          "reminder_date",
+          "reminder_set_by",
+          "reminder_set_by_name",
+          "reminder_set_at",
+          "reminder_sent_at",
+          "published_at",
+          "last_revalidated_at",
+          "last_validated_at",
+          "overdue",
           "missing_for_publish"
         ],
         "title": "DatasetDTO",
@@ -1061,7 +1176,7 @@
       "RevalidationReminderUpdateDTO": {
         "additionalProperties": false,
         "properties": {
-          "due_date": {
+          "reminder_date": {
             "anyOf": [
               {
                 "format": "date",
@@ -1071,12 +1186,12 @@
                 "type": "null"
               }
             ],
-            "description": "When to remind members to revalidate the metadata; null clears it",
-            "title": "Due Date"
+            "description": "When to remind the member who sets it to revalidate the metadata. Must be after today and at most 5 years ahead; null clears it",
+            "title": "Reminder Date"
           }
         },
         "required": [
-          "due_date"
+          "reminder_date"
         ],
         "title": "RevalidationReminderUpdateDTO",
         "type": "object"
@@ -2360,7 +2475,7 @@
     },
     "/api/v1/organisations/{org_id}/datasets/{dataset_id}/revalidation-reminder": {
       "put": {
-        "description": "Set or clear the date members are reminded to revalidate the metadata.",
+        "description": "Set, change or clear the date the caller is reminded to revalidate the metadata.\n\nAny member can do this. It does not change the metadata, so the dataset's version and\nlast-changed time stay as they are.",
         "operationId": "set_revalidation_reminder_api_v1_organisations__org_id__datasets__dataset_id__revalidation_reminder_put",
         "parameters": [
           {
