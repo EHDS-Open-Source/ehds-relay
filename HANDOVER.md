@@ -16,10 +16,12 @@ its diff shrinks as they land):
    #13 invitations with email, #14 dataset permissions, publish rules and row-level security.
    If #14 merges before #13, its migration must be re-pointed to follow the invitation migrations.
 
-**Built and browser-checked, but with no pull request yet** (each has its own branch and a
-`HANDOVER.md` on it; they were cut from this branch, so open their pull requests after #8 to #14 merge
-and the diffs are small): sign-in and organisation picker, catalogue with search and filter, dataset
-form, dataset record/edit/export pages.
+**UI pull requests** (open; cut from this branch, so they contain the work of #8 to #14 until those
+merge): #16 sign-in and organisation picker, #17 catalogue with search and filter, #18 dataset form,
+#19 dataset record, edit and export pages. They share a few files (messages, routes, `ui` exports, the
+lockfile and generated API files): merge them one at a time and regenerate the client and lockfile
+instead of hand-merging. On those branches the edit page is not yet wired to the form; this branch
+holds the reconciled, tested result.
 
 **Not built:** the real export route with validation and catalogue export (deliberately deferred until
 after the UI); the invitation page in the web app; the dataset revalidation reminder email.
