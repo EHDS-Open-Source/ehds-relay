@@ -72,9 +72,10 @@ function ProfileForm({
         return;
       }
       setName(data.name);
-      // So the rest of the app shows the new name
-      await store.refresh();
       setSaved(true);
+      // So the rest of the app shows the new name. The name is saved even if this fails;
+      // the next page load picks it up.
+      await store.refresh().catch(() => null);
     } catch {
       setError({ form: text.failed });
     } finally {
