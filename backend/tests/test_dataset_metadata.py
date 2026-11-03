@@ -79,6 +79,12 @@ def test_rejects_invalid(patch: dict[str, Any]) -> None:
         DatasetMetadata.model_validate(patch)
 
 
+def test_quantum_label_error_points_at_the_field() -> None:
+    with pytest.raises(ValidationError) as info:
+        DatasetMetadata.model_validate({"quantum_label": "this is not turtle ."})
+    assert info.value.errors()[0]["loc"] == ("quantum_label",)
+
+
 def test_quantum_label_accepts_turtle() -> None:
     label = '<https://example.org/label> <http://www.w3.org/2000/01/rdf-schema#label> "Q" .'
     assert DatasetMetadata.model_validate({"quantum_label": label}).quantum_label == label
