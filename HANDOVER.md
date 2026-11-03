@@ -1,4 +1,7 @@
-# Handover: dataset metadata → Health DCAT-AP (Turtle)
+# Handover: dataset metadata → Health DCAT-AP (Turtle, JSON-LD, RDF/XML)
+
+This branch is stacked on the metadata-to-Turtle branch (`T-013-map-datasets-to-health-dcat-ap-turtle`).
+Its pull request should target that branch and say it includes that branch's changes until it merges.
 
 Temporary file for picking up this branch; removed before merge.
 
@@ -19,6 +22,17 @@ the release 8 SHACL shapes (public shapes for the minimal one, non-public for th
   expected) and `tests/test_rdf.py` comparing graphs by isomorphism, not strings.
 - `tests/test_dataset_metadata.py`: validation rules (e.g. variables required only for
   structured data, English title preferred for display).
+
+## JSON-LD and RDF/XML
+- `relay/rdf/serialise.py` adds `to_jsonld` and `to_rdfxml` plus `JSONLD_MEDIA_TYPE` and
+  `RDFXML_MEDIA_TYPE`, all exported from `relay.rdf`. They wrap rdflib's built-in serialisers;
+  no new dependency.
+- JSON-LD is flat (`@graph`, blank-node ids) with an inline `@context` built from `vocab.PREFIXES`.
+  No framing and no remote context.
+- RDF/XML uses `pretty-xml`. Its text declares UTF-8, so an HTTP route must encode it as UTF-8.
+- Blank-node ids are random, so tests parse every format back and compare graphs with the golden
+  Turtle (golden examples, a two-dataset catalogue, an empty draft). No new golden files.
+- No HTTP route; the export route (format choice) still belongs to the export work.
 
 ## Next
 1. Don't wire the HTTP export route here: `relay/api/export.py` holds 501 stubs that the
