@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createApiClient } from "./client";
+import { CSRF_HEADER, CSRF_HEADER_VALUE, createApiClient } from "./client";
 
 function stubFetch(body: unknown, status = 200) {
   return vi.fn<(request: Request) => Promise<Response>>(() =>
@@ -28,6 +28,23 @@ describe("createApiClient", () => {
       "/healthz",
     );
     expect(fetch.mock.calls[0]![0].credentials).toBe("same-origin");
+  });
+
+  it("sets the CSRF header on every request, reads and writes", async () => {
+    const fetch = stubFetch({ id: "1" }, 201);
+    const api = createApiClient({ baseUrl: "http://relay.test", fetch });
+
+    await api.GET("/healthz");
+    await api.POST("/api/v1/organisations", {
+      body: { name: "Acme", country: "NL" },
+    });
+
+    const [get, post] = fetch.mock.calls.map(([request]) => request);
+    expect(CSRF_HEADER).toBe("X-Requested-By");
+    expect(get!.headers.get(CSRF_HEADER)).toBe(CSRF_HEADER_VALUE);
+    expect(post!.method).toBe("POST");
+    expect(post!.headers.get(CSRF_HEADER)).toBe(CSRF_HEADER_VALUE);
+    expect(post!.headers.get("Content-Type")).toBe("application/json");
   });
 
   it("rejects unknown paths at compile time", async () => {

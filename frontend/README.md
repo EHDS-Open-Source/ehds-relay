@@ -35,7 +35,7 @@ OpenAPI spec. Paths, params and bodies are type-checked:
 ```ts
 import { createApiClient } from "@ehds-relay/api-client";
 
-const api = createApiClient(); // relative URLs, cookies sent same-origin
+const api = createApiClient(); // relative URLs, cookies same-origin, X-Requested-By header set
 const { data, error } = await api.GET("/healthz"); // data: { status: string }
 ```
 
