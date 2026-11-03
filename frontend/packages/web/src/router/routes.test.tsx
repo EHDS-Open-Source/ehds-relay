@@ -165,7 +165,7 @@ describe("menu", () => {
     );
   });
 
-  it("highlights the item for a page below it", async () => {
+  it("highlights the current item", async () => {
     renderApp("/orgs/demo/settings");
     await screen.findByRole("heading", { level: 1 });
     await userEvent.click(screen.getByRole("button", { name: "Open menu" }));

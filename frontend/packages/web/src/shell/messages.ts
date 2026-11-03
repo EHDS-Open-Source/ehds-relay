@@ -3,7 +3,6 @@
 export const shellMessages = {
   appName: "EHDS Relay",
   menuTitle: "Menu",
-  organisationLabel: "Organisation",
   signOut: "Sign out",
   notBuilt: {
     title: "Not built yet",
