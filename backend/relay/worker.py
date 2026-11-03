@@ -47,7 +47,9 @@ def main() -> None:
             log.error("job queue schema is missing; run the database migrations first")
             sys.exit(1)
     log.info("worker started (smtp=%s:%s)", settings.smtp_host, settings.smtp_port)
-    app.run_worker(install_signal_handlers=True)
+    # The periodic task runs every few seconds; keeping its finished jobs would only grow the
+    # table. Failed jobs stay for inspection.
+    app.run_worker(install_signal_handlers=True, delete_jobs="successful")
 
 
 if __name__ == "__main__":
