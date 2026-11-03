@@ -9,13 +9,21 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from relay.db import Base
 
-# Version of the metadata document layout (HealthDCAT-AP release 8 subset)
-CURRENT_SCHEMA_VERSION = "healthdcat-ap-r8/1"
+# Version of the metadata document layout (Health DCAT-AP release 8, EU minimum metadata)
+CURRENT_SCHEMA_VERSION = "healthdcat-ap-r8/2"
 
 
 class DatasetStatus(StrEnum):
     DRAFT = "draft"
     PUBLISHED = "published"
+
+
+class AccessRights(StrEnum):
+    """Access level of a dataset, mapped to the EU access-right authority table."""
+
+    PUBLIC = "public"
+    RESTRICTED = "restricted"
+    NON_PUBLIC = "non_public"
 
 
 class Dataset(Base):

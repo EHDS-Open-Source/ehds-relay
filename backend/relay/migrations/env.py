@@ -4,7 +4,9 @@ from alembic import context
 from sqlalchemy import create_engine
 
 import relay.domain.datasets  # pyright: ignore[reportUnusedImport] (registers models)
-import relay.domain.organisations  # noqa: F401  # pyright: ignore[reportUnusedImport] (registers models)
+import relay.domain.memberships  # pyright: ignore[reportUnusedImport] (registers models)
+import relay.domain.organisations  # pyright: ignore[reportUnusedImport] (registers models)
+import relay.domain.users  # noqa: F401  # pyright: ignore[reportUnusedImport] (registers models)
 from relay.db import Base
 from relay.settings import get_settings
 

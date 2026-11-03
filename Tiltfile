@@ -101,7 +101,7 @@ k8s_resource(
   labels=['backend'],
 )
 
-# Manual buttons for the local checks (need `make -C backend install` first)
+# Manual buttons for the local checks (need `make install` first)
 local_resource(
   'pytest',
   cmd='make -C backend test',
@@ -113,6 +113,22 @@ local_resource(
 local_resource(
   'lint-typecheck',
   cmd='make -C backend check',
+  trigger_mode=TRIGGER_MODE_MANUAL,
+  auto_init=False,
+  labels=['checks'],
+)
+
+local_resource(
+  'web-lint-typecheck',
+  cmd='make -C frontend check',
+  trigger_mode=TRIGGER_MODE_MANUAL,
+  auto_init=False,
+  labels=['checks'],
+)
+
+local_resource(
+  'vitest',
+  cmd='make -C frontend test',
   trigger_mode=TRIGGER_MODE_MANUAL,
   auto_init=False,
   labels=['checks'],
