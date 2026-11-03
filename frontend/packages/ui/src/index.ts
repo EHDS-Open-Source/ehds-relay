@@ -51,6 +51,13 @@ export {
 export type { NavItem, NavLinkProps, RenderNavLink } from "./layout/types";
 export { FormMessage } from "./components/form-message";
 export { NativeSelect } from "./components/native-select";
+export { Badge, badgeVariants } from "./components/badge";
+export { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/tabs";
+export { CodeBlock, type CodeBlockProps } from "./detail/CodeBlock";
+export { ConfirmDialog, type ConfirmDialogProps } from "./detail/ConfirmDialog";
+export { DetailField, type DetailFieldProps } from "./detail/DetailField";
+export { DetailSection, type DetailSectionProps } from "./detail/DetailSection";
+export { StatusBadge, type StatusBadgeProps } from "./detail/StatusBadge";
 export { cn } from "./lib/utils";
 export { messages } from "./messages";
 export { CardGrid } from "./patterns/CardGrid";

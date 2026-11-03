@@ -51,7 +51,6 @@ function renderApp(
 
 const pages = [
   ["/orgs/demo/catalogue", shellMessages.pages.catalogue.title],
-  ["/orgs/demo/datasets/ds-1", shellMessages.pages.datasetDetail.title],
   ["/orgs/demo/members", shellMessages.pages.members.title],
   ["/orgs/demo/settings", shellMessages.pages.settings.title],
 ] as const;

@@ -10,4 +10,11 @@ export const messages = {
   datasetCard: { draft: "Draft" },
   tagInput: { remove: "Remove" },
   repeatableList: { add: "Add", remove: "Remove" },
+  copy: "Copy",
+  copied: "Copied",
+  copyFailed: "Could not copy",
+  cancel: "Cancel",
+  confirm: "Confirm",
+  statusDraft: "Draft",
+  statusPublished: "Published",
 } as const;

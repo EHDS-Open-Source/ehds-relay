@@ -1,6 +1,6 @@
 import uuid
 from datetime import date, datetime
-from typing import Any, Self
+from typing import Self
 
 from pydantic import Field, computed_field, model_validator
 
@@ -59,8 +59,8 @@ class DatasetDTO(DTO):
     status: DatasetStatus
     title: str | None
     description: str | None
-    # Stored JSON is returned as-is; it was validated on the way in
-    metadata: dict[str, Any] = Field(validation_alias="metadata_doc")
+    # The stored JSON was validated on the way in, so it parses back into the same shape
+    metadata: DatasetMetadata = Field(validation_alias="metadata_doc")
     schema_version: str
     version: int
     created_at: datetime
@@ -69,4 +69,4 @@ class DatasetDTO(DTO):
     @computed_field(description="Mandatory fields still missing before this can be published")
     @property
     def missing_for_publish(self) -> list[str]:
-        return DatasetMetadata.model_validate(self.metadata).missing_for_publish()
+        return self.metadata.missing_for_publish()

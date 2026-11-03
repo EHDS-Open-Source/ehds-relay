@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 
 import { validateCatalogueSearch } from "../pages/catalogue/search";
+import { isExportFormat, type ExportFormat } from "../datasets/download";
 import { CataloguePage } from "../pages/CataloguePage";
 import { DatasetDetailPage } from "../pages/DatasetDetailPage";
 import { DatasetEditPage } from "../pages/DatasetEditPage";
@@ -148,6 +149,10 @@ const datasetEditRoute = createRoute({
 const datasetExportRoute = createRoute({
   getParentRoute: () => orgRoute,
   path: "datasets/$datasetId/export",
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { format?: ExportFormat } =>
+    isExportFormat(search.format) ? { format: search.format } : {},
   component: DatasetExportPage,
 });
 
