@@ -6,4 +6,11 @@ export const messages = {
   openMenu: "Open menu",
   closeMenu: "Close menu",
   menuTitle: "Menu",
+  copy: "Copy",
+  copied: "Copied",
+  copyFailed: "Could not copy",
+  cancel: "Cancel",
+  confirm: "Confirm",
+  statusDraft: "Draft",
+  statusPublished: "Published",
 } as const;
