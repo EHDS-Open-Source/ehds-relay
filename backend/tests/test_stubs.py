@@ -52,7 +52,6 @@ STUBS: list[tuple[str, str, str, Any]] = [
     ),
     ("get", "/api/v1/invitations/{token}", "/api/v1/invitations/abc", None),
     ("post", "/api/v1/invitations/{token}/accept", "/api/v1/invitations/abc/accept", None),
-    ("delete", "/api/v1/organisations/{org_id}/datasets/{dataset_id}", DATASET, None),
     (
         "put",
         "/api/v1/organisations/{org_id}/datasets/{dataset_id}/revalidation-reminder",

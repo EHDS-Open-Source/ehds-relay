@@ -174,7 +174,8 @@ def test_auth_5_non_member_gets_404(
     path: str,
     body: Any,
 ) -> None:
-    dataset = client.post(f"{ORGS}/{org}/datasets", json={}).json()["id"]
+    titled = {"metadata": {"title": [{"text": "Ours"}]}}
+    dataset = client.post(f"{ORGS}/{org}/datasets", json=titled).json()["id"]
     url = f"{ORGS}/{org}" + path.format(user=standard.id, dataset=dataset)
     # The outsider owns an organisation of their own, so they are a signed-in Owner elsewhere
     them = as_user(outsider)

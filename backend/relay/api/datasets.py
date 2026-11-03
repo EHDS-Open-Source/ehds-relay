@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 
 from relay.api.stubs import not_implemented
-from relay.auth.authz import require_member
+from relay.auth.authz import OwnerDep, require_member
 from relay.auth.deps import current_user
 from relay.db import get_session
 from relay.domain.datasets import CURRENT_SCHEMA_VERSION, Dataset, DatasetStatus
@@ -47,6 +47,16 @@ def _apply_metadata(ds: Dataset, meta: DatasetMetadata) -> None:
     ds.updated_at = func.now()  # pyright: ignore[reportAttributeAccessIssue]
 
 
+def _apply_status(ds: Dataset, publish: bool, meta: DatasetMetadata) -> None:
+    """Save and publish publishes only a complete record; anything else is saved as a draft.
+
+    So a published dataset never has missing fields, and saving a draft of a published one
+    takes it back to draft.
+    """
+    complete = not meta.missing_for_publish()
+    ds.status = (DatasetStatus.PUBLISHED if publish and complete else DatasetStatus.DRAFT).value
+
+
 def _check_version(ds: Dataset, version: int) -> None:
     if ds.version != version:
         raise HTTPException(
@@ -69,8 +79,9 @@ def _commit(session: Session, ds: Dataset) -> None:
 
 @router.post("", response_model=DatasetDTO, status_code=status.HTTP_201_CREATED)
 def create_dataset(org_id: uuid.UUID, body: DatasetCreateDTO, session: SessionDep) -> Dataset:
-    ds = Dataset(org_id=org_id, status=DatasetStatus.DRAFT.value)
+    ds = Dataset(org_id=org_id)
     _apply_metadata(ds, body.metadata)
+    _apply_status(ds, body.publish, body.metadata)
     session.add(ds)
     session.commit()
     session.refresh(ds)
@@ -108,15 +119,8 @@ def update_dataset(
 ) -> Dataset:
     ds = _get_dataset(session, org_id, dataset_id)
     _check_version(ds, body.version)
-    if ds.status == DatasetStatus.PUBLISHED:
-        # Published metadata must stay publishable
-        missing = body.metadata.missing_for_publish()
-        if missing:
-            raise HTTPException(
-                status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail=f"published dataset requires: {', '.join(missing)}",
-            )
     _apply_metadata(ds, body.metadata)
+    _apply_status(ds, body.publish, body.metadata)
     _commit(session, ds)
     return ds
 
@@ -142,9 +146,12 @@ def publish_dataset(
 
 
 @router.delete("/{dataset_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
-def delete_dataset(org_id: uuid.UUID, dataset_id: uuid.UUID) -> NoReturn:
-    """Owners only."""
-    not_implemented()
+def delete_dataset(
+    org_id: uuid.UUID, dataset_id: uuid.UUID, _owner: OwnerDep, session: SessionDep
+) -> None:
+    """Delete the dataset for good. Owners only."""
+    session.delete(_get_dataset(session, org_id, dataset_id))
+    session.commit()
 
 
 @router.put("/{dataset_id}/revalidation-reminder", response_model=DatasetDTO)
