@@ -3,6 +3,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import create_engine
 
+import relay.domain.datasets  # pyright: ignore[reportUnusedImport] (registers models)
 import relay.domain.organisations  # noqa: F401  # pyright: ignore[reportUnusedImport] (registers models)
 from relay.db import Base
 from relay.settings import get_settings

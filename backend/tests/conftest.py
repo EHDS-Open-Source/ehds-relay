@@ -26,7 +26,7 @@ def database_url() -> Iterator[str]:
 def client(database_url: str) -> Iterator[TestClient]:
     engine = create_engine(database_url)
     with engine.begin() as conn:
-        conn.execute(text("TRUNCATE organisation"))
+        conn.execute(text("TRUNCATE dataset, organisation"))
     factory = sessionmaker(bind=engine, expire_on_commit=False)
 
     def override() -> Iterator[Session]:
