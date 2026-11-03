@@ -23,7 +23,7 @@ lockfile and generated API files): merge them one at a time and regenerate the c
 instead of hand-merging. On those branches the edit page is not yet wired to the form; this branch
 holds the reconciled, tested result.
 
-**Also built and merged here** (pull requests #21 and #22 are open; the next two have none yet):
+**Also built and merged here** (pull requests #21 to #24 are open):
 - **Export and validation** (#21): the three export routes (`GET .../datasets/{id}/export?format=ttl|jsonld|rdfxml`,
   `POST .../datasets/{id}/validate`, `GET .../catalogue/export?format=`) are real, with offline checks against the
   vendored official Health DCAT-AP release 8 shapes in `backend/relay/rdf/shapes/` (its README gives the source,
@@ -31,10 +31,10 @@ holds the reconciled, tested result.
   dependency: run `make -C backend install` after pulling.
 - **Members and invitations** (#22): the Members page for owners and the public `/invitations/<token>` accept page.
 - **Organisation settings screen:** owners edit the organisation's name and country; the new values show in the
-  header, menu and picker without signing out. Branch `T-043-build-organisation-settings-screen`, no pull request yet.
+  header, menu and picker without signing out. Pull request #24.
 - **Account page:** "Manage my account" opens `/account` (name editable, email read-only, sign out).
   `PATCH /api/v1/me` is real and a migration (`0008`) remembers that a user set their own name, so the sign-in
-  callback no longer overwrites it. Branch `T-032-add-account-page`, no pull request yet.
+  callback no longer overwrites it. Pull request #23.
 
 **Not built:** the dataset revalidation reminder (email, date and overdue flag), notification settings, password
 reset checks, and the other follow-ups listed in the team vault.
