@@ -142,7 +142,10 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update Me */
+        /**
+         * Update Me
+         * @description Change the signed-in user's name, as shown to the other members of their organisations.
+         */
         patch: operations["update_me_api_v1_me_patch"];
         trace?: never;
     };
@@ -833,7 +836,12 @@ export interface components {
             /** Name */
             name: string;
         };
-        /** MeUpdateDTO */
+        /**
+         * MeUpdateDTO
+         * @description Change the signed-in user's name. Once set here, signing in no longer replaces it.
+         *
+         *     The email address belongs to the identity provider and cannot be changed here.
+         */
         MeUpdateDTO: {
             /** Name */
             name: string;
