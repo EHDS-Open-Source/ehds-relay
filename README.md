@@ -65,11 +65,16 @@ cd backend && .venv/bin/alembic revision -m "describe change"
 ```bash
 make install             # also runs pnpm install in frontend/
 make web                 # Vite dev server on http://localhost:5173
+make api_client          # after changing routes or DTOs: regenerate the typed API client
 ```
 
 The dev server proxies `/api`, `/healthz` and `/readyz` to the API on
 `localhost:${API_LOCAL_PORT:-8000}` (e.g. the Tilt port-forward). Set `WEB_PORT` to run it
 on another port. More in `frontend/README.md`.
+
+The API client in `frontend/packages/api-client` is generated from the backend's OpenAPI spec
+(`python -m relay.openapi`, which needs no database). Commit the regenerated spec and client
+with the API change.
 
 ## API
 
