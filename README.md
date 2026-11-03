@@ -1,8 +1,10 @@
 # EHDS Relay
 
-Backend proof of concept: FastAPI + PostgreSQL, run on a local kind cluster with Tilt.
+EHDS Relay is an open-source tool that helps health data holders, such as hospitals, registries and research institutes, describe their datasets and publish that description in Health DCAT-AP, the metadata standard used across the European Health Data Space. We are building it so that people can sign in, create an organisation, invite colleagues, add dataset descriptions through a guided form, and export Health DCAT-AP metadata (Turtle, JSON-LD and RDF/XML) that has been checked against the official rules. It is licensed under AGPL-3.0 (see `LICENSE`).
 
-Not here yet: background worker, Keycloak/OIDC, frontend, gateway.
+This is a work in progress and is not ready for production use, so expect things to change and break. The code on this branch is the early skeleton; the rest is being built in the open and will arrive through pull requests. The quick start below is for local development only.
+
+**Status:** early development, backend skeleton only.
 
 ## Layout
 
