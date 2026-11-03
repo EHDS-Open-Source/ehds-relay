@@ -1,19 +1,32 @@
 import uuid
 from collections.abc import Sequence
-from typing import Annotated
+from typing import Annotated, NoReturn
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 
+from relay.api.stubs import not_implemented
+from relay.auth.deps import current_user
 from relay.db import get_session
 from relay.domain.datasets import CURRENT_SCHEMA_VERSION, Dataset, DatasetStatus
 from relay.domain.organisations import Organisation
-from relay.dtos.dataset import DatasetCreateDTO, DatasetDTO, DatasetPublishDTO, DatasetUpdateDTO
+from relay.dtos.dataset import (
+    AccessRights,
+    DatasetCreateDTO,
+    DatasetDTO,
+    DatasetPublishDTO,
+    DatasetUpdateDTO,
+    RevalidationReminderUpdateDTO,
+)
 from relay.dtos.dataset_metadata import DatasetMetadata
 
-router = APIRouter(prefix="/api/v1/organisations/{org_id}/datasets", tags=["datasets"])
+router = APIRouter(
+    prefix="/api/v1/organisations/{org_id}/datasets",
+    tags=["datasets"],
+    dependencies=[Depends(current_user)],
+)
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
@@ -75,6 +88,14 @@ def list_datasets(
     org_id: uuid.UUID,
     session: SessionDep,
     dataset_status: DatasetStatus | None = None,
+    # Declared so clients can be generated against them; not applied yet
+    q: Annotated[
+        str | None,
+        Query(description="Search title, description, keywords and health data category"),
+    ] = None,
+    access_rights: Annotated[
+        AccessRights | None, Query(description="Only datasets with this access level")
+    ] = None,
 ) -> Sequence[Dataset]:
     _require_org(session, org_id)
     stmt = select(Dataset).where(Dataset.org_id == org_id).order_by(Dataset.created_at)
@@ -125,3 +146,23 @@ def publish_dataset(
     ds.updated_at = func.now()  # pyright: ignore[reportAttributeAccessIssue]
     _commit(session, ds)
     return ds
+
+
+@router.delete("/{dataset_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
+def delete_dataset(org_id: uuid.UUID, dataset_id: uuid.UUID) -> NoReturn:
+    """Owners only."""
+    not_implemented()
+
+
+@router.put("/{dataset_id}/revalidation-reminder", response_model=DatasetDTO)
+def set_revalidation_reminder(
+    org_id: uuid.UUID, dataset_id: uuid.UUID, body: RevalidationReminderUpdateDTO
+) -> NoReturn:
+    """Set or clear the date members are reminded to revalidate the metadata."""
+    not_implemented()
+
+
+@router.post("/{dataset_id}/revalidate", response_model=DatasetDTO)
+def revalidate_dataset(org_id: uuid.UUID, dataset_id: uuid.UUID) -> NoReturn:
+    """Record that the metadata was checked today and move the next reminder a year ahead."""
+    not_implemented()
