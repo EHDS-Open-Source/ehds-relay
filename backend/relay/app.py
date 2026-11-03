@@ -3,7 +3,16 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from relay.api import datasets, health, organisations
+from relay.api import (
+    capabilities,
+    datasets,
+    export,
+    health,
+    invitations,
+    members,
+    organisations,
+    session,
+)
 from relay.settings import get_settings
 
 
@@ -22,4 +31,10 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(organisations.router)
     app.include_router(datasets.router)
+    app.include_router(members.router)
+    app.include_router(invitations.org_router)
+    app.include_router(invitations.router)
+    app.include_router(export.router)
+    app.include_router(session.router)
+    app.include_router(capabilities.router)
     return app
