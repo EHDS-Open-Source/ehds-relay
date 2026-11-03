@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {
+      "@ehds-relay/ui/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "vitest.config.ts", "vitest.setup.ts"]
+}

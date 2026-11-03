@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 
-.PHONY: cluster up down deploy tilt install pip_compile pip_compile_dev test check
+.PHONY: cluster up down deploy tilt web install pip_compile pip_compile_dev test check
 
 # make cluster up | make cluster down [--remove-registries]
 cluster:
@@ -15,8 +15,13 @@ deploy:
 tilt:
 	tilt up
 
+# Frontend dev server (Vite), proxying the API
+web:
+	$(MAKE) -C frontend dev
+
 install:
 	$(MAKE) -C backend install
+	$(MAKE) -C frontend install
 
 pip_compile:
 	$(MAKE) -C backend pip_compile
@@ -26,6 +31,8 @@ pip_compile_dev:
 
 test:
 	$(MAKE) -C backend test
+	$(MAKE) -C frontend test
 
 check:
 	$(MAKE) -C backend check
+	$(MAKE) -C frontend check
