@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 
 from relay.api.stubs import not_implemented
+from relay.auth.deps import current_user
 from relay.db import get_session
 from relay.domain.datasets import CURRENT_SCHEMA_VERSION, Dataset, DatasetStatus
 from relay.domain.organisations import Organisation
@@ -21,7 +22,11 @@ from relay.dtos.dataset import (
 )
 from relay.dtos.dataset_metadata import DatasetMetadata
 
-router = APIRouter(prefix="/api/v1/organisations/{org_id}/datasets", tags=["datasets"])
+router = APIRouter(
+    prefix="/api/v1/organisations/{org_id}/datasets",
+    tags=["datasets"],
+    dependencies=[Depends(current_user)],
+)
 
 SessionDep = Annotated[Session, Depends(get_session)]
 

@@ -1,9 +1,10 @@
 import uuid
 from typing import Annotated, NoReturn
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from relay.api.stubs import not_implemented
+from relay.auth.deps import current_user
 from relay.dtos.invitation import (
     InvitationCreateDTO,
     InvitationDTO,
@@ -13,8 +14,13 @@ from relay.dtos.invitation import (
 from relay.dtos.organisation import OrganisationDTO
 
 # Managed by an organisation's owners
-org_router = APIRouter(prefix="/api/v1/organisations/{org_id}/invitations", tags=["invitations"])
-# Used by the invitee, who may not be a member of anything yet
+org_router = APIRouter(
+    prefix="/api/v1/organisations/{org_id}/invitations",
+    tags=["invitations"],
+    dependencies=[Depends(current_user)],
+)
+# Used by the invitee, who may not be a member of anything yet. The preview is public;
+# accepting needs a session.
 router = APIRouter(prefix="/api/v1/invitations", tags=["invitations"])
 
 
@@ -48,7 +54,11 @@ def get_invitation(token: str) -> NoReturn:
     not_implemented()
 
 
-@router.post("/{token}/accept", response_model=OrganisationDTO)
+@router.post(
+    "/{token}/accept",
+    response_model=OrganisationDTO,
+    dependencies=[Depends(current_user)],
+)
 def accept_invitation(token: str) -> NoReturn:
     """Join the organisation as the signed-in user, with the role given in the invitation."""
     not_implemented()

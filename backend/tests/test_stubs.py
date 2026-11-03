@@ -1,6 +1,7 @@
 """Routes whose shape is defined but whose logic has not landed yet.
 
-These need no database: stubs take no session, so the app is used without overrides.
+These need no database: stubs take no session, and the sign-in check is replaced by a
+dummy user so protected stubs still reach their handler.
 When a route gets real logic, move its case out of STUBS into that area's tests.
 """
 
@@ -11,6 +12,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from relay.app import create_app
+from relay.auth.csrf import CSRF_HEADER, CSRF_HEADER_VALUE
+from relay.auth.deps import current_user
+from relay.domain.users import AppUser
 
 ORG = f"/api/v1/organisations/{uuid.uuid4()}"
 DATASET = f"{ORG}/datasets/{uuid.uuid4()}"
@@ -19,11 +23,7 @@ INVITATION_ID = uuid.uuid4()
 
 # (method, path template as in the OpenAPI spec, concrete URL, JSON body)
 STUBS: list[tuple[str, str, str, Any]] = [
-    ("get", "/api/v1/me", "/api/v1/me", None),
     ("patch", "/api/v1/me", "/api/v1/me", {"name": "Ada"}),
-    ("get", "/api/v1/auth/login", "/api/v1/auth/login", None),
-    ("get", "/api/v1/auth/callback", "/api/v1/auth/callback?code=c&state=s", None),
-    ("post", "/api/v1/auth/logout", "/api/v1/auth/logout", None),
     ("patch", "/api/v1/organisations/{org_id}", ORG, {"name": "Acme"}),
     ("get", "/api/v1/organisations/{org_id}/members", f"{ORG}/members", None),
     (
@@ -101,7 +101,11 @@ STUBS: list[tuple[str, str, str, Any]] = [
 
 @pytest.fixture(scope="module")
 def stub_client() -> TestClient:
-    return TestClient(create_app(), follow_redirects=False)
+    app = create_app()
+    app.dependency_overrides[current_user] = lambda: AppUser(
+        id=uuid.uuid4(), email="ada@example.org", name="Ada"
+    )
+    return TestClient(app, headers={CSRF_HEADER: CSRF_HEADER_VALUE}, follow_redirects=False)
 
 
 @pytest.mark.parametrize(

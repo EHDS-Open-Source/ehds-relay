@@ -7,11 +7,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from relay.api.stubs import not_implemented
+from relay.auth.deps import current_user
 from relay.db import get_session
 from relay.domain.organisations import Organisation
 from relay.dtos.organisation import OrganisationCreateDTO, OrganisationDTO, OrganisationUpdateDTO
 
-router = APIRouter(prefix="/api/v1/organisations", tags=["organisations"])
+router = APIRouter(
+    prefix="/api/v1/organisations", tags=["organisations"], dependencies=[Depends(current_user)]
+)
 
 SessionDep = Annotated[Session, Depends(get_session)]
 

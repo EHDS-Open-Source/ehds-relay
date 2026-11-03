@@ -32,11 +32,27 @@ class Settings(BaseSettings):
     smtp_port: int = 1025
     smtp_from: str = "ehds-relay@example.org"
 
+    # Sign-in and sessions. The browser reaches the API through the web app's origin, so the
+    # OIDC redirect and the session cookie belong to web_url.
+    web_url: str = "http://localhost:5173"
+    oidc_scopes: str = "openid email profile"
+    # Cookies on localhost ignore the port, so checkouts running side by side need different
+    # names or they sign each other out.
+    session_cookie_name: str = "relay_session"
+    # A session ends after this long without a request...
+    session_idle_minutes: int = 60
+    # ...and after this long regardless of activity.
+    session_max_hours: int = 12
+
     @property
     def oidc_discovery_url(self) -> str:
         """Where the API fetches the OIDC discovery document from."""
         base = (self.oidc_internal_url or self.oidc_issuer_url).rstrip("/")
         return f"{base}/.well-known/openid-configuration"
+
+    @property
+    def web_base_url(self) -> str:
+        return self.web_url.rstrip("/")
 
 
 @lru_cache
