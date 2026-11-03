@@ -3,12 +3,15 @@
 import uuid
 from typing import Annotated, NoReturn
 
-from fastapi import APIRouter, Query, Response
+from fastapi import APIRouter, Depends, Query, Response
 
 from relay.api.stubs import not_implemented
+from relay.auth.deps import current_user
 from relay.dtos.export import EXPORT_RESPONSES, ExportFormat, ValidationReportDTO
 
-router = APIRouter(prefix="/api/v1/organisations/{org_id}", tags=["export"])
+router = APIRouter(
+    prefix="/api/v1/organisations/{org_id}", tags=["export"], dependencies=[Depends(current_user)]
+)
 
 FormatQuery = Annotated[ExportFormat, Query(alias="format")]
 

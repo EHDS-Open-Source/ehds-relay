@@ -10,18 +10,20 @@ from fastapi import APIRouter, Query, status
 from fastapi.responses import RedirectResponse
 
 from relay.api.stubs import not_implemented
+from relay.auth.deps import CurrentUserDep
+from relay.domain.users import AppUser
 from relay.dtos.session import MeDTO, MeUpdateDTO
 
 router = APIRouter(prefix="/api/v1", tags=["session"])
 
 
 @router.get("/me", response_model=MeDTO)
-def get_me() -> NoReturn:
-    not_implemented()
+def get_me(user: CurrentUserDep) -> AppUser:
+    return user
 
 
 @router.patch("/me", response_model=MeDTO)
-def update_me(body: MeUpdateDTO) -> NoReturn:
+def update_me(body: MeUpdateDTO, user: CurrentUserDep) -> NoReturn:
     not_implemented()
 
 

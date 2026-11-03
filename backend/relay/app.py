@@ -13,6 +13,7 @@ from relay.api import (
     organisations,
     session,
 )
+from relay.auth.csrf import CSRFMiddleware
 from relay.settings import get_settings
 
 
@@ -21,6 +22,8 @@ def create_app() -> FastAPI:
     logging.basicConfig(level=settings.log_level.upper())
 
     app = FastAPI(title="EHDS Relay API", version="0.1.0")
+    # Added first so it sits inside CORS: its 403s still carry CORS headers
+    app.add_middleware(CSRFMiddleware)
     if settings.cors_origins:
         app.add_middleware(
             CORSMiddleware,
