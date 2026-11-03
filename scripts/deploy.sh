@@ -31,6 +31,8 @@ docker push "$IMAGE_REPO:$IMAGE_TAG"
 
 echo
 echo "=== Helm dependencies ==================================================="
+# helm only resolves a dependency from a repo that is in its repo list (no-op if present)
+helm repo add groundhog2k https://groundhog2k.github.io/helm-charts/
 helm dependency build "$CHART_DIR"
 
 echo
@@ -41,8 +43,12 @@ helm upgrade --install "$RELEASE_NAME" "$CHART_DIR" \
   --set api.image.repository="$IMAGE_REPO" \
   --set api.image.tag="$IMAGE_TAG" \
   --set api.image.pullPolicy=Always \
+  --set mailpit.enabled=true \
   --wait --timeout 5m
 
 echo
-echo "Done. Port-forward the API with:"
+echo "Done. Port-forward what you need (the ports are what the chart's defaults expect):"
 echo "  kubectl --context $KUBE_CONTEXT -n $NAMESPACE port-forward svc/$RELEASE_NAME-api 8000:8000"
+echo "  kubectl --context $KUBE_CONTEXT -n $NAMESPACE port-forward svc/$RELEASE_NAME-keycloak 8080:8080"
+echo "  kubectl --context $KUBE_CONTEXT -n $NAMESPACE port-forward svc/$RELEASE_NAME-mailpit 8025:8025"
+echo "Then 'make web' for the frontend on http://localhost:5173."

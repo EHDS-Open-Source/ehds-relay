@@ -1,0 +1,51 @@
+# Expected output for public_minimal.json: a sparse public dataset. "No" to personal
+# data has no release 8 representation, so it is absent; zero counts are kept.
+
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dcatap: <http://data.europa.eu/r5r/> .
+@prefix cv: <http://data.europa.eu/m8g/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix eli: <http://data.europa.eu/eli/ontology#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix healthdcatap: <http://healthdataportal.eu/ns/health#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://relay.example.org/datasets/bed-occupancy>
+    a dcat:Dataset ;
+    dcat:theme <http://publications.europa.eu/resource/authority/data-theme/HEAL> ;
+    dct:title "Hospital bed occupancy"@en ;
+    dct:description "Weekly aggregate bed occupancy per region."@en ;
+    dct:identifier "bed-occupancy" ;
+    dct:accessRights <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+    dcatap:applicableLegislation <http://data.europa.eu/eli/reg/2025/327/oj> ;
+    dct:temporal [
+        a dct:PeriodOfTime ;
+        dcat:startDate "2023-01-01"^^xsd:date
+    ] ;
+    dcat:distribution [
+        a dcat:Distribution ;
+        dcat:accessURL <https://open.example.org/bed-occupancy> ;
+        dcatap:applicableLegislation <http://data.europa.eu/eli/reg/2025/327/oj>
+    ] ;
+    healthdcatap:hdab [
+        a foaf:Agent ;
+        foaf:name "Health Data Access Body NL" ;
+        cv:contactPoint [
+            a cv:ContactPoint ;
+            rdfs:label "HDAB desk" ;
+            cv:email "hdab-contact@example.org"
+        ]
+    ] ;
+    healthdcatap:healthCategory <https://hdeu-dcat.data.health.europa.eu/resource/authority/healthcategories/HSRES> ;
+    healthdcatap:hasStructuredData false ;
+    healthdcatap:numberOfRecords "0"^^xsd:nonNegativeInteger .
+
+<http://publications.europa.eu/resource/authority/access-right/PUBLIC> a dct:RightsStatement .
+
+<http://data.europa.eu/eli/reg/2025/327/oj> a eli:LegalResource ;
+    rdfs:label "EHDS Regulation" .
+
+<https://hdeu-dcat.data.health.europa.eu/resource/authority/healthcategories/HSRES> a skos:Concept ;
+    skos:prefLabel "Health system resources" .

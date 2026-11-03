@@ -1,0 +1,4 @@
+@import "@ehds-relay/ui/styles.css";
+
+/* Scan the shared ui package too, or its components render unstyled. */
+@source "../../ui/src";

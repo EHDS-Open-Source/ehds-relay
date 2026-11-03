@@ -1,30 +1,38 @@
 import uuid
 from collections.abc import Sequence
-from typing import Annotated
+from typing import Annotated, NoReturn
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 
+from relay.api.stubs import not_implemented
+from relay.auth.authz import OwnerDep, require_member
+from relay.auth.deps import current_user
 from relay.db import get_session
 from relay.domain.datasets import CURRENT_SCHEMA_VERSION, Dataset, DatasetStatus
-from relay.domain.organisations import Organisation
-from relay.dtos.dataset import DatasetCreateDTO, DatasetDTO, DatasetPublishDTO, DatasetUpdateDTO
+from relay.dtos.dataset import (
+    AccessRights,
+    DatasetCreateDTO,
+    DatasetDTO,
+    DatasetPublishDTO,
+    DatasetUpdateDTO,
+    RevalidationReminderUpdateDTO,
+)
 from relay.dtos.dataset_metadata import DatasetMetadata
 
-router = APIRouter(prefix="/api/v1/organisations/{org_id}/datasets", tags=["datasets"])
+router = APIRouter(
+    prefix="/api/v1/organisations/{org_id}/datasets",
+    tags=["datasets"],
+    # Every dataset route is for members of the organisation only; others get 404
+    dependencies=[Depends(current_user), Depends(require_member)],
+)
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
-def _require_org(session: Session, org_id: uuid.UUID) -> None:
-    if session.get(Organisation, org_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="organisation not found")
-
-
 def _get_dataset(session: Session, org_id: uuid.UUID, dataset_id: uuid.UUID) -> Dataset:
-    _require_org(session, org_id)
     ds = session.get(Dataset, dataset_id)
     if ds is None or ds.org_id != org_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="dataset not found")
@@ -33,10 +41,20 @@ def _get_dataset(session: Session, org_id: uuid.UUID, dataset_id: uuid.UUID) -> 
 
 def _apply_metadata(ds: Dataset, meta: DatasetMetadata) -> None:
     ds.metadata_doc = meta.model_dump(mode="json")
-    ds.title = meta.title
-    ds.description = meta.description
+    ds.title = meta.display_title()
+    ds.description = meta.display_description()
     ds.schema_version = CURRENT_SCHEMA_VERSION
     ds.updated_at = func.now()  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def _apply_status(ds: Dataset, publish: bool, meta: DatasetMetadata) -> None:
+    """Save and publish publishes only a complete record; anything else is saved as a draft.
+
+    So a published dataset never has missing fields, and saving a draft of a published one
+    takes it back to draft.
+    """
+    complete = not meta.missing_for_publish()
+    ds.status = (DatasetStatus.PUBLISHED if publish and complete else DatasetStatus.DRAFT).value
 
 
 def _check_version(ds: Dataset, version: int) -> None:
@@ -61,9 +79,9 @@ def _commit(session: Session, ds: Dataset) -> None:
 
 @router.post("", response_model=DatasetDTO, status_code=status.HTTP_201_CREATED)
 def create_dataset(org_id: uuid.UUID, body: DatasetCreateDTO, session: SessionDep) -> Dataset:
-    _require_org(session, org_id)
-    ds = Dataset(org_id=org_id, status=DatasetStatus.DRAFT.value)
+    ds = Dataset(org_id=org_id)
     _apply_metadata(ds, body.metadata)
+    _apply_status(ds, body.publish, body.metadata)
     session.add(ds)
     session.commit()
     session.refresh(ds)
@@ -75,8 +93,15 @@ def list_datasets(
     org_id: uuid.UUID,
     session: SessionDep,
     dataset_status: DatasetStatus | None = None,
+    # Declared so clients can be generated against them; not applied yet
+    q: Annotated[
+        str | None,
+        Query(description="Search title, description, keywords and health data category"),
+    ] = None,
+    access_rights: Annotated[
+        AccessRights | None, Query(description="Only datasets with this access level")
+    ] = None,
 ) -> Sequence[Dataset]:
-    _require_org(session, org_id)
     stmt = select(Dataset).where(Dataset.org_id == org_id).order_by(Dataset.created_at)
     if dataset_status is not None:
         stmt = stmt.where(Dataset.status == dataset_status.value)
@@ -94,15 +119,8 @@ def update_dataset(
 ) -> Dataset:
     ds = _get_dataset(session, org_id, dataset_id)
     _check_version(ds, body.version)
-    if ds.status == DatasetStatus.PUBLISHED:
-        # Published metadata must stay publishable
-        missing = body.metadata.missing_for_publish()
-        if missing:
-            raise HTTPException(
-                status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail=f"published dataset requires: {', '.join(missing)}",
-            )
     _apply_metadata(ds, body.metadata)
+    _apply_status(ds, body.publish, body.metadata)
     _commit(session, ds)
     return ds
 
@@ -125,3 +143,26 @@ def publish_dataset(
     ds.updated_at = func.now()  # pyright: ignore[reportAttributeAccessIssue]
     _commit(session, ds)
     return ds
+
+
+@router.delete("/{dataset_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
+def delete_dataset(
+    org_id: uuid.UUID, dataset_id: uuid.UUID, _owner: OwnerDep, session: SessionDep
+) -> None:
+    """Delete the dataset for good. Owners only."""
+    session.delete(_get_dataset(session, org_id, dataset_id))
+    session.commit()
+
+
+@router.put("/{dataset_id}/revalidation-reminder", response_model=DatasetDTO)
+def set_revalidation_reminder(
+    org_id: uuid.UUID, dataset_id: uuid.UUID, body: RevalidationReminderUpdateDTO
+) -> NoReturn:
+    """Set or clear the date members are reminded to revalidate the metadata."""
+    not_implemented()
+
+
+@router.post("/{dataset_id}/revalidate", response_model=DatasetDTO)
+def revalidate_dataset(org_id: uuid.UUID, dataset_id: uuid.UUID) -> NoReturn:
+    """Record that the metadata was checked today and move the next reminder a year ahead."""
+    not_implemented()
