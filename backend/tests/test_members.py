@@ -113,7 +113,7 @@ def test_mgt_4_removed_member_loses_access_datasets_remain(
     db: sessionmaker[Session],
 ) -> None:
     them = as_user(standard)
-    res = them.post(f"{ORGS}/{org}/datasets", json={"metadata": {"title": "Theirs"}})
+    res = them.post(f"{ORGS}/{org}/datasets", json={"metadata": {"title": [{"text": "Theirs"}]}})
     assert res.status_code == 201
     dataset = res.json()["id"]
 
