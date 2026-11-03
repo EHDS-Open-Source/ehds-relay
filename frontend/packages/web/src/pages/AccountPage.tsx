@@ -31,9 +31,13 @@ export function AccountPage() {
         title={text.title}
         description={text.description}
       />
-      <ProfileForm key={user.id} name={user.name} email={user.email} />
+      <ProfileForm
+        key={`profile-${user.id}`}
+        name={user.name}
+        email={user.email}
+      />
       <OrganisationsSection />
-      <NotificationsSection key={user.id} />
+      <NotificationsSection key={`notifications-${user.id}`} />
     </AccountLayout>
   );
 }
