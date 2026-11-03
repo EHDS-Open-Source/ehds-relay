@@ -31,7 +31,7 @@ def test_display_title_prefers_english() -> None:
 
 
 def test_variables_required_only_when_structured() -> None:
-    doc = full() | {"variables": []}
+    doc: dict[str, Any] = full() | {"variables": []}
     assert DatasetMetadata.model_validate(doc).missing_for_publish() == ["variables"]
     doc["structured_data"] = False
     assert DatasetMetadata.model_validate(doc).missing_for_publish() == []
