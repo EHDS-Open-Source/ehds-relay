@@ -1,0 +1,46 @@
+{{- if .Values.worker.enabled }}
+{{- $repository := .Values.worker.image.repository | default .Values.api.image.repository }}
+{{- $tag := .Values.worker.image.tag | default .Values.api.image.tag }}
+{{- $pullPolicy := .Values.worker.image.pullPolicy | default .Values.api.image.pullPolicy }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ehds-relay.fullname" . }}-worker
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  selector:
+    matchLabels:
+      {{- include "ehds-relay.selectorLabels" (dict "ctx" . "component" "worker") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ehds-relay.selectorLabels" (dict "ctx" . "component" "worker") | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+      containers:
+        - name: worker
+          # Same image as the API; only the command differs
+          image: "{{ $repository }}:{{ $tag }}"
+          imagePullPolicy: {{ $pullPolicy }}
+          {{- if .Values.worker.reload }}
+          # Dev only (used by Tilt): restart the worker when synced code changes
+          command: ["watchfiles", "--target-type", "command", "--filter", "python", "python -m relay.worker", "relay"]
+          {{- else }}
+          command: ["python", "-m", "relay.worker"]
+          {{- end }}
+          env:
+            {{- include "ehds-relay.dbEnv" . | nindent 12 }}
+            {{- include "ehds-relay.smtpEnv" . | trim | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+{{- end }}

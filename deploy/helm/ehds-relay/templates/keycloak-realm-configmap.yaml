@@ -1,0 +1,15 @@
+{{- if .Values.keycloak.enabled }}
+# Realm imported by Keycloak at start-up. The ${RELAY_*} placeholders in the JSON are filled
+# from the Keycloak container's environment (see keycloak-deployment.yaml). The test-user
+# passwords in it are dev-only throwaway values; do not use this realm outside local development.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ehds-relay.fullname" . }}-keycloak-realm
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak
+data:
+  {{ .Values.keycloak.realm }}-realm.json: |-
+    {{- .Files.Get "files/ehds-relay-realm.json" | nindent 4 }}
+{{- end }}
