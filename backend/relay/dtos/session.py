@@ -15,3 +15,13 @@ class MeDTO(DTO):
 
 class MeUpdateDTO(RequestDTO):
     name: str = Field(min_length=1, max_length=200)
+
+
+class LogoutDTO(DTO):
+    """Where the browser goes next to finish signing out.
+
+    Usually the provider's end-session page, which ends its single sign-on session too and then
+    returns to the app's sign-in page.
+    """
+
+    redirect_url: str | None
