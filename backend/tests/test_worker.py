@@ -57,11 +57,26 @@ class _AppWithoutSchema:
         raise AssertionError("must not start")
 
 
+def test_wait_for_schema_retries_then_gives_up() -> None:
+    assert worker.wait_for_schema(_AppWithoutSchema(), attempts=3, delay=0) is False  # pyright: ignore[reportArgumentType]
+
+
+class _UnreachableApp(_AppWithoutSchema):
+    def open(self) -> "_AppWithoutSchema":
+        raise OSError("connection refused")
+
+
+def test_wait_for_schema_survives_unreachable_database() -> None:
+    assert worker.wait_for_schema(_UnreachableApp(), attempts=2, delay=0) is False  # pyright: ignore[reportArgumentType]
+
+
 def test_main_exits_when_schema_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     def build(settings: Settings) -> _AppWithoutSchema:
         return _AppWithoutSchema()
 
     monkeypatch.setattr(worker, "build_app", build)
+    monkeypatch.setattr(worker, "SCHEMA_WAIT_SECONDS", 0)
+    monkeypatch.setattr(worker, "SCHEMA_WAIT_ATTEMPTS", 2)
     with pytest.raises(SystemExit) as exc:
         worker.main()
     assert exc.value.code == 1

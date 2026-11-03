@@ -10,6 +10,7 @@ Procrastinate makes sure each periodic run happens on one worker only, however m
 
 import logging
 import sys
+import time
 
 from procrastinate import App, PsycopgConnector
 
@@ -18,6 +19,9 @@ from relay.jobs.email import send_pending_emails
 from relay.settings import Settings, get_settings
 
 log = logging.getLogger("relay.worker")
+
+SCHEMA_WAIT_ATTEMPTS = 60
+SCHEMA_WAIT_SECONDS = 5.0
 
 # Every 10 seconds (the sixth cron field is seconds)
 EMAIL_CRON = "* * * * * */10"
@@ -36,16 +40,35 @@ def build_app(settings: Settings) -> App:
     return app
 
 
+def wait_for_schema(
+    app: App, attempts: int = SCHEMA_WAIT_ATTEMPTS, delay: float = SCHEMA_WAIT_SECONDS
+) -> bool:
+    """Wait until the job queue's tables exist.
+
+    The API pod's init container runs the migrations, and the worker may start first. Waiting
+    here (rather than exiting at once) also suits the dev live-reload wrapper, which does not
+    restart a command that has exited.
+    """
+    for attempt in range(attempts):
+        try:
+            with app.open():
+                if app.check_connection():
+                    return True
+        except Exception as exc:
+            log.warning("database not reachable yet: %s", exc)
+        if attempt + 1 < attempts:
+            log.info("waiting for the database migrations")
+            time.sleep(delay)
+    return False
+
+
 def main() -> None:
     settings = get_settings()
     logging.basicConfig(level=settings.log_level.upper())
     app = build_app(settings)
-    with app.open():
-        # The API pod's init container runs the migrations; until it has, exit so the
-        # orchestrator restarts the worker later.
-        if not app.check_connection():
-            log.error("job queue schema is missing; run the database migrations first")
-            sys.exit(1)
+    if not wait_for_schema(app, SCHEMA_WAIT_ATTEMPTS, SCHEMA_WAIT_SECONDS):
+        log.error("job queue schema is missing; run the database migrations first")
+        sys.exit(1)
     log.info("worker started (smtp=%s:%s)", settings.smtp_host, settings.smtp_port)
     # The periodic task runs every few seconds; keeping its finished jobs would only grow the
     # table. Failed jobs stay for inspection.

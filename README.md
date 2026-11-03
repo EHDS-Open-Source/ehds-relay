@@ -152,8 +152,8 @@ In Tilt the worker sends to Mailpit: open http://localhost:8025 (`MAILPIT_UI_LOC
 read what was sent. Settings: `RELAY_SMTP_HOST`, `RELAY_SMTP_PORT`, `RELAY_SMTP_FROM`.
 
 The worker's job queue (Procrastinate) keeps its tables in the same database; the Alembic
-migrations create them. If they are missing at start-up the worker exits and is restarted, so
-it waits for the API pod's migrations.
+migrations create them. At start-up the worker waits up to five minutes for them (the API
+pod's init container runs the migrations), then exits so it is restarted.
 
 Invitation links have the form `{RELAY_WEB_URL}/invitations/{token}` and stay valid for
 `RELAY_INVITATION_TTL_DAYS` (default 30) days.
