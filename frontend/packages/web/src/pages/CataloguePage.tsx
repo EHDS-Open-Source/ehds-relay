@@ -1,10 +1,168 @@
+import {
+  Button,
+  CardGrid,
+  DatasetCard,
+  EmptyState,
+  FilterChips,
+  PageHeader,
+  SearchField,
+} from "@ehds-relay/ui";
+import { Link, getRouteApi, useNavigate } from "@tanstack/react-router";
+import { useDeferredValue, useMemo, useState } from "react";
+
+import { $api } from "../api";
 import { shellMessages } from "../shell/messages";
-import { PlaceholderPage } from "./PlaceholderPage";
+import {
+  accessFilters,
+  filterDatasets,
+  readCatalogueFields,
+  type AccessFilter,
+} from "./catalogue/filterDatasets";
 import { useOrgName } from "./useOrgName";
+
+const route = getRouteApi("/orgs/$orgId/catalogue");
+const text = shellMessages.catalogue;
 
 export function CataloguePage() {
   const orgName = useOrgName();
+  const { orgId } = route.useParams();
+  const { q = "", access = "all" } = route.useSearch();
+  const navigate = useNavigate({ from: route.id });
+
+  // Typing is kept locally so the cursor never waits on the router; the URL follows.
+  const [typed, setTyped] = useState(q);
+  const [seenQ, setSeenQ] = useState(q);
+  if (q !== seenQ) {
+    // The URL changed from outside (back button, clear): show it.
+    setSeenQ(q);
+    setTyped(q);
+  }
+  const deferredQuery = useDeferredValue(typed);
+
+  const setSearch = (next: { q?: string; access?: AccessFilter }) =>
+    void navigate({
+      replace: true,
+      search: (prev) => {
+        const merged = { ...prev, ...next };
+        return {
+          q: merged.q ? merged.q : undefined,
+          access: merged.access === "all" ? undefined : merged.access,
+        };
+      },
+    });
+
+  const list = $api.useQuery("get", "/api/v1/organisations/{org_id}/datasets", {
+    params: { path: { org_id: orgId } },
+  });
+
+  const cards = useMemo(
+    () => (Array.isArray(list.data) ? list.data.map(readCatalogueFields) : []),
+    [list.data],
+  );
+  const visible = useMemo(
+    () => filterDatasets(cards, deferredQuery, access),
+    [cards, deferredQuery, access],
+  );
+
+  const addButton = (
+    <Button asChild>
+      <Link to="/orgs/$orgId/datasets/new" params={{ orgId }}>
+        {text.addDataset}
+      </Link>
+    </Button>
+  );
+
+  let body;
+  if (list.isPending) {
+    body = <p role="status">{text.loading}</p>;
+  } else if (list.isError) {
+    body = (
+      <div role="alert" className="flex items-center gap-4">
+        <p>{text.error}</p>
+        <Button variant="outline" onClick={() => void list.refetch()}>
+          {text.retry}
+        </Button>
+      </div>
+    );
+  } else if (cards.length === 0) {
+    body = (
+      <EmptyState
+        title={text.empty.title}
+        description={text.empty.description}
+        action={addButton}
+      />
+    );
+  } else {
+    body = (
+      <div className="flex flex-col gap-6">
+        <SearchField
+          value={typed}
+          onChange={(value) => {
+            setTyped(value);
+            setSearch({ q: value });
+          }}
+          label={text.searchLabel}
+          placeholder={text.searchPlaceholder}
+        />
+        <FilterChips
+          label={text.filterLabel}
+          value={access}
+          onChange={(value) => setSearch({ access: value })}
+          options={accessFilters.map((value) => ({
+            value,
+            label: text.access[value],
+          }))}
+        />
+        {visible.length === 0 ? (
+          <EmptyState
+            title={text.noMatch.title}
+            description={text.noMatch.description}
+            action={
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setTyped("");
+                  setSearch({ q: "", access: "all" });
+                }}
+              >
+                {text.noMatch.clear}
+              </Button>
+            }
+          />
+        ) : (
+          <CardGrid>
+            {visible.map((d) => (
+              <DatasetCard
+                key={d.id}
+                title={d.title || text.untitled}
+                description={d.description}
+                draft={d.draft}
+                renderLink={({ className, children }) => (
+                  <Link
+                    to="/orgs/$orgId/datasets/$datasetId"
+                    params={{ orgId, datasetId: d.id }}
+                    className={className}
+                  >
+                    {children}
+                  </Link>
+                )}
+              />
+            ))}
+          </CardGrid>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <PlaceholderPage eyebrow={orgName} {...shellMessages.pages.catalogue} />
+    <>
+      <PageHeader
+        eyebrow={orgName}
+        title={shellMessages.pages.catalogue.title}
+        description={shellMessages.pages.catalogue.description}
+        actions={cards.length > 0 ? addButton : undefined}
+      />
+      {body}
+    </>
   );
 }

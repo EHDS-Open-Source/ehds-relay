@@ -59,3 +59,12 @@ Routes are org-scoped (`/orgs/$orgId/...`) and defined in code, not generated.
 Signed-in state comes from `packages/web/src/session/stub.ts`, a stand-in with one fake user and organisation until real sign-in exists.
 
 See `../AGENTS.md` for conventions.
+
+## Queries
+
+`$api` in `packages/web/src/api.ts` wraps the same client as typed TanStack Query hooks
+([openapi-react-query](https://openapi-ts.dev/openapi-react-query/)), e.g.
+`$api.useQuery("get", "/api/v1/organisations/{org_id}/datasets", { params: { path: { org_id } } })`.
+After a save that changes the list, invalidate it with the matching key
+(`queryClient.invalidateQueries({ queryKey: ["get", "/api/v1/organisations/{org_id}/datasets"] })`).
+The catalogue searches and filters in the browser over the full list.

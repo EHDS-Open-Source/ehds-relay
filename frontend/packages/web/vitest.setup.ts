@@ -12,11 +12,14 @@ window.scrollTo = () => {};
 // Tests that care about other responses pass their own client or stub fetch.
 vi.stubGlobal(
   "fetch",
-  vi.fn(() =>
-    Promise.resolve(
-      new Response(JSON.stringify({ status: "ok" }), {
+  vi.fn((input: RequestInfo | URL) => {
+    const url = input instanceof Request ? input.url : String(input);
+    // The catalogue lists datasets; an empty organisation by default.
+    const body = url.includes("/datasets") ? [] : { status: "ok" };
+    return Promise.resolve(
+      new Response(JSON.stringify(body), {
         headers: { "Content-Type": "application/json" },
       }),
-    ),
-  ),
+    );
+  }),
 );

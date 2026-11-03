@@ -7,6 +7,7 @@ import {
   rootRouteId,
 } from "@tanstack/react-router";
 
+import { validateCatalogueSearch } from "../pages/catalogue/search";
 import { CataloguePage } from "../pages/CataloguePage";
 import { DatasetDetailPage } from "../pages/DatasetDetailPage";
 import { DatasetEditPage } from "../pages/DatasetEditPage";
@@ -99,6 +100,7 @@ const orgIndexRoute = createRoute({
 const catalogueRoute = createRoute({
   getParentRoute: () => orgRoute,
   path: "catalogue",
+  validateSearch: validateCatalogueSearch,
   component: CataloguePage,
 });
 

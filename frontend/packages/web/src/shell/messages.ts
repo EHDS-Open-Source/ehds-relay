@@ -28,6 +28,31 @@ export const shellMessages = {
       description: "Manage this organisation.",
     },
   },
+  catalogue: {
+    addDataset: "+ Add new dataset",
+    searchLabel: "Search datasets",
+    searchPlaceholder: "Search by title, description, keyword or category",
+    filterLabel: "Access level",
+    access: {
+      all: "All",
+      public: "Public",
+      restricted: "Restricted",
+      non_public: "Non-public",
+    },
+    untitled: "Untitled dataset",
+    loading: "Loading datasets...",
+    error: "The datasets could not be loaded.",
+    retry: "Retry",
+    empty: {
+      title: "No datasets yet",
+      description: "Add your first dataset to start your catalogue.",
+    },
+    noMatch: {
+      title: "No datasets match",
+      description: "Try different words or another access level.",
+      clear: "Clear search and filters",
+    },
+  },
   signIn: {
     title: "Sign in",
     description: "Sign-in is not connected yet. Continue with the demo user.",
