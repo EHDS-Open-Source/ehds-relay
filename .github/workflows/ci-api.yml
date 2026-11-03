@@ -1,0 +1,46 @@
+name: ci-api
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/packages/api-client/**"
+      - ".github/workflows/ci-api.yml"
+  push:
+    branches:
+      - main
+      - mvp-integration
+    paths:
+      - "backend/**"
+      - "frontend/packages/api-client/**"
+      - ".github/workflows/ci-api.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-api-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+
+      # Lint, type check, then pytest. The tests start a throwaway Postgres with
+      # testcontainers, which uses the Docker daemon on the runner.
+      - name: Install, check and test
+        run: make -C backend install check test
