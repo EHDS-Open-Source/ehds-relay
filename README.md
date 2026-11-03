@@ -3,7 +3,7 @@
 Proof of concept: FastAPI + PostgreSQL backend, run on a local kind cluster with Tilt, and a
 React + Vite frontend.
 
-Not here yet: background worker, Keycloak/OIDC, gateway.
+Not here yet: gateway. The worker is a placeholder and nothing signs in through Keycloak yet.
 
 ## Layout
 
@@ -11,7 +11,7 @@ Not here yet: background worker, Keycloak/OIDC, gateway.
 |---|---|
 | `backend/` | Python package `relay` (FastAPI routers in `api/`, request/response DTOs in `dtos/`, SQLAlchemy models in `domain/`, Alembic migrations) and tests |
 | `frontend/` | pnpm workspace: `packages/web` (Vite + React app), `packages/ui` (shared shadcn/ui components and theme), `packages/api-client` (typed API client) |
-| `deploy/helm/ehds-relay/` | Umbrella Helm chart: API + `groundhog2k/postgres` subchart (`postgres.enabled`) |
+| `deploy/helm/ehds-relay/` | Umbrella Helm chart: API, worker, Keycloak (realm in `files/`), Mailpit and the `groundhog2k/postgres` subchart; each has an `enabled` switch |
 | `.kind/`, `scripts/cluster.sh` | Local kind cluster `ehds-relay` and the shared local registries |
 | `Tiltfile` | Dev loop: renders the chart, builds the image, live-syncs code |
 
@@ -24,15 +24,35 @@ pinned in `frontend/package.json`).
 
 ```bash
 make cluster up          # kind cluster "ehds-relay" + registries on localhost:5001-5003
-tilt up                  # deploy postgres + api, live reload
+tilt up                  # deploy everything below, with live reload
 ```
 
-- API: http://localhost:8000 (OpenAPI docs at `/docs`)
-- Postgres: `localhost:5432`, database `relay`, user/password `relay`/`relay`
+| Service | Where | Notes |
+|---|---|---|
+| API | http://localhost:8000 | OpenAPI docs at `/docs` |
+| Web | http://localhost:5173 | Vite dev server on the host (hot module reload), proxies `/api` to the API |
+| Worker | no port | Same image as the API, restarts on code change. A placeholder until the job queue lands |
+| Keycloak | http://localhost:8080 | Admin console `admin`/`admin`; realm `ehds-relay`, client `ehds-relay-bff` |
+| Mailpit | http://localhost:8025 (SMTP `localhost:1025`) | Catches mail from the worker and from Keycloak (sign-up verification, password reset) |
+| Postgres | `localhost:5432` | Database `relay`, user/password `relay`/`relay` |
+
+Keycloak test users in the `ehds-relay` realm (password = username): `owner`, `standard`
+and `invitee` (`<username>@example.org`). They are plain accounts: roles and organisation
+membership live in the app database. All credentials here, including the BFF client secret,
+are throwaway values for local development only. Keycloak runs in dev mode and keeps nothing
+between restarts; the realm is re-imported from
+`deploy/helm/ehds-relay/files/ehds-relay-realm.json` every time it starts.
 
 Tilt and the scripts only ever target the `kind-ehds-relay` context. Settings (cluster
 name, namespace, release name, local ports) are in `.dev.env`, created from
-`.dev.env.example` on first run.
+`.dev.env.example` on first run. Every local port can be changed there so several checkouts
+run side by side; Keycloak's issuer and redirect URLs follow the web, API and Keycloak ports.
+
+Keycloak tokens carry the browser-facing issuer (`http://localhost:8080/realms/ehds-relay`),
+while the API reaches Keycloak at its in-cluster address (`RELAY_OIDC_INTERNAL_URL`). Open
+Keycloak in a browser at `localhost`, not at another hostname, or the issuer will not match.
+Keycloak 26 marks its login cookies `Secure` even over http. Chrome and Firefox accept that on
+`http://localhost`; Safari may not, so use another browser for sign-in there.
 
 Without Tilt: `make deploy` builds and pushes the image and runs `helm upgrade --install`.
 
