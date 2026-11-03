@@ -59,3 +59,14 @@ Routes are org-scoped (`/orgs/$orgId/...`) and defined in code, not generated.
 Signed-in state comes from `packages/web/src/session/stub.ts`, a stand-in with one fake user and organisation until real sign-in exists.
 
 See `../AGENTS.md` for conventions.
+
+## Sign-in and session
+
+Signing in leaves the app: `/sign-in` is our own page, and its "Sign in" and "Create one" links go
+to `/api/v1/auth/login?redirect=...` (plus `signup=true`), which the API turns into redirects to
+Keycloak and back. The app then loads the session once (`GET /api/v1/me` and
+`GET /api/v1/organisations`, see `packages/web/src/session/`) and the route guards read it from
+there. `/orgs` forwards people with no organisation to `/orgs/new` and people with one straight to
+its catalogue. Sign-out posts to `/api/v1/auth/logout` and goes to the sign-out address it returns;
+a 401 from any later call sends the user back to `/sign-in` with the current page as `redirect`.
+Tests use `session/testing.ts`, a store that never calls the API.

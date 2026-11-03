@@ -1,15 +1,13 @@
-import { Button, PageHeader } from "@ehds-relay/ui";
-import { useRouter, useSearch } from "@tanstack/react-router";
+import { Button, FormMessage, PageHeader } from "@ehds-relay/ui";
+import { useSearch } from "@tanstack/react-router";
 
-import { safeRedirect } from "../router/safeRedirect";
-import { useSessionStore } from "../session/useSession";
+import { loginUrl } from "../session/login";
 import { BareLayout } from "../shell/BareLayout";
 import { shellMessages } from "../shell/messages";
 
+/** Our own entry page. Both links leave the app: the API sends the browser on to Keycloak. */
 export function SignInPage() {
-  const { redirect } = useSearch({ from: "/sign-in" });
-  const store = useSessionStore();
-  const router = useRouter();
+  const { redirect, error } = useSearch({ from: "/sign-in" });
 
   return (
     <BareLayout>
@@ -17,15 +15,24 @@ export function SignInPage() {
         title={shellMessages.signIn.title}
         description={shellMessages.signIn.description}
       />
-      <div>
-        <Button
-          onClick={() => {
-            store.signIn();
-            router.history.push(safeRedirect(redirect));
-          }}
-        >
-          {shellMessages.signIn.continue}
+      {error === "signin_failed" ? (
+        <FormMessage className="mb-6">
+          {shellMessages.signIn.failed}
+        </FormMessage>
+      ) : null}
+      <div className="flex flex-col items-start gap-6">
+        <Button asChild>
+          <a href={loginUrl({ redirect })}>{shellMessages.signIn.action}</a>
         </Button>
+        <p className="text-sm text-muted-foreground">
+          {shellMessages.signIn.noAccount}{" "}
+          <a
+            href={loginUrl({ redirect, signup: true })}
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            {shellMessages.signIn.createAccount}
+          </a>
+        </p>
       </div>
     </BareLayout>
   );

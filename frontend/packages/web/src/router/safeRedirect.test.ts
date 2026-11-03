@@ -14,5 +14,8 @@ describe("safeRedirect", () => {
     expect(safeRedirect("https://evil.example/")).toBe("/");
     expect(safeRedirect("//evil.example/")).toBe("/");
     expect(safeRedirect("orgs/demo")).toBe("/");
+    expect(safeRedirect("/\\evil.example")).toBe("/");
+    expect(safeRedirect("/orgs\n/x")).toBe("/");
+    expect(safeRedirect("/orgs\t/x")).toBe("/");
   });
 });

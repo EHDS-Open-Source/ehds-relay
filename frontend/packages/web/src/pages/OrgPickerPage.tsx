@@ -1,10 +1,13 @@
 import { PageHeader } from "@ehds-relay/ui";
 import { Link } from "@tanstack/react-router";
 
+import { countryName } from "../orgs/countries";
 import { useSession } from "../session/useSession";
 import { BareLayout } from "../shell/BareLayout";
 import { shellMessages } from "../shell/messages";
+import { SignOutHint } from "./SignOutHint";
 
+/** Only reached with two or more organisations; with 0 or 1 the route forwards. */
 export function OrgPickerPage() {
   const orgs = useSession()?.orgs ?? [];
 
@@ -20,13 +23,17 @@ export function OrgPickerPage() {
             <Link
               to="/orgs/$orgId/catalogue"
               params={{ orgId: org.id }}
-              className="block rounded-2xl border bg-background px-4 py-3 font-medium hover:bg-accent"
+              className="flex items-baseline justify-between gap-4 rounded-2xl border bg-background px-4 py-3 hover:bg-accent"
             >
-              {org.name}
+              <span className="font-medium">{org.name}</span>
+              <span className="text-sm text-muted-foreground">
+                {countryName(org.country)}
+              </span>
             </Link>
           </li>
         ))}
       </ul>
+      <SignOutHint lead={shellMessages.orgPicker.signOutHint} />
     </BareLayout>
   );
 }
