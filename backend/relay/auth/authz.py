@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from relay.auth.deps import CurrentUserDep
-from relay.db import get_session
+from relay.db import get_session, set_tenant
 from relay.domain.memberships import MemberRole, Membership
 from relay.domain.organisations import Organisation, OrganisationStatus
 
@@ -35,8 +35,9 @@ def require_member(
     ).one_or_none()
     if membership is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="organisation not found")
-    # TODO: set the database's per-request organisation context here once row-level
-    # security lands, and refuse writes to suspended organisations once that is decided.
+    # Every later query in this request sees only this organisation's tenant rows
+    set_tenant(session, org_id)
+    # TODO: refuse writes to suspended organisations once that is decided.
     return membership
 
 

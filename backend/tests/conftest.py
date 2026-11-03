@@ -6,7 +6,7 @@ from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import Engine, create_engine, text
+from sqlalchemy import Engine, create_engine, make_url, text
 from sqlalchemy.orm import Session, sessionmaker
 from testcontainers.community.postgres import PostgresContainer
 
@@ -24,14 +24,50 @@ MakeUser = Callable[..., AppUser]
 SignIn = Callable[[TestClient, AppUser], str]
 
 
+# The app's database role, as in development: it logs in, owns the tables (it runs the
+# migrations), and is neither superuser nor BYPASSRLS, so row-level security applies to it.
+APP_ROLE = "relay"
+APP_PASSWORD = "relay"
+
+
 @pytest.fixture(scope="session")
-def database_url() -> Iterator[str]:
+def _postgres() -> Iterator[tuple[str, str]]:
+    """(superuser URL, app role URL) for a throwaway database migrated to head."""
     with PostgresContainer("postgres:17", driver="psycopg2") as pg:
         url = pg.get_connection_url()
+        admin = create_engine(url)
+        with admin.begin() as conn:
+            conn.execute(text(f"CREATE ROLE {APP_ROLE} LOGIN PASSWORD '{APP_PASSWORD}'"))
+            conn.execute(text(f"GRANT CREATE ON SCHEMA public TO {APP_ROLE}"))
+        admin.dispose()
+        app_url = (
+            make_url(url)
+            .set(username=APP_ROLE, password=APP_PASSWORD)
+            .render_as_string(hide_password=False)
+        )
         cfg = Config("alembic.ini")
-        cfg.attributes["database_url"] = url
+        cfg.attributes["database_url"] = app_url
         command.upgrade(cfg, "head")
-        yield url
+        yield url, app_url
+
+
+@pytest.fixture(scope="session")
+def database_url(_postgres: tuple[str, str]) -> str:
+    """Superuser URL, for arranging and inspecting rows across organisations."""
+    return _postgres[0]
+
+
+@pytest.fixture(scope="session")
+def app_database_url(_postgres: tuple[str, str]) -> str:
+    """The URL the app connects with in tests: the non-superuser table owner."""
+    return _postgres[1]
+
+
+@pytest.fixture
+def app_engine(app_database_url: str) -> Iterator[Engine]:
+    engine = create_engine(app_database_url)
+    yield engine
+    engine.dispose()
 
 
 @pytest.fixture
@@ -51,9 +87,12 @@ def db(engine: Engine) -> sessionmaker[Session]:
 
 
 @pytest.fixture
-def app(db: sessionmaker[Session]) -> FastAPI:
+def app(db: sessionmaker[Session], app_engine: Engine) -> FastAPI:
+    # `db` is requested first so the tables are truncated before the app runs
+    app_sessions = sessionmaker(bind=app_engine, expire_on_commit=False)
+
     def override() -> Iterator[Session]:
-        with db() as session:
+        with app_sessions() as session:
             yield session
 
     app = create_app()

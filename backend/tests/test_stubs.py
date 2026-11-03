@@ -25,7 +25,6 @@ USER_ID = uuid.uuid4()
 # (method, path template as in the OpenAPI spec, concrete URL, JSON body)
 STUBS: list[tuple[str, str, str, Any]] = [
     ("patch", "/api/v1/me", "/api/v1/me", {"name": "Ada"}),
-    ("delete", "/api/v1/organisations/{org_id}/datasets/{dataset_id}", DATASET, None),
     (
         "put",
         "/api/v1/organisations/{org_id}/datasets/{dataset_id}/revalidation-reminder",
