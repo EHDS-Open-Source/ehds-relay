@@ -21,37 +21,10 @@ from relay.domain.users import AppUser
 ORG = f"/api/v1/organisations/{uuid.uuid4()}"
 DATASET = f"{ORG}/datasets/{uuid.uuid4()}"
 USER_ID = uuid.uuid4()
-INVITATION_ID = uuid.uuid4()
 
 # (method, path template as in the OpenAPI spec, concrete URL, JSON body)
 STUBS: list[tuple[str, str, str, Any]] = [
     ("patch", "/api/v1/me", "/api/v1/me", {"name": "Ada"}),
-    (
-        "get",
-        "/api/v1/organisations/{org_id}/invitations",
-        f"{ORG}/invitations?status=pending",
-        None,
-    ),
-    (
-        "post",
-        "/api/v1/organisations/{org_id}/invitations",
-        f"{ORG}/invitations",
-        {"email": "ada@example.org", "role": "standard"},
-    ),
-    (
-        "delete",
-        "/api/v1/organisations/{org_id}/invitations/{invitation_id}",
-        f"{ORG}/invitations/{INVITATION_ID}",
-        None,
-    ),
-    (
-        "post",
-        "/api/v1/organisations/{org_id}/invitations/{invitation_id}/resend",
-        f"{ORG}/invitations/{INVITATION_ID}/resend",
-        None,
-    ),
-    ("get", "/api/v1/invitations/{token}", "/api/v1/invitations/abc", None),
-    ("post", "/api/v1/invitations/{token}/accept", "/api/v1/invitations/abc/accept", None),
     ("delete", "/api/v1/organisations/{org_id}/datasets/{dataset_id}", DATASET, None),
     (
         "put",
