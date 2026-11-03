@@ -33,8 +33,8 @@ def _get_dataset(session: Session, org_id: uuid.UUID, dataset_id: uuid.UUID) -> 
 
 def _apply_metadata(ds: Dataset, meta: DatasetMetadata) -> None:
     ds.metadata_doc = meta.model_dump(mode="json")
-    ds.title = meta.title
-    ds.description = meta.description
+    ds.title = meta.display_title()
+    ds.description = meta.display_description()
     ds.schema_version = CURRENT_SCHEMA_VERSION
     ds.updated_at = func.now()  # pyright: ignore[reportAttributeAccessIssue]
 

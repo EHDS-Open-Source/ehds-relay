@@ -16,3 +16,6 @@ deploy/helm/*/charts/
 
 # Tilt
 tilt_modules/
+
+# Agent worktrees (one per ticket branch)
+.worktrees/
