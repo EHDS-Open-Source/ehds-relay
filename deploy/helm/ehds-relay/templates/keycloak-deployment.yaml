@@ -1,0 +1,100 @@
+{{- if .Values.keycloak.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ehds-relay.fullname" . }}-keycloak
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak
+spec:
+  replicas: 1
+  # One pod at a time: dev mode keeps its data in the pod and is memory hungry
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "ehds-relay.selectorLabels" (dict "ctx" . "component" "keycloak") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ehds-relay.selectorLabels" (dict "ctx" . "component" "keycloak") | nindent 8 }}
+      annotations:
+        # Roll the pod when the realm changes (it is only imported at start-up)
+        checksum/realm: {{ include (print $.Template.BasePath "/keycloak-realm-configmap.yaml") . | sha256sum }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: keycloak
+          image: "{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}"
+          imagePullPolicy: {{ .Values.keycloak.image.pullPolicy }}
+          args: ["start-dev", "--import-realm"]
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: management
+              containerPort: 9000
+          envFrom:
+            - secretRef:
+                name: {{ include "ehds-relay.fullname" . }}-keycloak
+          env:
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            # Tokens and browser redirects use this address. Back-channel endpoints (token,
+            # keys) follow the address the caller used, so pods can reach them in-cluster.
+            - name: KC_HOSTNAME
+              value: {{ .Values.keycloak.hostname | quote }}
+            - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
+              value: "true"
+            # Filled into the ${RELAY_*} placeholders of the realm JSON
+            - name: RELAY_WEB_URL
+              value: {{ trimSuffix "/" (.Values.keycloak.webUrl | default (include "ehds-relay.webUrl" .)) | quote }}
+            - name: RELAY_API_URL
+              value: {{ trimSuffix "/" .Values.keycloak.apiUrl | quote }}
+            - name: RELAY_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ehds-relay.oidcSecretName" . }}
+                  key: OIDC_CLIENT_SECRET
+            - name: RELAY_SMTP_HOST
+              value: {{ include "ehds-relay.smtpHost" . | default "localhost" | quote }}
+            - name: RELAY_SMTP_PORT
+              value: {{ .Values.smtp.port | quote }}
+            - name: RELAY_SMTP_FROM
+              value: {{ .Values.smtp.from | quote }}
+          volumeMounts:
+            - name: realm
+              mountPath: /opt/keycloak/data/import
+              readOnly: true
+          # The first dev-mode start builds and imports before it listens: give it time
+          startupProbe:
+            httpGet:
+              path: /health/ready
+              port: management
+            periodSeconds: 5
+            failureThreshold: 90
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: management
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: management
+            periodSeconds: 10
+            failureThreshold: 6
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.keycloak.resources | nindent 12 }}
+      volumes:
+        - name: realm
+          configMap:
+            name: {{ include "ehds-relay.fullname" . }}-keycloak-realm
+{{- end }}
