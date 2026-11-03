@@ -6,18 +6,12 @@ import {
   SideMenuDivider,
   SideMenuItem,
 } from "@ehds-relay/ui";
-import {
-  Link,
-  Outlet,
-  useLocation,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
+import { Link, Outlet, useLocation, useParams } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { HealthStatus } from "../HealthStatus";
 
-import { useSession, useSessionStore } from "../session/useSession";
+import { useSession, useSignOut } from "../session/useSession";
 import { shellMessages } from "./messages";
 import { accountNavItems, activeNavId, coreNavItems, navLabels } from "./nav";
 import { renderOrgLink, renderRootLink } from "./RouterLink";
@@ -27,8 +21,7 @@ export function OrgLayout() {
   const { orgId } = useParams({ from: "/orgs/$orgId" });
   const pathname = useLocation({ select: (location) => location.pathname });
   const session = useSession();
-  const store = useSessionStore();
-  const navigate = useNavigate();
+  const signOutAndLeave = useSignOut();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const org = session?.orgs.find((candidate) => candidate.id === orgId);
@@ -38,13 +31,17 @@ export function OrgLayout() {
   const items = coreNavItems.filter(
     (item) => !item.requires || item.requires === org.role,
   );
+  // Choosing between organisations only makes sense with more than one.
+  const accountItems = accountNavItems.filter(
+    (item) =>
+      item.id !== "switch-organisation" || (session?.orgs.length ?? 0) > 1,
+  );
   const closeMenu = () => {
     setMenuOpen(false);
   };
   const signOut = () => {
     closeMenu();
-    store.signOut();
-    void navigate({ to: "/sign-in" });
+    void signOutAndLeave();
   };
 
   return (
@@ -83,12 +80,14 @@ export function OrgLayout() {
           onNavigate={closeMenu}
         />
         <SideMenuDivider />
-        <NavList
-          label={navLabels.account}
-          items={accountNavItems}
-          renderLink={renderRootLink}
-          onNavigate={closeMenu}
-        />
+        {accountItems.length > 0 ? (
+          <NavList
+            label={navLabels.account}
+            items={accountItems}
+            renderLink={renderRootLink}
+            onNavigate={closeMenu}
+          />
+        ) : null}
         <SideMenuItem danger onClick={signOut}>
           {shellMessages.signOut}
         </SideMenuItem>

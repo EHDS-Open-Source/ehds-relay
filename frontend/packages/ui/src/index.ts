@@ -12,5 +12,9 @@ export {
   type SideMenuProps,
 } from "./layout/SideMenu";
 export type { NavItem, NavLinkProps, RenderNavLink } from "./layout/types";
+export { FormMessage } from "./components/form-message";
+export { Input } from "./components/input";
+export { Label } from "./components/label";
+export { NativeSelect } from "./components/native-select";
 export { cn } from "./lib/utils";
 export { messages } from "./messages";

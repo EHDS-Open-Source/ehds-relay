@@ -31,16 +31,21 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  beforeLoad: ({ context }) => {
-    throw redirect({ to: context.session.get() ? "/orgs" : "/sign-in" });
+  beforeLoad: async ({ context }) => {
+    const session = await context.session.load();
+    throw redirect({ to: session ? "/orgs" : "/sign-in" });
   },
 });
 
 const signInRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "sign-in",
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
-    typeof search.redirect === "string" ? { redirect: search.redirect } : {},
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { redirect?: string; error?: string } => ({
+    ...(typeof search.redirect === "string" && { redirect: search.redirect }),
+    ...(typeof search.error === "string" && { error: search.error }),
+  }),
   component: SignInPage,
 });
 
@@ -48,8 +53,8 @@ const signInRoute = createRoute({
 const orgsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "orgs",
-  beforeLoad: ({ context, location }) => {
-    if (!context.session.get()) {
+  beforeLoad: async ({ context, location }) => {
+    if (!(await context.session.load())) {
       throw redirect({
         to: "/sign-in",
         search: { redirect: location.href },
@@ -62,6 +67,17 @@ const orgsRoute = createRoute({
 const orgPickerRoute = createRoute({
   getParentRoute: () => orgsRoute,
   path: "/",
+  // Nobody has to pick when there is nothing or only one thing to pick.
+  beforeLoad: ({ context }) => {
+    const orgs = context.session.get()?.orgs ?? [];
+    if (orgs.length === 0) throw redirect({ to: "/orgs/new" });
+    if (orgs.length === 1) {
+      throw redirect({
+        to: "/orgs/$orgId/catalogue",
+        params: { orgId: orgs[0]!.id },
+      });
+    }
+  },
   component: OrgPickerPage,
 });
 
