@@ -8,8 +8,8 @@ Members can set a date to be reminded to revalidate a dataset's metadata. Publis
 have gone a year without validation are flagged "Overdue". This branch was cut from `mvp-integration`.
 
 ## Status
-- Backend: done and tested.
-- Frontend: in progress (see the end of this file).
+Done and tested: 351 backend tests and 254 frontend tests pass, and `make check` and the frontend
+build pass. A manual check in the browser is still left (see "Next").
 
 ## Backend
 - `PUT /api/v1/organisations/{org_id}/datasets/{dataset_id}/revalidation-reminder` with body
@@ -55,6 +55,29 @@ have gone a year without validation are flagged "Overdue". This branch was cut f
 - The story asks for the change to be "written to the audit log", but there is no audit log yet.
   For now, who set the date and when is stored on the dataset.
 
+## Frontend
+- **Record page** (`pages/DatasetDetailPage.tsx`):
+  - A "Set reminder" button sits between "Back to catalogue" and the other actions. It opens
+    `datasets/ReminderDialog.tsx`, a date input that starts at the current date if it is still
+    ahead, otherwise one year from today.
+  - In the dialog, "Save reminder" saves the date and "Remove reminder" (shown only when a date is
+    set) clears it. Today, past dates, empty or impossible dates and dates more than 5 years ahead
+    are refused before any call to the server. Server errors are shown as plain messages.
+  - The record's facts show the reminder date and who set it. A date that has passed is marked
+    "date passed".
+  - The facts also show "Last validated", and an "Overdue" label with a short explanation when the
+    dataset is overdue.
+- **Catalogue**:
+  - `DatasetCard` in `ui` has an `overdue` prop that shows an "Overdue" chip.
+  - The catalogue has a "Revalidation" chip group (Any / Overdue only), kept in the URL as
+    `?overdue=true`.
+- The date helpers are in `datasets/reminderDates.ts`. The mutation is `useSetReminder` in
+  `datasets/queries.ts`. All strings are in `shell/messages.ts`.
+
 ## Next
-- Frontend: a "Set reminder" dialog on the record, the reminder date and "Overdue" label on the
-  record, an "Overdue" chip on catalogue cards, and an overdue filter in the catalogue.
+- Manual check in the browser: set, change and remove a reminder on a record. Then, to see the
+  Overdue chip, make a dataset's `published_at` more than a year old in the database.
+- The reminder email work can use `due_revalidation_reminders` and
+  `mark_revalidation_reminder_sent`.
+- The planned Revalidate action should set `last_revalidated_at` and could move the reminder a
+  year ahead.
