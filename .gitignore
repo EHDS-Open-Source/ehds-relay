@@ -11,6 +11,14 @@ __pycache__/
 .coverage
 htmlcov/
 
+# Node / frontend
+node_modules/
+dist/
+.vite/
+coverage/
+*.tsbuildinfo
+.eslintcache
+
 # Helm dependencies (restored by `helm dependency build`)
 deploy/helm/*/charts/
 
