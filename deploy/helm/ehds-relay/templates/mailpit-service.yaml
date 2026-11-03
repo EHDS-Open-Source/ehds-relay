@@ -1,0 +1,19 @@
+{{- if .Values.mailpit.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ehds-relay.fullname" . }}-mailpit
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mailpit
+spec:
+  selector:
+    {{- include "ehds-relay.selectorLabels" (dict "ctx" . "component" "mailpit") | nindent 4 }}
+  ports:
+    - name: smtp
+      port: {{ .Values.smtp.port }}
+      targetPort: smtp
+    - name: http
+      port: {{ .Values.mailpit.service.uiPort }}
+      targetPort: http
+{{- end }}

@@ -1,0 +1,81 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  filterDatasets,
+  readCatalogueFields,
+  type Dataset,
+} from "./filterDatasets";
+
+function ds(
+  id: string,
+  metadata: Record<string, unknown>,
+  extra = {},
+): Dataset {
+  return {
+    id,
+    org_id: "o",
+    title: null,
+    description: null,
+    status: "draft",
+    metadata,
+    schema_version: "1",
+    version: 1,
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+    missing_for_publish: [],
+    ...extra,
+  };
+}
+
+const all = [
+  ds("a", {
+    title: [
+      { lang: "en", text: "Diabetes Registry" },
+      { lang: "fr", text: "Registre du diabete" },
+    ],
+    description: [{ lang: "en", text: "Adult patients" }],
+    keyword: ["insulin"],
+    health_category: [{ label: "Cardiology", uri: "x" }],
+    access_rights: "public",
+  }),
+  ds("b", {
+    title: [{ lang: "en", text: "Cancer" }],
+    access_rights: "restricted",
+  }),
+  ds("c", { title: [{ lang: "en", text: "Other" }] }),
+  ds("d", "weird" as never, { title: "Old shape", description: "legacy text" }),
+].map(readCatalogueFields);
+
+const ids = (q: string, access: Parameters<typeof filterDatasets>[2] = "all") =>
+  filterDatasets(all, q, access).map((d) => d.id);
+
+describe("filterDatasets", () => {
+  it("returns everything for an empty search", () => {
+    expect(ids("  ")).toEqual(["a", "b", "c", "d"]);
+  });
+  it.each([
+    ["DIABETES", ["a"]],
+    ["registre", ["a"]],
+    ["adult", ["a"]],
+    ["insulin", ["a"]],
+    ["cardio", ["a"]],
+    ["legacy", ["d"]],
+    ["nothing", []],
+  ])("matches %s", (q, expected) => expect(ids(q)).toEqual(expected));
+
+  it("combines the chip with search", () => {
+    expect(ids("", "public")).toEqual(["a"]);
+    expect(ids("cancer", "public")).toEqual([]);
+    expect(ids("cancer", "restricted")).toEqual(["b"]);
+  });
+  it("keeps datasets without an access level under All only", () => {
+    expect(ids("", "non_public")).toEqual([]);
+    expect(ids("other")).toEqual(["c"]);
+  });
+  it("falls back to the plain title and description", () => {
+    expect(all[3]).toMatchObject({
+      title: "Old shape",
+      description: "legacy text",
+    });
+  });
+});
