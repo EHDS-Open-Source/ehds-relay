@@ -243,7 +243,7 @@ export interface paths {
         post?: never;
         /**
          * Delete Dataset
-         * @description Owners only.
+         * @description Delete the dataset for good. Owners only.
          */
         delete: operations["delete_dataset_api_v1_organisations__org_id__datasets__dataset_id__delete"];
         options?: never;
@@ -506,18 +506,6 @@ export interface components {
          */
         AccessRights: "public" | "restricted" | "non_public";
         /**
-         * Agent
-         * @description foaf:Agent (publisher, creator, health data access body).
-         */
-        Agent: {
-            /** Email */
-            email?: string | null;
-            /** Name */
-            name: string;
-            /** Url */
-            url?: string | null;
-        };
-        /**
          * CapabilitiesDTO
          * @description What this deployment offers, so the UI can show or hide features.
          */
@@ -546,58 +534,22 @@ export interface components {
              */
             vocabulary_lookup: boolean;
         };
-        /**
-         * Column
-         * @description csvw:Column.
-         */
-        Column: {
-            /**
-             * Datatype
-             * @description csvw:datatype
-             */
-            datatype: string;
-            /**
-             * Description
-             * @description dct:description
-             */
-            description: string[];
-            /**
-             * Name
-             * @description csvw:name
-             */
-            name: string;
-            /**
-             * Property Url
-             * @description csvw:propertyUrl
-             */
-            property_url?: string | null;
-            /**
-             * Titles
-             * @description csvw:titles
-             */
-            titles: string[];
-        };
-        /**
-         * ContactPoint
-         * @description vcard:Kind. At least one of email or contact_page is required.
-         */
+        /** ContactPoint */
         ContactPoint: {
-            /**
-             * Contact Page
-             * @description vcard:hasURL
-             */
-            contact_page?: string | null;
-            /**
-             * Email
-             * @description vcard:hasEmail
-             */
-            email?: string | null;
+            /** Email */
+            email: string;
             /** Name */
-            name?: string | null;
+            name: string;
         };
         /** DatasetCreateDTO */
         DatasetCreateDTO: {
-            metadata?: components["schemas"]["DatasetMetadata"];
+            metadata: components["schemas"]["DatasetMetadata"];
+            /**
+             * Publish
+             * @description Save and publish: publish if nothing is missing, otherwise save as a draft and report what is missing. False saves a draft, which also takes a published dataset back to draft.
+             * @default false
+             */
+            publish: boolean;
         };
         /** DatasetDTO */
         DatasetDTO: {
@@ -642,110 +594,57 @@ export interface components {
         };
         /** DatasetMetadata */
         DatasetMetadata: {
-            /**
-             * Access Rights
-             * @description dct:accessRights
-             */
-            access_rights?: string | null;
-            /**
-             * Applicable Legislation
-             * @description r5r:applicableLegislation
-             */
-            applicable_legislation?: string[];
-            /**
-             * Contact Points
-             * @description dcat:contactPoint
-             */
+            access_rights?: components["schemas"]["AccessRights"] | null;
+            /** Applicable Legislation */
+            applicable_legislation?: components["schemas"]["Term"][];
+            /** Code Values */
+            code_values?: string[];
+            /** Coding System */
+            coding_system?: components["schemas"]["Term"][];
+            /** Conforms To */
+            conforms_to?: components["schemas"]["Term"][];
+            /** Contact Points */
             contact_points?: components["schemas"]["ContactPoint"][];
-            /**
-             * Creator
-             * @description dct:creator
-             */
-            creator?: components["schemas"]["Agent"][];
-            /**
-             * Dataset Version
-             * @description dcat:version
-             */
-            dataset_version?: string | null;
-            /**
-             * Description
-             * @description dct:description
-             */
-            description?: string | null;
-            /**
-             * Distributions
-             * @description dcat:distribution
-             */
+            /** Description */
+            description?: components["schemas"]["LangText"][];
+            /** Distributions */
             distributions?: components["schemas"]["Distribution"][];
-            /**
-             * Frequency
-             * @description dct:accrualPeriodicity
-             */
-            frequency?: string | null;
-            /**
-             * Geographical Coverage
-             * @description dct:spatial
-             */
-            geographical_coverage?: string[];
+            /** Generated By */
+            generated_by?: components["schemas"]["Term"][];
+            /** Geographical Coverage */
+            geographical_coverage?: components["schemas"]["Term"][];
+            /** Has Personal Data */
+            has_personal_data?: boolean | null;
             /** Health Category */
-            health_category?: string[];
-            health_data_access_body?: components["schemas"]["Agent"] | null;
+            health_category?: components["schemas"]["Term"][];
+            health_data_access_body?: components["schemas"]["Organisation"] | null;
+            health_data_holder?: components["schemas"]["Organisation"] | null;
             /** Health Theme */
-            health_theme?: string[];
-            /**
-             * Identifier
-             * @description dct:identifier
-             */
+            health_theme?: components["schemas"]["Term"][];
+            /** Identifier */
             identifier?: string[];
-            /**
-             * Keyword
-             * @description dcat:keyword
-             */
+            /** Keyword */
             keyword?: string[];
-            /**
-             * Language
-             * @description dct:language
-             */
-            language?: string[];
-            /** Maximum Typical Age */
-            maximum_typical_age?: number | null;
-            /** Minimum Typical Age */
-            minimum_typical_age?: number | null;
-            /**
-             * Modification Date
-             * @description dct:modified
-             */
-            modification_date?: string | null;
+            /** Language */
+            language?: components["schemas"]["Term"][];
             /** Number Of Records */
             number_of_records?: number | null;
             /** Number Of Unique Individuals */
             number_of_unique_individuals?: number | null;
-            /** Population Coverage */
-            population_coverage?: string[];
-            /** @description dct:publisher */
-            publisher?: components["schemas"]["Agent"] | null;
-            /**
-             * Release Date
-             * @description dct:issued
-             */
-            release_date?: string | null;
-            /**
-             * Structured Data
-             * @description healthdcatap:hasStructuredData
-             */
+            /** Provenance */
+            provenance?: string | null;
+            publisher?: components["schemas"]["Publisher"] | null;
+            /** Quantum Label */
+            quantum_label?: string | null;
+            /** Structured Data */
             structured_data?: boolean | null;
-            /**
-             * Temporal Coverage
-             * @description dct:temporal, e.g. 2020-01-01/2022-12-31
-             */
-            temporal_coverage?: string[];
-            /**
-             * Title
-             * @description dct:title
-             */
-            title?: string | null;
-            /** @description healthdcatap:hasVariables */
-            variables?: components["schemas"]["Variables"] | null;
+            temporal_coverage?: components["schemas"]["TemporalCoverage"] | null;
+            /** Title */
+            title?: components["schemas"]["LangText"][];
+            /** Type */
+            type?: components["schemas"]["Term"][];
+            /** Variables */
+            variables?: components["schemas"]["Variable"][];
         };
         /** DatasetPublishDTO */
         DatasetPublishDTO: {
@@ -764,64 +663,30 @@ export interface components {
         DatasetUpdateDTO: {
             metadata: components["schemas"]["DatasetMetadata"];
             /**
+             * Publish
+             * @description Save and publish: publish if nothing is missing, otherwise save as a draft and report what is missing. False saves a draft, which also takes a published dataset back to draft.
+             * @default false
+             */
+            publish: boolean;
+            /**
              * Version
              * @description Version last read by the client; 409 if stale
              */
             version: number;
         };
-        /**
-         * Distribution
-         * @description dcat:Distribution.
-         */
+        /** Distribution */
         Distribution: {
             /**
              * Access Url
-             * @description dcat:accessURL
+             * Format: uri
              */
-            access_url: string[];
-            /**
-             * Applicable Legislation
-             * @description r5r:applicableLegislation
-             */
-            applicable_legislation: string[];
-            /**
-             * Byte Size
-             * @description dcat:byteSize
-             */
-            byte_size?: number | null;
-            /**
-             * Description
-             * @description dct:description
-             */
+            access_url: string;
+            /** Applicable Legislation */
+            applicable_legislation: components["schemas"]["Term"][];
+            /** Description */
             description?: string | null;
-            /**
-             * Download Url
-             * @description dcat:downloadURL
-             */
-            download_url?: string[];
-            /**
-             * Format
-             * @description dct:format
-             */
-            format?: string | null;
-            /**
-             * Licence
-             * @description dct:license
-             */
-            licence?: string | null;
-            /**
-             * Media Type
-             * @description dcat:mediaType
-             */
-            media_type?: string | null;
-            /** Modification Date */
-            modification_date?: string | null;
-            /** Release Date */
-            release_date?: string | null;
-            /**
-             * Title
-             * @description dct:title
-             */
+            format?: components["schemas"]["Term"] | null;
+            /** Title */
             title?: string | null;
         };
         /**
@@ -922,6 +787,19 @@ export interface components {
          */
         InvitationStatus: "pending" | "accepted" | "cancelled" | "expired";
         /**
+         * LangText
+         * @description A text in one language.
+         */
+        LangText: {
+            /**
+             * Lang
+             * @default en
+             */
+            lang: string;
+            /** Text */
+            text: string;
+        };
+        /**
          * LogoutDTO
          * @description Where the browser goes next to finish signing out.
          *
@@ -983,6 +861,16 @@ export interface components {
         MemberUpdateDTO: {
             role: components["schemas"]["MemberRole"];
         };
+        /**
+         * Organisation
+         * @description An organisation: health data access body or health data holder.
+         */
+        Organisation: {
+            contact_point?: components["schemas"]["ContactPoint"] | null;
+            /** Name */
+            name: string;
+            type?: components["schemas"]["Term"] | null;
+        };
         /** OrganisationCreateDTO */
         OrganisationCreateDTO: {
             /**
@@ -1031,6 +919,15 @@ export interface components {
             /** Name */
             name?: string | null;
         };
+        /** Publisher */
+        Publisher: {
+            contact_point?: components["schemas"]["ContactPoint"] | null;
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name: string;
+            type?: components["schemas"]["Term"] | null;
+        };
         /** RevalidationReminderUpdateDTO */
         RevalidationReminderUpdateDTO: {
             /**
@@ -1039,19 +936,25 @@ export interface components {
              */
             due_date: string | null;
         };
+        /** TemporalCoverage */
+        TemporalCoverage: {
+            /** End */
+            end?: string | null;
+            /** Start */
+            start?: string | null;
+        };
         /**
-         * Table
-         * @description csvw:Table.
+         * Term
+         * @description A controlled-vocabulary term or other named web resource: a label and its URI.
          */
-        Table: {
-            /** Column */
-            column: components["schemas"]["Column"][];
-            /** Keyword */
-            keyword?: string[];
-            /** Title */
-            title: string[];
-            /** Url */
-            url?: string | null;
+        Term: {
+            /** Label */
+            label: string;
+            /**
+             * Uri
+             * Format: uri
+             */
+            uri: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -1098,14 +1001,24 @@ export interface components {
             severity: components["schemas"]["ValidationSeverity"];
         };
         /**
-         * Variables
-         * @description csvw:TableGroup: the variables of a structured dataset.
+         * Variable
+         * @description One variable (column) of a structured dataset.
          */
-        Variables: {
-            /** Table */
-            table: components["schemas"]["Table"][];
-            /** Title */
-            title: string[];
+        Variable: {
+            /**
+             * Coding System
+             * @description Coding system or value domain the values come from
+             */
+            coding_system?: string | null;
+            /**
+             * Data Type
+             * @description e.g. string, integer, boolean, date
+             */
+            data_type: string;
+            /** Definition */
+            definition: string;
+            /** Name */
+            name: string;
         };
     };
     responses: never;

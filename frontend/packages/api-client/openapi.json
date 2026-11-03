@@ -11,48 +11,6 @@
         "title": "AccessRights",
         "type": "string"
       },
-      "Agent": {
-        "additionalProperties": false,
-        "description": "foaf:Agent (publisher, creator, health data access body).",
-        "properties": {
-          "email": {
-            "anyOf": [
-              {
-                "maxLength": 254,
-                "pattern": "^(?:\"[^\"]+\"|[^\\s@\"][^\\s@]*)@[^@\\s]+$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Email"
-          },
-          "name": {
-            "minLength": 1,
-            "title": "Name",
-            "type": "string"
-          },
-          "url": {
-            "anyOf": [
-              {
-                "format": "uri",
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Url"
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "title": "Agent",
-        "type": "object"
-      },
       "CapabilitiesDTO": {
         "description": "What this deployment offers, so the UI can show or hide features.",
         "properties": {
@@ -97,108 +55,25 @@
         "title": "CapabilityFeaturesDTO",
         "type": "object"
       },
-      "Column": {
+      "ContactPoint": {
         "additionalProperties": false,
-        "description": "csvw:Column.",
         "properties": {
-          "datatype": {
-            "description": "csvw:datatype",
-            "minLength": 1,
-            "title": "Datatype",
+          "email": {
+            "maxLength": 254,
+            "pattern": "^(?:\"[^\"]+\"|[^\\s@\"][^\\s@]*)@[^@\\s]+$",
+            "title": "Email",
             "type": "string"
           },
-          "description": {
-            "description": "dct:description",
-            "items": {
-              "type": "string"
-            },
-            "minItems": 1,
-            "title": "Description",
-            "type": "array"
-          },
           "name": {
-            "description": "csvw:name",
             "minLength": 1,
             "title": "Name",
             "type": "string"
-          },
-          "property_url": {
-            "anyOf": [
-              {
-                "format": "uri",
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "csvw:propertyUrl",
-            "title": "Property Url"
-          },
-          "titles": {
-            "description": "csvw:titles",
-            "items": {
-              "type": "string"
-            },
-            "minItems": 1,
-            "title": "Titles",
-            "type": "array"
           }
         },
         "required": [
           "name",
-          "titles",
-          "description",
-          "datatype"
+          "email"
         ],
-        "title": "Column",
-        "type": "object"
-      },
-      "ContactPoint": {
-        "additionalProperties": false,
-        "description": "vcard:Kind. At least one of email or contact_page is required.",
-        "properties": {
-          "contact_page": {
-            "anyOf": [
-              {
-                "format": "uri",
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "vcard:hasURL",
-            "title": "Contact Page"
-          },
-          "email": {
-            "anyOf": [
-              {
-                "maxLength": 254,
-                "pattern": "^(?:\"[^\"]+\"|[^\\s@\"][^\\s@]*)@[^@\\s]+$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "vcard:hasEmail",
-            "title": "Email"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          }
-        },
         "title": "ContactPoint",
         "type": "object"
       },
@@ -207,8 +82,17 @@
         "properties": {
           "metadata": {
             "$ref": "#/components/schemas/DatasetMetadata"
+          },
+          "publish": {
+            "default": false,
+            "description": "Save and publish: publish if nothing is missing, otherwise save as a draft and report what is missing. False saves a draft, which also takes a published dataset back to draft.",
+            "title": "Publish",
+            "type": "boolean"
           }
         },
+        "required": [
+          "metadata"
+        ],
         "title": "DatasetCreateDTO",
         "type": "object"
       },
@@ -304,104 +188,91 @@
           "access_rights": {
             "anyOf": [
               {
-                "format": "uri",
-                "minLength": 1,
-                "type": "string"
+                "$ref": "#/components/schemas/AccessRights"
               },
               {
                 "type": "null"
               }
-            ],
-            "description": "dct:accessRights",
-            "title": "Access Rights"
+            ]
           },
           "applicable_legislation": {
-            "description": "r5r:applicableLegislation",
             "items": {
-              "format": "uri",
-              "minLength": 1,
-              "type": "string"
+              "$ref": "#/components/schemas/Term"
             },
             "title": "Applicable Legislation",
             "type": "array"
           },
+          "code_values": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Code Values",
+            "type": "array"
+          },
+          "coding_system": {
+            "items": {
+              "$ref": "#/components/schemas/Term"
+            },
+            "title": "Coding System",
+            "type": "array"
+          },
+          "conforms_to": {
+            "items": {
+              "$ref": "#/components/schemas/Term"
+            },
+            "title": "Conforms To",
+            "type": "array"
+          },
           "contact_points": {
-            "description": "dcat:contactPoint",
             "items": {
               "$ref": "#/components/schemas/ContactPoint"
             },
             "title": "Contact Points",
             "type": "array"
           },
-          "creator": {
-            "description": "dct:creator",
+          "description": {
             "items": {
-              "$ref": "#/components/schemas/Agent"
+              "$ref": "#/components/schemas/LangText"
             },
-            "title": "Creator",
+            "title": "Description",
             "type": "array"
           },
-          "dataset_version": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "dcat:version",
-            "title": "Dataset Version"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "dct:description",
-            "title": "Description"
-          },
           "distributions": {
-            "description": "dcat:distribution",
             "items": {
               "$ref": "#/components/schemas/Distribution"
             },
             "title": "Distributions",
             "type": "array"
           },
-          "frequency": {
+          "generated_by": {
+            "items": {
+              "$ref": "#/components/schemas/Term"
+            },
+            "title": "Generated By",
+            "type": "array"
+          },
+          "geographical_coverage": {
+            "items": {
+              "$ref": "#/components/schemas/Term"
+            },
+            "title": "Geographical Coverage",
+            "type": "array"
+          },
+          "has_personal_data": {
             "anyOf": [
               {
-                "format": "uri",
-                "minLength": 1,
-                "type": "string"
+                "type": "boolean"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "dct:accrualPeriodicity",
-            "title": "Frequency"
-          },
-          "geographical_coverage": {
-            "description": "dct:spatial",
-            "items": {
-              "format": "uri",
-              "minLength": 1,
-              "type": "string"
-            },
-            "title": "Geographical Coverage",
-            "type": "array"
+            "title": "Has Personal Data"
           },
           "health_category": {
             "items": {
-              "format": "uri",
-              "minLength": 1,
-              "type": "string"
+              "$ref": "#/components/schemas/Term"
             },
             "title": "Health Category",
             "type": "array"
@@ -409,7 +280,17 @@
           "health_data_access_body": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Agent"
+                "$ref": "#/components/schemas/Organisation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "health_data_holder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Organisation"
               },
               {
                 "type": "null"
@@ -418,77 +299,33 @@
           },
           "health_theme": {
             "items": {
-              "format": "uri",
-              "minLength": 1,
-              "type": "string"
+              "$ref": "#/components/schemas/Term"
             },
             "title": "Health Theme",
             "type": "array"
           },
           "identifier": {
-            "description": "dct:identifier",
             "items": {
+              "minLength": 1,
               "type": "string"
             },
             "title": "Identifier",
             "type": "array"
           },
           "keyword": {
-            "description": "dcat:keyword",
             "items": {
+              "minLength": 1,
               "type": "string"
             },
             "title": "Keyword",
             "type": "array"
           },
           "language": {
-            "description": "dct:language",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/Term"
             },
             "title": "Language",
             "type": "array"
-          },
-          "maximum_typical_age": {
-            "anyOf": [
-              {
-                "minimum": 0.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maximum Typical Age"
-          },
-          "minimum_typical_age": {
-            "anyOf": [
-              {
-                "minimum": 0.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Minimum Typical Age"
-          },
-          "modification_date": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "dct:modified",
-            "title": "Modification Date"
           },
           "number_of_records": {
             "anyOf": [
@@ -514,40 +351,37 @@
             ],
             "title": "Number Of Unique Individuals"
           },
-          "population_coverage": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Population Coverage",
-            "type": "array"
+          "provenance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provenance"
           },
           "publisher": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Agent"
+                "$ref": "#/components/schemas/Publisher"
               },
               {
                 "type": "null"
               }
-            ],
-            "description": "dct:publisher"
+            ]
           },
-          "release_date": {
+          "quantum_label": {
             "anyOf": [
               {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "format": "date",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "dct:issued",
-            "title": "Release Date"
+            "title": "Quantum Label"
           },
           "structured_data": {
             "anyOf": [
@@ -558,39 +392,38 @@
                 "type": "null"
               }
             ],
-            "description": "healthdcatap:hasStructuredData",
             "title": "Structured Data"
           },
           "temporal_coverage": {
-            "description": "dct:temporal, e.g. 2020-01-01/2022-12-31",
-            "items": {
-              "type": "string"
-            },
-            "title": "Temporal Coverage",
-            "type": "array"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemporalCoverage"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "dct:title",
-            "title": "Title"
+            "items": {
+              "$ref": "#/components/schemas/LangText"
+            },
+            "title": "Title",
+            "type": "array"
+          },
+          "type": {
+            "items": {
+              "$ref": "#/components/schemas/Term"
+            },
+            "title": "Type",
+            "type": "array"
           },
           "variables": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Variables"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "healthdcatap:hasVariables"
+            "items": {
+              "$ref": "#/components/schemas/Variable"
+            },
+            "title": "Variables",
+            "type": "array"
           }
         },
         "title": "DatasetMetadata",
@@ -626,6 +459,12 @@
           "metadata": {
             "$ref": "#/components/schemas/DatasetMetadata"
           },
+          "publish": {
+            "default": false,
+            "description": "Save and publish: publish if nothing is missing, otherwise save as a draft and report what is missing. False saves a draft, which also takes a published dataset back to draft.",
+            "title": "Publish",
+            "type": "boolean"
+          },
           "version": {
             "description": "Version last read by the client; 409 if stale",
             "minimum": 1.0,
@@ -642,42 +481,20 @@
       },
       "Distribution": {
         "additionalProperties": false,
-        "description": "dcat:Distribution.",
         "properties": {
           "access_url": {
-            "description": "dcat:accessURL",
-            "items": {
-              "format": "uri",
-              "minLength": 1,
-              "type": "string"
-            },
-            "minItems": 1,
+            "format": "uri",
+            "minLength": 1,
             "title": "Access Url",
-            "type": "array"
+            "type": "string"
           },
           "applicable_legislation": {
-            "description": "r5r:applicableLegislation",
             "items": {
-              "format": "uri",
-              "minLength": 1,
-              "type": "string"
+              "$ref": "#/components/schemas/Term"
             },
             "minItems": 1,
             "title": "Applicable Legislation",
             "type": "array"
-          },
-          "byte_size": {
-            "anyOf": [
-              {
-                "minimum": 0.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "dcat:byteSize",
-            "title": "Byte Size"
           },
           "description": {
             "anyOf": [
@@ -688,80 +505,17 @@
                 "type": "null"
               }
             ],
-            "description": "dct:description",
             "title": "Description"
-          },
-          "download_url": {
-            "description": "dcat:downloadURL",
-            "items": {
-              "format": "uri",
-              "minLength": 1,
-              "type": "string"
-            },
-            "title": "Download Url",
-            "type": "array"
           },
           "format": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/Term"
               },
               {
                 "type": "null"
               }
-            ],
-            "description": "dct:format",
-            "title": "Format"
-          },
-          "licence": {
-            "anyOf": [
-              {
-                "format": "uri",
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "dct:license",
-            "title": "Licence"
-          },
-          "media_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "dcat:mediaType",
-            "title": "Media Type"
-          },
-          "modification_date": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Modification Date"
-          },
-          "release_date": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Release Date"
+            ]
           },
           "title": {
             "anyOf": [
@@ -772,7 +526,6 @@
                 "type": "null"
               }
             ],
-            "description": "dct:title",
             "title": "Title"
           }
         },
@@ -971,6 +724,28 @@
         "title": "InvitationStatus",
         "type": "string"
       },
+      "LangText": {
+        "additionalProperties": false,
+        "description": "A text in one language.",
+        "properties": {
+          "lang": {
+            "default": "en",
+            "pattern": "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$",
+            "title": "Lang",
+            "type": "string"
+          },
+          "text": {
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "LangText",
+        "type": "object"
+      },
       "LogoutDTO": {
         "description": "Where the browser goes next to finish signing out.\n\nUsually the provider's end-session page, which ends its single sign-on session too and then\nreturns to the app's sign-in page.",
         "properties": {
@@ -1090,6 +865,42 @@
         "title": "MemberUpdateDTO",
         "type": "object"
       },
+      "Organisation": {
+        "additionalProperties": false,
+        "description": "An organisation: health data access body or health data holder.",
+        "properties": {
+          "contact_point": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Term"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Organisation",
+        "type": "object"
+      },
       "OrganisationCreateDTO": {
         "additionalProperties": false,
         "properties": {
@@ -1202,6 +1013,52 @@
         "title": "OrganisationUpdateDTO",
         "type": "object"
       },
+      "Publisher": {
+        "additionalProperties": false,
+        "properties": {
+          "contact_point": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Term"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Publisher",
+        "type": "object"
+      },
       "RevalidationReminderUpdateDTO": {
         "additionalProperties": false,
         "properties": {
@@ -1225,52 +1082,58 @@
         "title": "RevalidationReminderUpdateDTO",
         "type": "object"
       },
-      "Table": {
+      "TemporalCoverage": {
         "additionalProperties": false,
-        "description": "csvw:Table.",
         "properties": {
-          "column": {
-            "items": {
-              "$ref": "#/components/schemas/Column"
-            },
-            "minItems": 1,
-            "title": "Column",
-            "type": "array"
-          },
-          "keyword": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Keyword",
-            "type": "array"
-          },
-          "title": {
-            "items": {
-              "type": "string"
-            },
-            "minItems": 1,
-            "title": "Title",
-            "type": "array"
-          },
-          "url": {
+          "end": {
             "anyOf": [
               {
-                "format": "uri",
-                "minLength": 1,
+                "format": "date",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Url"
+            "title": "End"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          }
+        },
+        "title": "TemporalCoverage",
+        "type": "object"
+      },
+      "Term": {
+        "additionalProperties": false,
+        "description": "A controlled-vocabulary term or other named web resource: a label and its URI.",
+        "properties": {
+          "label": {
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "uri": {
+            "format": "uri",
+            "minLength": 1,
+            "title": "Uri",
+            "type": "string"
           }
         },
         "required": [
-          "title",
-          "column"
+          "label",
+          "uri"
         ],
-        "title": "Table",
+        "title": "Term",
         "type": "object"
       },
       "ValidationError": {
@@ -1383,32 +1246,47 @@
         "title": "ValidationViolationDTO",
         "type": "object"
       },
-      "Variables": {
+      "Variable": {
         "additionalProperties": false,
-        "description": "csvw:TableGroup: the variables of a structured dataset.",
+        "description": "One variable (column) of a structured dataset.",
         "properties": {
-          "table": {
-            "items": {
-              "$ref": "#/components/schemas/Table"
-            },
-            "minItems": 1,
-            "title": "Table",
-            "type": "array"
+          "coding_system": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Coding system or value domain the values come from",
+            "title": "Coding System"
           },
-          "title": {
-            "items": {
-              "type": "string"
-            },
-            "minItems": 1,
-            "title": "Title",
-            "type": "array"
+          "data_type": {
+            "description": "e.g. string, integer, boolean, date",
+            "minLength": 1,
+            "title": "Data Type",
+            "type": "string"
+          },
+          "definition": {
+            "minLength": 1,
+            "title": "Definition",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
           }
         },
         "required": [
-          "title",
-          "table"
+          "name",
+          "data_type",
+          "definition"
         ],
-        "title": "Variables",
+        "title": "Variable",
         "type": "object"
       }
     }
@@ -2132,7 +2010,7 @@
     },
     "/api/v1/organisations/{org_id}/datasets/{dataset_id}": {
       "delete": {
-        "description": "Owners only.",
+        "description": "Delete the dataset for good. Owners only.",
         "operationId": "delete_dataset_api_v1_organisations__org_id__datasets__dataset_id__delete",
         "parameters": [
           {
