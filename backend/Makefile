@@ -2,7 +2,7 @@ SHELL=/bin/bash
 VENV ?= .venv
 BIN := $(VENV)/bin
 
-.PHONY: venv install pip_compile pip_compile_dev test check lint format typecheck migrate run
+.PHONY: venv install pip_compile pip_compile_dev test check lint format typecheck migrate run openapi
 
 venv:
 	python3.13 -m venv $(VENV)
@@ -40,3 +40,8 @@ migrate:
 
 run:
 	$(BIN)/uvicorn --factory relay.app:create_app --reload --port 8000
+
+# Dump the OpenAPI spec for the frontend client; needs no database or running server
+OPENAPI_OUT ?= ../frontend/packages/api-client/openapi.json
+openapi:
+	$(BIN)/python -m relay.openapi $(OPENAPI_OUT)

@@ -1,5 +1,6 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
+from enum import StrEnum
 from typing import Any
 
 from pydantic import Field, computed_field
@@ -20,6 +21,20 @@ class DatasetUpdateDTO(RequestDTO):
 
 class DatasetPublishDTO(RequestDTO):
     version: int = Field(ge=1, description="Version last read by the client; 409 if stale")
+
+
+class AccessRights(StrEnum):
+    """Access level of a dataset, mapped to the EU access-right authority table."""
+
+    PUBLIC = "public"
+    RESTRICTED = "restricted"
+    NON_PUBLIC = "non_public"
+
+
+class RevalidationReminderUpdateDTO(RequestDTO):
+    due_date: date | None = Field(
+        description="When to remind members to revalidate the metadata; null clears it"
+    )
 
 
 class DatasetDTO(DTO):

@@ -1,14 +1,15 @@
 import uuid
 from collections.abc import Sequence
-from typing import Annotated
+from typing import Annotated, NoReturn
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from relay.api.stubs import not_implemented
 from relay.db import get_session
 from relay.domain.organisations import Organisation
-from relay.dtos.organisation import OrganisationCreateDTO, OrganisationDTO
+from relay.dtos.organisation import OrganisationCreateDTO, OrganisationDTO, OrganisationUpdateDTO
 
 router = APIRouter(prefix="/api/v1/organisations", tags=["organisations"])
 
@@ -35,3 +36,8 @@ def get_organisation(org_id: uuid.UUID, session: SessionDep) -> Organisation:
     if org is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="organisation not found")
     return org
+
+
+@router.patch("/{org_id}", response_model=OrganisationDTO)
+def update_organisation(org_id: uuid.UUID, body: OrganisationUpdateDTO) -> NoReturn:
+    not_implemented()

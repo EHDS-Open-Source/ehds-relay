@@ -1,0 +1,50 @@
+{{- if .Values.mailpit.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ehds-relay.fullname" . }}-mailpit
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mailpit
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "ehds-relay.selectorLabels" (dict "ctx" . "component" "mailpit") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ehds-relay.selectorLabels" (dict "ctx" . "component" "mailpit") | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+      containers:
+        - name: mailpit
+          image: "{{ .Values.mailpit.image.repository }}:{{ .Values.mailpit.image.tag }}"
+          imagePullPolicy: {{ .Values.mailpit.image.pullPolicy }}
+          ports:
+            - name: smtp
+              containerPort: 1025
+            - name: http
+              containerPort: 8025
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: http
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.mailpit.resources | nindent 12 }}
+{{- end }}
