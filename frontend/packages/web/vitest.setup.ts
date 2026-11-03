@@ -14,8 +14,11 @@ vi.stubGlobal(
   "fetch",
   vi.fn((input: RequestInfo | URL) => {
     const url = input instanceof Request ? input.url : String(input);
-    // The catalogue lists datasets; an empty organisation by default.
-    const body = url.includes("/datasets") ? [] : { status: "ok" };
+    // The catalogue lists datasets, the members page lists members and invitations;
+    // an empty organisation by default.
+    const isList =
+      url.includes("/datasets") || /\/(members|invitations)(\?|$)/.test(url);
+    const body = isList ? [] : { status: "ok" };
     return Promise.resolve(
       new Response(JSON.stringify(body), {
         headers: { "Content-Type": "application/json" },
