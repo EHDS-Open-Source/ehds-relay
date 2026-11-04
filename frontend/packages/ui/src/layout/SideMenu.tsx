@@ -1,6 +1,8 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Dialog } from "radix-ui";
 
+import { Button } from "../components/button";
+import { Icon } from "../icons";
 import { cn } from "../lib/utils";
 import { messages } from "../messages";
 
@@ -8,54 +10,73 @@ export interface SideMenuProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title?: string;
-  /** Shown under the title, e.g. the current organisation. */
+  /** Shown at the top in yellow, e.g. the current organisation. */
   description?: string;
   closeLabel?: string;
+  /** Small content at the foot of the panel, e.g. a status line. */
+  footer?: ReactNode;
   children: ReactNode;
 }
 
-/** Drawer that slides in from the right. Closes on Esc, overlay click and the close button. */
+/** Blue panel that slides in from the right. Closes on Esc, overlay click and the close button. */
 export function SideMenu({
   open,
   onOpenChange,
   title = messages.menuTitle,
   description,
   closeLabel = messages.closeMenu,
+  footer,
   children,
 }: SideMenuProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/30 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-foreground/40 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          data-onBlue
           // Radix wants a description; opt out explicitly when there is none.
           {...(description ? {} : { "aria-describedby": undefined })}
-          className="fixed inset-y-0 right-0 z-50 flex w-[300px] max-w-[85vw] flex-col rounded-l-3xl border-l bg-background shadow-2xl outline-none duration-200 data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right"
+          className="fixed inset-y-0 right-0 z-50 flex w-[400px] max-w-full flex-col bg-blue text-white outline-none duration-[180ms] data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right max-md:w-full"
         >
-          <div className="flex items-center justify-between border-b p-5">
-            <div>
-              <Dialog.Title className="text-[15px] font-semibold tracking-tight">
-                {title}
-              </Dialog.Title>
+          <div className="flex items-start justify-between gap-4 px-8 pt-8 pb-4">
+            <div className="min-w-0 pt-2">
+              <Dialog.Title className="sr-only">{title}</Dialog.Title>
               {description ? (
-                <Dialog.Description className="mt-0.5 text-xs text-muted-foreground">
+                <Dialog.Description className="font-semibold text-yellow">
                   {description}
                 </Dialog.Description>
               ) : null}
             </div>
-            <Dialog.Close
-              aria-label={closeLabel}
-              className="rounded-md p-1 text-xl leading-none text-muted-foreground hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-            >
-              <span aria-hidden="true">✕</span>
+            <Dialog.Close asChild>
+              <Button
+                type="button"
+                variant="icon"
+                size="icon"
+                onBlue
+                aria-label={closeLabel}
+              >
+                <Icon name="close" size="sm" />
+              </Button>
             </Dialog.Close>
           </div>
-          <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-2.5">
+          <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-8 py-4">
             {children}
+          </div>
+          <div className="flex items-end justify-between gap-4 px-8 pt-4 pb-6">
+            <div className="min-w-0 text-sm">{footer}</div>
+            <Icon name="star" size="lg" className="shrink-0 text-yellow" />
           </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+}
+
+/** A link in the blue panel: white, turning yellow on hover, with room for an icon. */
+export function menuLinkClass({ active = false }: { active?: boolean } = {}) {
+  return cn(
+    "flex w-full items-center gap-3 py-4 text-left text-[1.05em] font-semibold no-underline transition-colors duration-150 hover:text-yellow",
+    active ? "text-yellow" : "text-white",
   );
 }
 
@@ -72,21 +93,20 @@ export function menuItemClass({
   );
 }
 
-/** A menu entry that runs an action rather than going to a page (e.g. sign out). */
+/** A menu entry that runs an action rather than going to a page. */
 export function SideMenuItem({
-  danger = false,
   className,
   ...props
-}: ComponentProps<"button"> & { danger?: boolean }) {
+}: ComponentProps<"button">) {
   return (
     <button
       type="button"
-      className={cn(menuItemClass({ danger }), className)}
+      className={cn(menuLinkClass(), className)}
       {...props}
     />
   );
 }
 
 export function SideMenuDivider() {
-  return <hr className="mx-2.5 my-2 border-border" />;
+  return <hr className="border-white/20" />;
 }

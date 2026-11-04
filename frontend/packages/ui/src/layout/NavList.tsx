@@ -1,5 +1,6 @@
+import { Icon } from "../icons";
 import type { NavItem, RenderNavLink } from "./types";
-import { menuItemClass } from "./SideMenu";
+import { menuLinkClass } from "./SideMenu";
 
 export interface NavListProps<TTo extends string = string> {
   items: readonly NavItem<TTo>[];
@@ -21,18 +22,32 @@ export function NavList<TTo extends string = string>({
 }: NavListProps<TTo>) {
   return (
     <nav aria-label={label}>
-      <ul className="flex flex-col gap-0.5">
+      <ul className="flex flex-col">
         {items.map((item) => {
           const active = item.id === activeId;
           return (
-            <li key={item.id}>
+            <li
+              key={item.id}
+              className="border-b border-white/20 last:border-b-0"
+            >
               {renderLink({
                 item,
                 active,
-                className: menuItemClass({ active }),
+                className: menuLinkClass({ active }),
                 "aria-current": active ? "page" : undefined,
                 onClick: onNavigate,
-                children: item.label,
+                children: (
+                  <>
+                    {item.icon ? (
+                      <Icon
+                        name={item.icon}
+                        size="lg"
+                        className="text-yellow"
+                      />
+                    ) : null}
+                    {item.label}
+                  </>
+                ),
               })}
             </li>
           );

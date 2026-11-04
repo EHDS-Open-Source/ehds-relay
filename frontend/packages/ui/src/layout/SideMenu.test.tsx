@@ -12,12 +12,16 @@ function Harness() {
     <>
       <AppHeader
         logo="Relay"
-        orgName="Acme"
         menuOpen={open}
         onMenuClick={() => setOpen(true)}
       />
-      <SideMenu open={open} onOpenChange={setOpen} description="Acme">
-        <SideMenuItem>Sign out</SideMenuItem>
+      <SideMenu
+        open={open}
+        onOpenChange={setOpen}
+        description="Acme"
+        footer={<p>API ok</p>}
+      >
+        <SideMenuItem>Log out</SideMenuItem>
       </SideMenu>
     </>
   );
@@ -39,7 +43,8 @@ describe("SideMenu", () => {
     const dialog = screen.getByRole("dialog", { name: "Menu" });
     expect(dialog).toBeInTheDocument();
     expect(dialog).toHaveAccessibleDescription("Acme");
-    expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Log out" })).toBeVisible();
+    expect(screen.getByText("API ok")).toBeVisible();
   });
 
   it("closes with the close button", async () => {

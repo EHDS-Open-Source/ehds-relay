@@ -2,8 +2,7 @@ import { AppHeader, AppShell } from "@ehds-relay/ui";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { HealthStatus } from "../HealthStatus";
-import { shellMessages } from "./messages";
+import { Logo } from "./Logo";
 
 /**
  * Header and content area for pages that belong to the user rather than to one organisation.
@@ -15,11 +14,10 @@ export function AccountLayout({ children }: { children: ReactNode }) {
       header={
         <AppHeader
           logo={
-            <Link to="/orgs" className="text-lg font-bold tracking-tight">
-              {shellMessages.appName}
+            <Link to="/orgs" className="no-underline">
+              <Logo />
             </Link>
           }
-          actions={<HealthStatus />}
         />
       }
     >

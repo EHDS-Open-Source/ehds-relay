@@ -252,7 +252,7 @@ describe("menu", () => {
       within(dialog).getByRole("link", { name: "Catalogue" }),
     ).toHaveAttribute("aria-current", "page");
     expect(
-      within(dialog).getByRole("link", { name: "Members" }),
+      within(dialog).getByRole("link", { name: "Manage users" }),
     ).not.toHaveAttribute("aria-current");
   });
 
@@ -260,14 +260,14 @@ describe("menu", () => {
     const router = renderApp("/orgs/demo/catalogue");
     await screen.findByRole("heading", { name: "Dataset Catalogue" });
     await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
-    await userEvent.click(screen.getByRole("link", { name: "Members" }));
+    await userEvent.click(screen.getByRole("link", { name: "Manage users" }));
 
     await screen.findByRole("heading", { level: 1, name: "Members" });
     expect(router.state.location.pathname).toBe("/orgs/demo/members");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
-    expect(screen.getByRole("link", { name: "Members" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Manage users" })).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -294,7 +294,7 @@ describe("menu", () => {
     await screen.findByRole("heading", { name: "Dataset Catalogue" });
     await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
     expect(
-      screen.queryByRole("link", { name: "Members" }),
+      screen.queryByRole("link", { name: "Manage users" }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Catalogue" })).toBeVisible();
   });
@@ -346,7 +346,7 @@ describe("menu", () => {
     await screen.findByRole("heading", { name: "Dataset Catalogue" });
     await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
     await userEvent.click(
-      screen.getByRole("button", { name: shellMessages.signOut }),
+      screen.getByRole("button", { name: shellMessages.logOut }),
     );
     await waitFor(() => {
       expect(navigateExternal).toHaveBeenCalledWith("https://idp.test/out");
@@ -361,7 +361,7 @@ describe("menu", () => {
     await screen.findByRole("heading", { name: "Dataset Catalogue" });
     await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
     await userEvent.click(
-      screen.getByRole("button", { name: shellMessages.signOut }),
+      screen.getByRole("button", { name: shellMessages.logOut }),
     );
     await screen.findByRole("heading", { name: "Sign in" });
     expect(router.state.location.pathname).toBe("/sign-in");
@@ -373,7 +373,7 @@ describe("menu", () => {
     await screen.findByRole("heading", { name: "Dataset Catalogue" });
     await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
     await userEvent.click(
-      screen.getByRole("button", { name: shellMessages.signOut }),
+      screen.getByRole("button", { name: shellMessages.logOut }),
     );
     await screen.findByRole("heading", { name: "Sign in" });
     await waitFor(() => {

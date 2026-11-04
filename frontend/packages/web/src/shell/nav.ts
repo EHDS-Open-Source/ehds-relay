@@ -7,16 +7,23 @@ export type OrgNavPath =
   "/orgs/$orgId/catalogue" | "/orgs/$orgId/members" | "/orgs/$orgId/settings";
 
 export const coreNavItems: readonly NavItem<OrgNavPath>[] = [
-  { id: "catalogue", label: "Catalogue", to: "/orgs/$orgId/catalogue" },
+  {
+    id: "catalogue",
+    label: "Catalogue",
+    to: "/orgs/$orgId/catalogue",
+    icon: "file",
+  },
   {
     id: "members",
-    label: "Members",
+    label: "Manage users",
+    icon: "person",
     to: "/orgs/$orgId/members",
     requires: "owner",
   },
   {
     id: "settings",
     label: "Settings",
+    icon: "orgChart",
     to: "/orgs/$orgId/settings",
     requires: "owner",
   },
@@ -26,8 +33,18 @@ export const coreNavItems: readonly NavItem<OrgNavPath>[] = [
 export type RootNavPath = "/orgs" | "/account";
 
 export const accountNavItems: readonly NavItem<RootNavPath>[] = [
-  { id: "account", label: "Manage my account", to: "/account" },
-  { id: "switch-organisation", label: "Switch organisation", to: "/orgs" },
+  {
+    id: "account",
+    label: "Manage my account",
+    to: "/account",
+    icon: "account",
+  },
+  {
+    id: "switch-organisation",
+    label: "Switch organisation",
+    to: "/orgs",
+    icon: "switch",
+  },
 ];
 
 export const navLabels = {

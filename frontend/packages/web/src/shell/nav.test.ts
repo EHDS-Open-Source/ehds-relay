@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { activeNavId, coreNavItems } from "./nav";
+import { accountNavItems, activeNavId, coreNavItems } from "./nav";
 
 describe("activeNavId", () => {
   it("matches an item's own path", () => {
@@ -25,5 +25,13 @@ describe("activeNavId", () => {
     expect(
       activeNavId(coreNavItems, "demo", "/orgs/other/catalogue"),
     ).toBeUndefined();
+  });
+});
+
+describe("menu entries", () => {
+  it("each has an icon", () => {
+    for (const item of [...coreNavItems, ...accountNavItems]) {
+      expect(item.icon, item.id).toBeDefined();
+    }
   });
 });

@@ -10,6 +10,7 @@ describe("PageHeader", () => {
       <PageHeader
         eyebrow="Acme"
         title="Catalogue"
+        titleAdornment={<span data-testid="star" />}
         description="All datasets"
         actions={<button>Add</button>}
       />,
@@ -18,6 +19,9 @@ describe("PageHeader", () => {
       screen.getByRole("heading", { level: 1, name: "Catalogue" }),
     ).toBeVisible();
     expect(screen.getByText("Acme")).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1 })).toContainElement(
+      screen.getByTestId("star"),
+    );
     expect(screen.getByText("All datasets")).toBeVisible();
     expect(screen.getByRole("button", { name: "Add" })).toBeVisible();
   });
