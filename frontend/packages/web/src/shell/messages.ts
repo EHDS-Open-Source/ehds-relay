@@ -166,7 +166,7 @@ export const shellMessages = {
       title: "Dataset output",
       description: "The metadata record in each of the supported formats.",
       tabs: {
-        ttl: "Turtle",
+        ttl: "Turtle (TTL)",
         jsonld: "JSON-LD",
         rdfxml: "RDF/XML",
       },

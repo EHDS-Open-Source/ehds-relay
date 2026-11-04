@@ -49,7 +49,7 @@ describe("dataset export", () => {
       [`GET ${base}/export`]: () => json({ detail: "not implemented" }, 501),
     });
     renderApp(path);
-    for (const name of ["Turtle", "JSON-LD", "RDF/XML"]) {
+    for (const name of ["Turtle (TTL)", "JSON-LD", "RDF/XML"]) {
       await userEvent.click(await screen.findByRole("tab", { name }));
       expect(await screen.findByText(m.output.unavailable)).toBeVisible();
     }
@@ -93,6 +93,8 @@ describe("dataset export", () => {
 
     renderApp(path);
     expect(await screen.findByText("@prefix a: <b> .")).toBeVisible();
+    // The panel names the format by its media type.
+    expect(screen.getByText("text/turtle")).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Copy" }));
     expect(writeText).toHaveBeenCalledWith("@prefix a: <b> .");
 

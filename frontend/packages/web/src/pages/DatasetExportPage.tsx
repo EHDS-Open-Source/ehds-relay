@@ -1,6 +1,7 @@
 import {
   Button,
   CodeBlock,
+  CodeBlockButton,
   EmptyState,
   Icon,
   LoadingStar,
@@ -77,12 +78,9 @@ function OutputTab({
     <CodeBlock
       text={query.data}
       label={label}
+      formatLabel={info.mediaType}
       actions={
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onBlue
+        <CodeBlockButton
           onClick={() => {
             downloadText(
               query.data,
@@ -92,7 +90,7 @@ function OutputTab({
           }}
         >
           {m.output.downloadAs.replace("{ext}", info.extension)}
-        </Button>
+        </CodeBlockButton>
       }
     />
   );
@@ -169,9 +167,14 @@ export function DatasetExportPage() {
               });
             }}
           >
-            <TabsList>
+            {/* Segmented pill switch, set apart from the panel below rather than attached to it. */}
+            <TabsList className="mb-5 max-w-full flex-wrap items-center gap-0.5 rounded-[999px] border-2 border-line bg-white p-1">
               {exportFormats.map((f) => (
-                <TabsTrigger key={f.format} value={f.format}>
+                <TabsTrigger
+                  key={f.format}
+                  value={f.format}
+                  className="rounded-full bg-transparent px-4 py-2 text-[13px] leading-[1.5] font-semibold text-ink hover:bg-blue-tint-95 hover:text-blue data-[state=active]:bg-blue data-[state=active]:font-semibold data-[state=active]:text-white"
+                >
                   {m.output.tabs[f.format]}
                 </TabsTrigger>
               ))}
