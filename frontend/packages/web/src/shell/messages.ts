@@ -265,6 +265,8 @@ export const shellMessages = {
     nameLabel: "Organisation name",
     countryLabel: "Country",
     countryPlaceholder: "Choose a country",
+    countryHint:
+      "Where the organisation is based. People see it when they choose an organisation.",
     save: "Save changes",
     saving: "Saving…",
     saved: "Saved",
@@ -298,6 +300,11 @@ export const shellMessages = {
     invalid: "Check your name and try again.",
     failed: "Your name could not be saved. Try again in a moment.",
     detailsTitle: "User details",
+    role: {
+      label: "Role in this organisation",
+      ownerHint: "You can change roles in Manage users.",
+      standardHint: "Roles are managed by the organisation's owner.",
+    },
     orgs: {
       title: "My organisations",
       none: "You do not belong to any organisation yet.",
@@ -337,7 +344,6 @@ export const shellMessages = {
     roles: { owner: "Owner", standard: "Standard" },
     list: {
       title: "Users",
-      joinedOn: (date: string) => `Joined ${date}`,
       roleFor: (name: string) => `Role of ${name}`,
       remove: "Remove",
       you: "you",
@@ -382,8 +388,9 @@ export const shellMessages = {
         cancelled: "Cancelled",
         expired: "Expired",
       },
-      sentOn: (date: string) => `Sent ${date}`,
+      subline: (role: string, date: string) => `${role} · Invited ${date}`,
       resend: "Resend",
+      resending: "Sending…",
       resent: (email: string) => `Invitation sent again to ${email}.`,
       cancel: "Cancel invitation",
       empty: "No invitations to show.",

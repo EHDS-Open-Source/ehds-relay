@@ -1,15 +1,17 @@
 import { zMeUpdateDto } from "@ehds-relay/api-client";
 import {
-  Badge,
   Button,
   EmptyState,
   Field,
+  FieldHint,
   FormMessage,
+  Icon,
   Input,
   LoadingStar,
   PageHeader,
   SaveButton,
   Toggle,
+  cn,
   fieldErrorId,
   useMinimumPending,
   useToast,
@@ -19,8 +21,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 
 import { api } from "../api";
+import {
+  rowCard,
+  rowEmail,
+  rowInfo,
+  rowName,
+  sectionHeading,
+  settingsCard,
+} from "../members/rowStyles";
+import { RoleTag } from "../members/tags";
 import { countryName } from "../orgs/countries";
 import { useSession, useSessionStore, useSignOut } from "../session/useSession";
+import type { OrgRole } from "../session/types";
 import { AccountLayout } from "../shell/AccountLayout";
 import { shellMessages } from "../shell/messages";
 import { useSavedFlash } from "./useSavedFlash";
@@ -29,9 +41,11 @@ const text = shellMessages.account;
 
 /** The signed-in user's own details: name (editable) and email (from the identity provider). */
 export function AccountPage() {
-  const user = useSession()?.user;
+  const session = useSession();
+  const user = session?.user;
   // Signing out empties the session before the redirect finishes.
   if (!user) return null;
+  const orgs = session.orgs;
   return (
     <AccountLayout>
       <PageHeader
@@ -43,9 +57,20 @@ export function AccountPage() {
         key={`profile-${user.id}`}
         name={user.name}
         email={user.email}
+        // With one organisation the page knows which role to show.
+        role={orgs.length === 1 ? orgs[0]!.role : undefined}
       />
       <OrganisationsSection />
       <NotificationsSection key={`notifications-${user.id}`} />
+      {orgs.length === 0 ? (
+        // The header has no way back without an organisation, so it is offered here.
+        <Button asChild variant="secondary" className="mt-12">
+          <Link to="/orgs">
+            <Icon name="back" />
+            {text.back}
+          </Link>
+        </Button>
+      ) : null}
     </AccountLayout>
   );
 }
@@ -53,9 +78,11 @@ export function AccountPage() {
 function ProfileForm({
   name: savedName,
   email,
+  role,
 }: {
   name: string;
   email: string;
+  role?: OrgRole;
 }) {
   const store = useSessionStore();
   const signOut = useSignOut();
@@ -101,54 +128,81 @@ function ProfileForm({
   };
 
   return (
-    <div className="max-w-[480px] rounded-card bg-white p-6 shadow-card">
-      <h2 className="mb-4 text-lg font-semibold">{text.detailsTitle}</h2>
+    <section aria-labelledby="account-details">
+      <h2 id="account-details" className={sectionHeading}>
+        {text.detailsTitle}
+      </h2>
       <form
         noValidate
         aria-label={text.title}
         onSubmit={(event) => {
           void submit(event);
         }}
-        className="flex flex-col gap-5"
       >
-        <Field
-          label={text.nameLabel}
-          htmlFor="account-name"
-          required
-          error={error.name}
-        >
-          <Input
-            id="account-name"
-            value={name}
-            autoComplete="name"
-            aria-invalid={error.name ? true : undefined}
-            aria-describedby={
-              error.name ? fieldErrorId("account-name") : undefined
-            }
-            onChange={(event) => {
-              setName(event.target.value);
-              clearSaved();
-            }}
-          />
-        </Field>
-        <Field
-          label={text.emailLabel}
-          htmlFor="account-email"
-          hint={text.emailHint}
-        >
-          <Input
-            id="account-email"
-            type="email"
-            value={email}
-            readOnly
-            className="bg-muted"
-          />
-        </Field>
-        {error.form ? <FormMessage>{error.form}</FormMessage> : null}
+        <div className={`${settingsCard} flex flex-col gap-4 p-6`}>
+          <Field
+            label={text.nameLabel}
+            htmlFor="account-name"
+            required
+            error={error.name}
+          >
+            <Input
+              id="account-name"
+              value={name}
+              autoComplete="name"
+              aria-invalid={error.name ? true : undefined}
+              aria-describedby={
+                error.name ? fieldErrorId("account-name") : undefined
+              }
+              onChange={(event) => {
+                setName(event.target.value);
+                clearSaved();
+              }}
+            />
+          </Field>
+          <Field
+            label={text.emailLabel}
+            htmlFor="account-email"
+            hint={text.emailHint}
+          >
+            <Input
+              id="account-email"
+              type="email"
+              value={email}
+              readOnly
+              className="bg-muted"
+            />
+          </Field>
+          {role ? (
+            <div
+              data-part="role"
+              className="mt-2 flex flex-wrap items-center gap-3 border-t border-line pt-5"
+            >
+              <span
+                id="account-role-label"
+                className="text-[0.95em] leading-[1.6] font-semibold"
+              >
+                {text.role.label}
+              </span>
+              <RoleTag
+                role={role}
+                aria-describedby="account-role-label account-role-hint"
+              />
+              <FieldHint id="account-role-hint" className="w-full">
+                {role === "owner"
+                  ? text.role.ownerHint
+                  : text.role.standardHint}
+              </FieldHint>
+            </div>
+          ) : null}
+        </div>
+        {error.form ? (
+          <FormMessage className="mt-5">{error.form}</FormMessage>
+        ) : null}
         <p role="status" className="sr-only">
           {saved ? text.savedAnnouncement : null}
         </p>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="mt-5 flex flex-wrap items-center gap-2.5">
           <SaveButton
             busy={busy}
             saved={saved}
@@ -163,11 +217,11 @@ function ProfileForm({
               void signOut();
             }}
           >
-            {shellMessages.signOut}
+            {shellMessages.logOut}
           </Button>
         </div>
       </form>
-    </div>
+    </section>
   );
 }
 
@@ -176,8 +230,8 @@ function OrganisationsSection() {
   const orgs = useSession()?.orgs ?? [];
   const copy = text.orgs;
   return (
-    <section aria-labelledby="account-orgs" className="mt-10 max-w-[480px]">
-      <h2 id="account-orgs" className="mb-3 text-lg font-semibold">
+    <section aria-labelledby="account-orgs" className="mt-12 max-w-[560px]">
+      <h2 id="account-orgs" className={sectionHeading}>
         {copy.title}
       </h2>
       {orgs.length === 0 ? (
@@ -185,19 +239,14 @@ function OrganisationsSection() {
       ) : (
         <ul aria-label={copy.title} className="flex flex-col gap-3">
           {orgs.map((org) => (
-            <li
-              key={org.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-card bg-white px-5 py-4 shadow-card"
-            >
-              <div className="min-w-0">
-                <p className="text-[1.15em] font-semibold break-words text-blue">
-                  {org.name}
-                </p>
-                <p className="text-[0.9em] font-semibold text-ink-3">
+            <li key={org.id} className={rowCard}>
+              <div className={rowInfo}>
+                <p className={rowName}>{org.name}</p>
+                <p className={rowEmail}>
                   {org.country ? countryName(org.country) : copy.unknownCountry}
                 </p>
               </div>
-              <Badge>{shellMessages.members.roles[org.role]}</Badge>
+              <RoleTag role={org.role} />
             </li>
           ))}
         </ul>
@@ -250,12 +299,12 @@ function NotificationsSection() {
   return (
     <section
       aria-labelledby="account-notifications"
-      className="mt-10 max-w-[480px]"
+      className="mt-12 max-w-[560px]"
     >
-      <h2 id="account-notifications" className="text-lg font-semibold">
+      <h2 id="account-notifications" className={cn(sectionHeading, "mb-2")}>
         {copy.title}
       </h2>
-      <p className="mb-3 text-sm text-muted-foreground">{copy.description}</p>
+      <p className="mb-4 text-ink-3">{copy.description}</p>
       {loading || query.isPending ? (
         <LoadingStar size="page" message={copy.loading} />
       ) : null}
@@ -278,7 +327,7 @@ function NotificationsSection() {
         />
       ) : null}
       {query.data && !loading ? (
-        <ul className="flex flex-col gap-4 rounded-card bg-white p-6 shadow-card">
+        <ul className={`${settingsCard} flex flex-col gap-4 p-6`}>
           {query.data.map((setting) => {
             const kind = copy.kinds[setting.kind];
             return (
@@ -298,11 +347,6 @@ function NotificationsSection() {
           })}
         </ul>
       ) : null}
-      <p className="mt-8 text-sm">
-        <Link to="/orgs" className="underline underline-offset-4">
-          {text.back}
-        </Link>
-      </p>
     </section>
   );
 }

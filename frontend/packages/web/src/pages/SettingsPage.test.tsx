@@ -131,6 +131,19 @@ describe("MGT-6 organisation settings", () => {
     ).toHaveTextContent("(required)");
   });
 
+  it("MGT-6: the fields sit in a 560px card, with a country hint and Save changes below", async () => {
+    stubApi("owner");
+    renderPage();
+    const name = await screen.findByLabelText(nameLabel);
+    const card = name.closest("[class*=shadow-card]")!;
+    expect(card).toHaveClass("max-w-[560px]", "rounded-card", "p-8");
+    const country = screen.getByLabelText(countryLabel);
+    expect(country).toHaveAccessibleDescription(text.countryHint);
+    const button = screen.getByRole("button", { name: text.save });
+    expect(card).not.toContainElement(button);
+    expect(button.lastElementChild).toHaveAttribute("data-icon", "save");
+  });
+
   it("MGT-6: an empty name is explained and nothing is sent", async () => {
     const patches = stubApi("owner");
     renderPage();

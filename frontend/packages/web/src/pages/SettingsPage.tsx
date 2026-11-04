@@ -19,6 +19,7 @@ import {
 } from "../orgs/queries";
 import { useSession } from "../session/useSession";
 import type { SessionOrg } from "../session/types";
+import { settingsCard } from "../members/rowStyles";
 import { shellMessages } from "../shell/messages";
 import { useOrgName } from "./useOrgName";
 import { useSavedFlash } from "./useSavedFlash";
@@ -86,62 +87,65 @@ function SettingsForm({ org }: { org: SessionOrg }) {
   };
 
   return (
-    <form noValidate onSubmit={submit} className="flex max-w-xl flex-col gap-5">
-      <Field
-        label={text.nameLabel}
-        htmlFor="settings-name"
-        required
-        error={errors.name}
-      >
-        <Input
-          id="settings-name"
-          value={name}
-          autoComplete="organization"
-          aria-invalid={errors.name ? true : undefined}
-          aria-describedby={
-            errors.name ? fieldErrorId("settings-name") : undefined
-          }
-          onChange={(event) => {
-            setName(event.target.value);
-          }}
-        />
-      </Field>
-      <Field
-        label={text.countryLabel}
-        htmlFor="settings-country"
-        required
-        error={errors.country}
-      >
-        <NativeSelect
-          id="settings-country"
-          value={country}
-          aria-invalid={errors.country ? true : undefined}
-          aria-describedby={
-            errors.country ? fieldErrorId("settings-country") : undefined
-          }
-          onChange={(event) => {
-            setCountry(event.target.value);
-          }}
+    <form noValidate onSubmit={submit}>
+      <div className={`${settingsCard} flex flex-col gap-6 p-8`}>
+        <Field
+          label={text.nameLabel}
+          htmlFor="settings-name"
+          required
+          error={errors.name}
         >
-          {org.country === null ? (
-            <option value="">{text.countryPlaceholder}</option>
-          ) : null}
-          {options.map((code) => (
-            <option key={code} value={code}>
-              {countryName(code)}
-            </option>
-          ))}
-        </NativeSelect>
-      </Field>
+          <Input
+            id="settings-name"
+            value={name}
+            autoComplete="organization"
+            aria-invalid={errors.name ? true : undefined}
+            aria-describedby={
+              errors.name ? fieldErrorId("settings-name") : undefined
+            }
+            onChange={(event) => {
+              setName(event.target.value);
+            }}
+          />
+        </Field>
+        <Field
+          label={text.countryLabel}
+          htmlFor="settings-country"
+          required
+          hint={text.countryHint}
+          error={errors.country}
+        >
+          <NativeSelect
+            id="settings-country"
+            value={country}
+            aria-invalid={errors.country ? true : undefined}
+            aria-describedby={
+              errors.country ? fieldErrorId("settings-country") : undefined
+            }
+            onChange={(event) => {
+              setCountry(event.target.value);
+            }}
+          >
+            {org.country === null ? (
+              <option value="">{text.countryPlaceholder}</option>
+            ) : null}
+            {options.map((code) => (
+              <option key={code} value={code}>
+                {countryName(code)}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+      </div>
       {update.isError ? (
-        <FormMessage>
+        <FormMessage className="mt-6">
           {updateOrganisationError(errorStatus(update.error))}
         </FormMessage>
       ) : null}
       <p role="status" className="sr-only">
         {saved ? text.savedAnnouncement : null}
       </p>
-      <div>
+      <div className="mt-6">
         <SaveButton
           busy={update.isPending}
           saved={saved}
