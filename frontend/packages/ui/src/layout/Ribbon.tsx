@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { glyphs } from "../icons";
+import { Icon } from "../icons";
 import { cn } from "../lib/utils";
 
 export interface RibbonProps {
@@ -16,37 +16,11 @@ export interface RibbonProps {
 
 function RibbonIcon({ overdue }: { overdue: boolean }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      width={24}
-      height={24}
-      aria-hidden
-      focusable="false"
+    <Icon
+      name={overdue ? "calendarAlert" : "calendarTick"}
+      size="lg"
       data-icon={overdue ? "calendar-alert" : "calendar-tick"}
-      className="shrink-0"
-    >
-      {glyphs.calendar}
-      {overdue ? (
-        <g
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-        >
-          <path d="M12 12.5v3" />
-          <path d="M12 18.2v.1" />
-        </g>
-      ) : (
-        <path
-          d="m8.8 15 2.2 2.2 4.2-4.6"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
-    </svg>
+    />
   );
 }
 

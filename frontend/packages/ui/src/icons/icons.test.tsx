@@ -34,4 +34,16 @@ describe("Icon", () => {
       unmount();
     }
   });
+
+  it("follows the text colour with no fixed colours in the artwork", () => {
+    for (const name of Object.keys(glyphs) as (keyof typeof glyphs)[]) {
+      const { container, unmount } = render(<Icon name={name} />);
+      expect(container.innerHTML, name).not.toMatch(/#[0-9a-f]{3,6}/i);
+      expect(container.querySelector("g")).toHaveAttribute(
+        "fill",
+        "currentColor",
+      );
+      unmount();
+    }
+  });
 });
