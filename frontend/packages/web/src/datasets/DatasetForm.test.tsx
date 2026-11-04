@@ -316,6 +316,53 @@ describe("new dataset form", () => {
     expect(server.saves()).toHaveLength(0);
   });
 
+  it("marks the fields a dataset needs to be published as required", async () => {
+    await openNew();
+    for (const key of ["title", "keyword", "access_rights", "publisher"]) {
+      expect(field(key).getAllByText("(required)")[0]).toBeInTheDocument();
+    }
+    // Needed only with personal data, or not needed at all
+    expect(
+      document.querySelector(
+        `#${fieldAnchorId("number_of_unique_individuals")} [data-slot="required-star"]`,
+      ),
+    ).toBeNull();
+    expect(
+      document.querySelector(
+        `#${fieldAnchorId("code_values")} [data-slot="required-star"]`,
+      ),
+    ).toBeNull();
+    await userEvent.click(field("has_personal_data").getByLabelText(text.yes));
+    expect(
+      document.querySelector(
+        `#${fieldAnchorId("number_of_unique_individuals")} [data-slot="required-star"]`,
+      ),
+    ).not.toBeNull();
+  });
+
+  it("clears an empty form without asking", async () => {
+    await openNew();
+    await userEvent.click(
+      screen.getByRole("button", { name: text.actions.clear }),
+    );
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("keeps the entries when the clear confirmation is declined", async () => {
+    await openNew();
+    await userEvent.type(titleBox(), "Stay");
+    await userEvent.click(
+      screen.getByRole("button", { name: text.actions.clear }),
+    );
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText(text.actions.clearTitle)).toBeVisible();
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: text.actions.cancel }),
+    );
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(titleBox()).toHaveValue("Stay");
+  });
+
   it("clears the form after confirming", async () => {
     await openNew();
     await userEvent.type(titleBox(), "Gone soon");
