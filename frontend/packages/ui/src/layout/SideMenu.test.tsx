@@ -28,6 +28,16 @@ function Harness() {
 }
 
 describe("SideMenu", () => {
+  it("returns focus to the menu button when closed with Esc", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const button = screen.getByRole("button", { name: "Open menu" });
+    await user.click(button);
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(button).toHaveFocus();
+  });
+
   it("is closed until the menu button is pressed", () => {
     render(<Harness />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

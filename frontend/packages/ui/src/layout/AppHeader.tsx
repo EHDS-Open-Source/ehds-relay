@@ -27,7 +27,10 @@ export function AppHeader({
   menuLabel = messages.openMenu,
 }: AppHeaderProps) {
   return (
-    <header data-onBlue className="sticky top-0 z-30 bg-blue text-white">
+    <header
+      data-surface="blue"
+      className="sticky top-0 z-30 bg-blue text-white"
+    >
       <div className="flex min-h-16 flex-wrap items-center gap-x-3 gap-y-3 px-5 py-3 md:min-h-[72px] md:flex-nowrap md:px-[calc(2%+2.5rem)] md:py-0">
         <div className="mr-auto flex min-w-0 items-center">{logo}</div>
         {orgName ? (

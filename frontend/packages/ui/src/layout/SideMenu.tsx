@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from "react";
+import { useRef, type ComponentProps, type ReactNode } from "react";
 import { Dialog } from "radix-ui";
 
 import { Button } from "../components/button";
@@ -28,12 +28,21 @@ export function SideMenu({
   footer,
   children,
 }: SideMenuProps) {
+  // The menu is opened from outside (no Dialog.Trigger), so remember the opener to give focus back.
+  const opener = useRef<HTMLElement | null>(null);
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-foreground/40 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
-          data-onBlue
+          data-surface="blue"
+          onOpenAutoFocus={() => {
+            opener.current = document.activeElement as HTMLElement | null;
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            opener.current?.focus();
+          }}
           // Radix wants a description; opt out explicitly when there is none.
           {...(description ? {} : { "aria-describedby": undefined })}
           className="fixed inset-y-0 right-0 z-50 flex w-[400px] max-w-full flex-col bg-blue text-white outline-none duration-[180ms] data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right max-md:w-full"
