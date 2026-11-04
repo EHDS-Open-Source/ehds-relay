@@ -1,6 +1,6 @@
-// Each dataset gets a star colour from its position in the catalogue, so neighbours differ
-// and a dataset keeps its colour wherever it appears. The colours are decorative only
-// and are not used for anything else.
+// Each dataset gets a star colour from its id, so it keeps the same colour wherever it
+// appears (catalogue card, record title) however the page was reached and however the list
+// is filtered. The colours are decorative only and are not used for anything else.
 export const STAR_PALETTE = [
   "#E3A6E4",
   "#A3DDB9",
@@ -21,11 +21,16 @@ export function starColour(index: number): string {
   return STAR_PALETTE[((i % n) + n) % n]!;
 }
 
-/** A stable position derived from an id, for when the list position is not known. */
+/** A stable palette position derived from an id. */
 export function starIndexFromId(id: string): number {
   let hash = 0;
   for (let i = 0; i < id.length; i += 1) {
     hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
   }
   return hash % STAR_PALETTE.length;
+}
+
+/** The star colour of a dataset. Use this everywhere a dataset's star is drawn. */
+export function datasetStarColour(id: string): string {
+  return starColour(starIndexFromId(id));
 }
