@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router";
+import { ToastProvider } from "@ehds-relay/ui";
 import { render } from "@testing-library/react";
 
 import { createRelayRouter } from "../router/router";
@@ -61,7 +62,9 @@ export function renderAs(path: string, session: Session | null) {
   });
   render(
     <QueryClientProvider client={router.options.context.queryClient}>
-      <RouterProvider router={router} />
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
     </QueryClientProvider>,
   );
   return router;
