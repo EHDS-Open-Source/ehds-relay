@@ -7,11 +7,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
+  ConfirmDialog,
   Field,
   FormMessage,
   Icon,
   Input,
   fieldErrorId,
+  useToast,
 } from "@ehds-relay/ui";
 import { useState, type FormEvent } from "react";
 
@@ -21,6 +23,7 @@ import {
   REMINDER_MAX_YEARS_AHEAD,
   addYears,
   initialReminderDate,
+  isIsoDate,
   nextDay,
   reminderDateProblem,
   todayIso,
@@ -28,6 +31,20 @@ import {
 
 const m = shellMessages.datasets.reminder;
 const INPUT_ID = "reminder-date";
+
+const longDateFormat = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/** A `YYYY-MM-DD` date written out in full, e.g. "4 November 2027". */
+function longDate(iso: string): string {
+  return isIsoDate(iso)
+    ? longDateFormat.format(new Date(`${iso}T00:00:00Z`))
+    : iso;
+}
 
 function saveErrorMessage(error: unknown): string {
   switch (errorStatus(error)) {
@@ -43,6 +60,8 @@ function saveErrorMessage(error: unknown): string {
 export interface ReminderDialogProps {
   orgId: string;
   datasetId: string;
+  /** Named in the confirmation before the reminder is cleared. */
+  datasetTitle: string;
   /** The date now set, if any. */
   current: string | null;
   open: boolean;
@@ -53,11 +72,14 @@ export interface ReminderDialogProps {
 export function ReminderDialog({
   orgId,
   datasetId,
+  datasetTitle,
   current,
   open,
   onOpenChange,
 }: ReminderDialogProps) {
   const save = useSetReminder(orgId, datasetId);
+  const toast = useToast();
+  const [confirmingClear, setConfirmingClear] = useState(false);
   const [value, setValue] = useState(() => initialReminderDate(current));
   const [showProblem, setShowProblem] = useState(false);
 
@@ -68,6 +90,7 @@ export function ReminderDialog({
     if (open) {
       setValue(initialReminderDate(current));
       setShowProblem(false);
+      setConfirmingClear(false);
       save.reset();
     }
   }
@@ -82,31 +105,58 @@ export function ReminderDialog({
       setShowProblem(true);
       return;
     }
-    save.mutate(value, { onSuccess: () => onOpenChange(false) });
+    save.mutate(value, {
+      onSuccess: () => {
+        onOpenChange(false);
+        toast.show({ tone: "success", message: m.savedToast(longDate(value)) });
+      },
+    });
   }
 
   function clear() {
-    save.mutate(null, { onSuccess: () => onOpenChange(false) });
+    save.mutate(null, {
+      onSuccess: () => {
+        setConfirmingClear(false);
+        onOpenChange(false);
+        toast.show({ tone: "success", message: m.clearedToast });
+      },
+    });
   }
+
+  const clearing = confirmingClear && save.isPending;
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+      <AlertDialogContent
+        className="data-[size=default]:max-w-[min(420px,calc(100%-40px))]"
+        onOverlayClick={() => {
+          if (!save.isPending) onOpenChange(false);
+        }}
+      >
+        <form onSubmit={submit} noValidate className="flex flex-col gap-6">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              <Icon name="calendar" size="xl" />
+              <Icon name="calendar" size="lg" />
               {m.dialogTitle}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {m.dialogDescription}
             </AlertDialogDescription>
+            {current ? (
+              <p>
+                {m.saved}{" "}
+                <strong className="font-bold">
+                  <time dateTime={current}>{longDate(current)}</time>
+                </strong>
+              </p>
+            ) : null}
           </AlertDialogHeader>
           <Field
             label={m.dateLabel}
             htmlFor={INPUT_ID}
             hint={m.dateHint}
             error={fieldError}
+            required
           >
             <Input
               id={INPUT_ID}
@@ -114,6 +164,7 @@ export function ReminderDialog({
               value={value}
               min={nextDay(today)}
               max={addYears(today, REMINDER_MAX_YEARS_AHEAD)}
+              required
               aria-invalid={fieldError ? true : undefined}
               aria-describedby={fieldError ? fieldErrorId(INPUT_ID) : undefined}
               onChange={(e) => {
@@ -122,28 +173,70 @@ export function ReminderDialog({
               }}
             />
           </Field>
-          {save.isError ? (
+          {save.isError && !confirmingClear ? (
             <FormMessage>{saveErrorMessage(save.error)}</FormMessage>
           ) : null}
-          <AlertDialogFooter>
-            <AlertDialogCancel type="button" disabled={save.isPending}>
+          {/* Cancel on the left; Clear reminder and Save on the right. */}
+          <AlertDialogFooter className="justify-between max-[480px]:flex-col-reverse">
+            <AlertDialogCancel
+              type="button"
+              size="sm"
+              disabled={save.isPending}
+            >
               {m.cancel}
             </AlertDialogCancel>
-            {current ? (
+            <div className="flex flex-wrap gap-2 max-[480px]:flex-col-reverse max-[480px]:*:w-full">
+              {current ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={save.isPending}
+                  onClick={() => {
+                    save.reset();
+                    setConfirmingClear(true);
+                  }}
+                >
+                  {m.clear}
+                </Button>
+              ) : null}
               <Button
-                type="button"
-                variant="secondary"
-                disabled={save.isPending}
-                onClick={clear}
+                type="submit"
+                size="sm"
+                busy={save.isPending && !confirmingClear}
               >
-                {m.clear}
+                {m.save}
+                <Icon name="save" size="sm" />
               </Button>
-            ) : null}
-            <Button type="submit" disabled={save.isPending}>
-              {m.save}
-            </Button>
+            </div>
           </AlertDialogFooter>
         </form>
+        {current ? (
+          <ConfirmDialog
+            open={confirmingClear}
+            onOpenChange={(next) => {
+              if (!save.isPending) setConfirmingClear(next);
+            }}
+            icon="calendarUpdate"
+            title={m.clearDialog.title(datasetTitle)}
+            description={
+              <>
+                {m.clearDialog.lead}{" "}
+                <strong className="font-bold">{longDate(current)}</strong>{" "}
+                {m.clearDialog.trail}
+              </>
+            }
+            confirmLabel={m.clearDialog.confirm}
+            destructive
+            pending={clearing}
+            error={
+              confirmingClear && save.isError
+                ? saveErrorMessage(save.error)
+                : undefined
+            }
+            onConfirm={clear}
+          />
+        ) : null}
       </AlertDialogContent>
     </AlertDialog>
   );

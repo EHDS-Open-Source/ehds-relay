@@ -1,9 +1,13 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 
 // Vitest globals are off, so Testing Library can't register its own cleanup.
 afterEach(cleanup);
+
+// Page loaders stay up for at least half a second (and an export page shows two in a row),
+// so give async queries more than the default second.
+configure({ asyncUtilTimeout: 2500 });
 
 // The router scrolls to the top on navigation; jsdom does not implement it.
 window.scrollTo = () => {};

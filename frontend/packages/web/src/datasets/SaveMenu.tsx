@@ -40,7 +40,7 @@ export function SaveMenu({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button type="button" busy={busy}>
-            {busy ? null : <Icon name="save" size="sm" />}
+            <Icon name="save" size="sm" />
             {text.saveMenu}
           </Button>
         </DropdownMenuTrigger>
@@ -85,10 +85,13 @@ export function SaveMenu({
           <>
             {datasetTitle ? (
               <>
-                <strong className="font-bold">{datasetTitle}</strong>:{" "}
+                {text.clearDescription}{" "}
+                <strong className="font-bold">{datasetTitle}</strong>{" "}
+                {text.clearDescriptionTrail}
               </>
-            ) : null}
-            {text.clearDescription}{" "}
+            ) : (
+              text.clearDescriptionUntitled
+            )}{" "}
             <strong className="font-bold">{text.clearIrreversible}</strong>
           </>
         }

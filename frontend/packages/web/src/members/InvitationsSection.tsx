@@ -1,6 +1,5 @@
 import {
   Badge,
-  Banner,
   Button,
   ConfirmDialog,
   EmptyState,
@@ -10,6 +9,7 @@ import {
   LoadingStar,
   NativeSelect,
   fieldErrorId,
+  useMinimumPending,
   useToast,
 } from "@ehds-relay/ui";
 import { useState, type FormEvent } from "react";
@@ -45,6 +45,7 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
     orgId,
     filter === "all" ? undefined : filter,
   );
+  const loadingList = useMinimumPending(invitations.isPending);
   const invite = useInvite(orgId);
   const resend = useResendInvitation(orgId);
   const cancel = useCancelInvitation(orgId);
@@ -161,10 +162,22 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
         />
       </div>
 
-      {invitations.isPending ? (
-        <LoadingStar size="page" message={shellMessages.loading} />
+      {loadingList || invitations.isPending ? (
+        <LoadingStar size="page" message={m.loadingInvitations} />
       ) : invitations.isError ? (
-        <Banner tone="error">{m.loadFailed}</Banner>
+        <EmptyState
+          status
+          title={m.loadFailed}
+          action={
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => void invitations.refetch()}
+            >
+              {m.retry}
+            </Button>
+          }
+        />
       ) : invitations.data.length === 0 ? (
         <EmptyState compact title={text.empty} />
       ) : (

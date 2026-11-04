@@ -207,7 +207,7 @@ describe("invitations", () => {
     await waitFor(() => {
       expect(screen.queryByText("new@example.org")).not.toBeInTheDocument();
     });
-    expect(screen.getByText("old@example.org")).toBeVisible();
+    expect(await screen.findByText("old@example.org")).toBeVisible();
     expect(calls.some((c) => c.url.includes("status=expired"))).toBe(true);
   });
 

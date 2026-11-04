@@ -1,7 +1,6 @@
 import { zMeUpdateDto } from "@ehds-relay/api-client";
 import {
   Badge,
-  Banner,
   Button,
   EmptyState,
   Field,
@@ -12,6 +11,7 @@ import {
   PageHeader,
   Toggle,
   fieldErrorId,
+  useMinimumPending,
   useToast,
 } from "@ehds-relay/ui";
 import { Link } from "@tanstack/react-router";
@@ -225,6 +225,7 @@ function NotificationsSection() {
   const [changed, setChanged] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const toast = useToast();
+  const loading = useMinimumPending(query.isPending);
 
   const toggle = async (kind: string, enabled: boolean) => {
     setBusy(kind);
@@ -259,17 +260,18 @@ function NotificationsSection() {
         {copy.title}
       </h2>
       <p className="mb-3 text-sm text-muted-foreground">{copy.description}</p>
-      {query.isPending ? (
+      {loading || query.isPending ? (
         <LoadingStar size="page" message={copy.loading} />
       ) : null}
-      {query.isError ? (
-        <Banner
-          tone="error"
+      {query.isError && !loading ? (
+        // About this section only, so said here rather than in a page banner.
+        <EmptyState
+          status
+          title={copy.loadFailed}
           action={
             <Button
               type="button"
               variant="secondary"
-              size="sm"
               onClick={() => {
                 void query.refetch();
               }}
@@ -277,11 +279,9 @@ function NotificationsSection() {
               {copy.retry}
             </Button>
           }
-        >
-          {copy.loadFailed}
-        </Banner>
+        />
       ) : null}
-      {query.data ? (
+      {query.data && !loading ? (
         <ul className="flex flex-col gap-4 rounded-card bg-white p-6 shadow-card">
           {query.data.map((setting) => {
             const kind = copy.kinds[setting.kind];

@@ -44,6 +44,7 @@ export const shellMessages = {
       description: "It may have been deleted, or the address is wrong.",
     },
     loadFailed: "The dataset could not be loaded. Try again in a moment.",
+    loadingRecord: "Loading the dataset record…",
     retry: "Try again",
     backToCatalogue: "Back to catalogue",
     backToRecord: "Back to record",
@@ -94,9 +95,19 @@ export const shellMessages = {
         "Choose when to be reminded to check this dataset's metadata is still right. The reminder is kept in EHDS Relay and is not part of the published record.",
       dateLabel: "Reminder date",
       dateHint: "After today and no more than 5 years ahead.",
-      save: "Save reminder",
-      clear: "Remove reminder",
+      saved: "Saved reminder:",
+      save: "Save",
+      clear: "Clear reminder",
       cancel: "Cancel",
+      savedToast: (date: string) => `Reminder set for ${date}.`,
+      clearedToast: "Reminder cleared.",
+      clearDialog: {
+        title: (title: string) => `Clear the reminder for ${title}?`,
+        lead: "The revalidation reminder for",
+        trail:
+          "will be removed for everyone in your organisation. You can set a new one at any time.",
+        confirm: "Clear reminder",
+      },
       problems: {
         required: "Choose a date.",
         invalid: "Enter a real date.",
@@ -111,9 +122,10 @@ export const shellMessages = {
       },
     },
     deleteDialog: {
-      title: "Delete this dataset?",
+      title: (title: string) => `Delete ${title}?`,
       description:
-        "This removes the dataset and its metadata for good. It cannot be undone.",
+        "and its metadata will be removed for everyone in your organisation.",
+      irreversible: "This can't be undone.",
       confirm: "Delete dataset",
       deleted: "Dataset deleted.",
       forbidden: "Only an owner of this organisation can delete a dataset.",
@@ -128,7 +140,7 @@ export const shellMessages = {
         jsonld: "JSON-LD",
         rdfxml: "RDF/XML",
       },
-      loading: "Loading output",
+      loading: "Generating your DCAT-AP output…",
       unavailable: "This output is not available yet.",
       incomplete:
         "This record is incomplete, so there is no output to show yet.",
@@ -253,7 +265,7 @@ export const shellMessages = {
       failed: "Something went wrong. Please try again.",
     },
   },
-  loading: "Loading...",
+  loading: "Loading…",
   account: {
     eyebrow: "Account",
     title: "Manage my account",
@@ -283,7 +295,7 @@ export const shellMessages = {
     notifications: {
       title: "Notifications",
       description: "Choose which emails you receive from EHDS Relay.",
-      loading: "Loading your notification settings...",
+      loading: "Loading your notification settings…",
       loadFailed:
         "Your notification settings could not be loaded. Try again in a moment.",
       retry: "Try again",
@@ -305,6 +317,8 @@ export const shellMessages = {
   members: {
     ownersOnly: "Only an owner of this organisation can manage its members.",
     loadFailed: "Could not load this list. Try again in a moment.",
+    loadingUsers: "Loading users…",
+    loadingInvitations: "Loading invitations…",
     retry: "Try again",
     roles: { owner: "Owner", standard: "Standard" },
     list: {
@@ -381,7 +395,7 @@ export const shellMessages = {
     },
   },
   acceptInvite: {
-    loading: "Loading your invitation...",
+    loading: "Loading your invitation…",
     title: (organisation: string) => `Join ${organisation}`,
     invitedBy: (name: string) => `${name} invited you`,
     invitedByUnknown: "You have been invited",
@@ -559,8 +573,9 @@ export const shellMessages = {
       saveAndPublish: "Save and Publish",
       clear: "Clear",
       clearTitle: "Clear all fields?",
-      clearDescription:
-        "Every answer on this page will be removed. Saved data is not changed until you save.",
+      clearDescription: "Every field in",
+      clearDescriptionTrail: "will be emptied.",
+      clearDescriptionUntitled: "Every field in this dataset will be emptied.",
       clearIrreversible: "This can't be undone.",
       clearConfirm: "Clear all fields",
       cancel: "Keep my entries",

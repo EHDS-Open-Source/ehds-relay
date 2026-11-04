@@ -22,6 +22,15 @@ import {
 } from "./datasetTestUtils";
 
 const m = shellMessages.datasets;
+
+/** e.g. "4 November 2027", as the reminder dialog and its toasts write dates. */
+const longDate = (iso: string) =>
+  new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${iso}T00:00:00Z`));
 const form = shellMessages.datasetForm;
 const path = `/orgs/${ORG}/datasets/${ID}`;
 
@@ -215,7 +224,7 @@ describe("revalidation reminder", () => {
     const { bodies } = stubReminder();
     renderApp(path);
     const dialog = await openDialog();
-    const input = within(dialog).getByLabelText(r.dateLabel);
+    const input = within(dialog).getByLabelText(r.dateLabel, { exact: false });
     expect(input).toHaveValue(inAYear);
     expect(input).toHaveAttribute("min", nextDay(todayIso()));
     // Nothing to remove yet
@@ -228,6 +237,10 @@ describe("revalidation reminder", () => {
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
     );
     expect(bodies).toEqual([{ reminder_date: inAYear }]);
+    expect(
+      await screen.findByText(r.savedToast(longDate(inAYear))),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: r.update })).toHaveFocus();
     // The ribbon and the pill both show the date
     expect(screen.getAllByText(formatIsoDate(inAYear))).toHaveLength(2);
     expect(screen.getByText(m.ribbon.due)).toBeVisible();
@@ -244,7 +257,7 @@ describe("revalidation reminder", () => {
       (await screen.findAllByText(formatIsoDate(current))).length,
     ).toBeGreaterThan(0);
     const dialog = await openDialog();
-    const input = within(dialog).getByLabelText(r.dateLabel);
+    const input = within(dialog).getByLabelText(r.dateLabel, { exact: false });
     expect(input).toHaveValue(current);
     const next = nextDay(todayIso());
     fireEvent.change(input, { target: { value: next } });
@@ -264,15 +277,44 @@ describe("revalidation reminder", () => {
     await userEvent.click(
       within(dialog).getByRole("button", { name: r.clear }),
     );
+    // Asks first, naming the dataset and the date
+    const confirm = screen.getByRole("alertdialog", {
+      name: r.clearDialog.title(makeDataset().title!),
+    });
+    expect(confirm).toHaveTextContent(longDate(inAYear));
+    expect(bodies).toEqual([]);
+    await userEvent.click(
+      within(confirm).getByRole("button", { name: r.clearDialog.confirm }),
+    );
     await waitFor(() => expect(bodies).toEqual([{ reminder_date: null }]));
     expect(await screen.findByText(r.none)).toBeVisible();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(await screen.findByText(r.clearedToast)).toBeVisible();
+    // Focus goes back to the button that opened the reminder dialog
+    expect(screen.getByRole("button", { name: r.button })).toHaveFocus();
+  });
+
+  it("keeps the reminder when the clear confirmation is cancelled", async () => {
+    const { bodies } = stubReminder(
+      makeDataset({ reminder_date: inAYear, reminder_set_by_name: "Bo" }),
+    );
+    renderApp(path);
+    const dialog = await openDialog();
+    const clear = within(dialog).getByRole("button", { name: r.clear });
+    await userEvent.click(clear);
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(screen.getAllByRole("alertdialog")).toHaveLength(1),
+    );
+    expect(clear).toHaveFocus();
+    expect(bodies).toEqual([]);
   });
 
   it("EDIT-11 refuses today and past dates without calling the API", async () => {
     const { bodies } = stubReminder();
     renderApp(path);
     const dialog = await openDialog();
-    const input = within(dialog).getByLabelText(r.dateLabel);
+    const input = within(dialog).getByLabelText(r.dateLabel, { exact: false });
     fireEvent.change(input, { target: { value: todayIso() } });
     expect(within(dialog).getByText(r.problems.notFuture)).toBeVisible();
     expect(input).toHaveAttribute("aria-invalid", "true");
@@ -304,7 +346,9 @@ describe("revalidation reminder", () => {
       formatIsoDate("2025-01-10"),
     );
     const dialog = await openDialog();
-    expect(within(dialog).getByLabelText(r.dateLabel)).toHaveValue(inAYear);
+    expect(
+      within(dialog).getByLabelText(r.dateLabel, { exact: false }),
+    ).toHaveValue(inAYear);
   });
 });
 

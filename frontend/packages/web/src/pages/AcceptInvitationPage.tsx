@@ -1,4 +1,9 @@
-import { Button, FormMessage, LoadingStar } from "@ehds-relay/ui";
+import {
+  Button,
+  FormMessage,
+  LoadingStar,
+  useMinimumPending,
+} from "@ehds-relay/ui";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 
 import {
@@ -47,8 +52,9 @@ export function AcceptInvitationPage() {
   const signOut = useSignOut();
   const preview = useInvitationPreview(token);
   const accept = useAcceptInvitation(token);
+  const loading = useMinimumPending(preview.isPending);
 
-  if (preview.isPending) {
+  if (loading || preview.isPending) {
     return (
       <BareLayout>
         <LoadingStar size="page" message={m.loading} />
