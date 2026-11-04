@@ -156,6 +156,15 @@ export const glyphs = {
       />
     </g>
   ),
+  // The status "success" mark: a disc with the tick cut out (the tick stroke as an outline).
+  tickCircle: (
+    <g fill="currentColor">
+      <path
+        d="M12 1a11 11 0 1 0 0 22a11 11 0 0 0 0-22zM7.919 11.581L10.207 13.869L16.088 8.074A1.3 1.3 0 0 1 17.912 9.926L11.112 16.626A1.3 1.3 0 0 1 9.281 16.619L6.081 13.419A1.3 1.3 0 0 1 7.919 11.581z"
+        fillRule="evenodd"
+      />
+    </g>
+  ),
   info: (
     <g fill="currentColor">
       <path

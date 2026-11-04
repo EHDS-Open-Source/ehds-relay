@@ -17,7 +17,7 @@ export interface BannerProps {
 }
 
 const icons: Record<BannerTone, IconName> = {
-  success: "tick",
+  success: "tickCircle",
   info: "info",
   warning: "warning",
   error: "star",

@@ -38,7 +38,7 @@ export const MAX_TOASTS = 3;
 export const TOAST_DURATION_MS = 5000;
 
 const icons: Record<ToastTone, IconName> = {
-  success: "tick",
+  success: "tickCircle",
   info: "info",
   warning: "warning",
   error: "star",
