@@ -1,3 +1,5 @@
+import { LoadingStar } from "@ehds-relay/ui";
+
 import { BareLayout } from "../shell/BareLayout";
 import { shellMessages } from "../shell/messages";
 
@@ -5,9 +7,7 @@ import { shellMessages } from "../shell/messages";
 export function Loading() {
   return (
     <BareLayout>
-      <p role="status" className="text-muted-foreground">
-        {shellMessages.loading}
-      </p>
+      <LoadingStar size="page" message={shellMessages.loading} />
     </BareLayout>
   );
 }

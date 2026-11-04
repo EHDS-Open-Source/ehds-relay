@@ -1,21 +1,57 @@
 import type { ReactNode } from "react";
 
+import { Icon } from "../icons";
+import { cn } from "../lib/utils";
+
 export interface EmptyStateProps {
   title: string;
   description?: string;
   action?: ReactNode;
+  /** Smaller, for under an existing list. Drops the action. */
+  compact?: boolean;
+  /** Announce the state when it appears, e.g. a search with no matches. */
+  status?: boolean;
 }
 
-export function EmptyState({ title, description, action }: EmptyStateProps) {
+/** Stands in for a list that has nothing in it: says why, and what to do next. */
+export function EmptyState({
+  title,
+  description,
+  action,
+  compact,
+  status,
+}: EmptyStateProps) {
   return (
-    <div className="rounded-3xl border-2 border-dashed bg-background/70 px-6 py-14 text-center">
-      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+    <div
+      role={status || compact ? "status" : undefined}
+      data-slot="empty-state"
+      data-compact={compact ? "" : undefined}
+      className={cn(
+        "rounded-lg border-2 border-dashed border-blue-tint-80 bg-white text-center",
+        compact ? "px-5 py-6" : "px-6 py-14",
+      )}
+    >
+      <Icon
+        name="star"
+        aria-hidden
+        className="mx-auto mb-3 text-blue-tint-80"
+        style={{
+          width: compact ? 36 : 56,
+          height: compact ? 36 : 56,
+        }}
+      />
+      <h2
+        className={cn(
+          "font-bold text-blue",
+          compact ? "text-base" : "text-[1.3em]",
+        )}
+      >
+        {title}
+      </h2>
       {description ? (
-        <p className="mx-auto mt-2 max-w-md text-muted-foreground">
-          {description}
-        </p>
+        <p className="mx-auto mt-2 max-w-[46ch] text-ink">{description}</p>
       ) : null}
-      {action ? <div className="mt-6">{action}</div> : null}
+      {action && !compact ? <div className="mt-6">{action}</div> : null}
     </div>
   );
 }
