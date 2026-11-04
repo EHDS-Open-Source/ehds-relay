@@ -10,6 +10,7 @@ export const messages = {
   datasetCard: {
     draft: "Draft",
     overdue: "Overdue",
+    overdueSince: "Revalidation overdue since",
     reminder: "Revalidation due",
   },
   tagInput: { remove: "Remove" },

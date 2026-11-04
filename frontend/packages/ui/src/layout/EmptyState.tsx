@@ -34,7 +34,7 @@ export function EmptyState({
       <Icon
         name="star"
         aria-hidden
-        className="mx-auto mb-3 text-blue-tint-80"
+        className={cn("mx-auto text-blue-tint-80", compact ? "mb-4" : "mb-5")}
         style={{
           width: compact ? 36 : 56,
           height: compact ? 36 : 56,
@@ -43,13 +43,17 @@ export function EmptyState({
       <h2
         className={cn(
           "font-bold text-blue",
+          // The line height comes after the size: the class merger drops it otherwise.
           compact ? "text-base" : "text-[1.3em]",
+          "leading-[1.3]",
         )}
       >
         {title}
       </h2>
       {description ? (
-        <p className="mx-auto mt-2 max-w-[46ch] text-ink">{description}</p>
+        <p className="mx-auto mt-2 max-w-[46ch] leading-[1.6] text-ink">
+          {description}
+        </p>
       ) : null}
       {action && !compact ? <div className="mt-6">{action}</div> : null}
     </div>

@@ -120,29 +120,39 @@ describe("DatasetCard", () => {
     );
     const link = screen.getByRole("link", { name: /Due/ });
     expect(link).toHaveTextContent("Revalidation due 4 Mar 2027");
+    expect(link.querySelector("[data-band='reminder']")).not.toBeNull();
     expect(screen.getByText("Revalidation due")).toHaveClass("sr-only");
     expect(link.querySelector("[data-icon='star']")).toHaveStyle({
       color: "#E3A6E4",
     });
   });
 
-  it("says Overdue in the footer in words, with the date when there is one", () => {
+  it("says Overdue in the footer, read out as overdue since the date, with a blue star", () => {
     render(
       <DatasetCard
         title="Late"
         overdue
-        reminderDate="1 Jan 2026"
+        reminderDate="1 January 2026"
+        starColour="#E3A6E4"
         renderLink={renderLink}
       />,
     );
-    expect(screen.getByRole("link")).toHaveTextContent("Overdue 1 Jan 2026");
+    const link = screen.getByRole("link");
+    expect(screen.getByText("Overdue")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByText("Revalidation overdue since")).toHaveClass(
+      "sr-only",
+    );
+    expect(link).toHaveTextContent("1 January 2026");
+    expect(link.querySelector("[data-band='overdue']")).not.toBeNull();
+    expect(link.querySelector("[data-icon='calendarAlert']")).not.toBeNull();
+    expect(link.querySelector("[data-band] [data-icon='star']")).toHaveStyle({
+      color: "var(--blue)",
+    });
   });
 
   it("has no footer band without a reminder or overdue", () => {
     render(<DatasetCard title="Plain" renderLink={renderLink} />);
-    expect(
-      screen.getByRole("link").querySelector("[data-icon='calendar']"),
-    ).toBeNull();
+    expect(screen.getByRole("link").querySelector("[data-band]")).toBeNull();
   });
 
   it("marks the title as a level 2 heading", () => {

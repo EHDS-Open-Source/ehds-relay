@@ -5,6 +5,7 @@ import {
   formatIsoDate,
   initialReminderDate,
   isIsoDate,
+  isReminderPassed,
   nextDay,
   reminderDateProblem,
   todayIso,
@@ -56,7 +57,16 @@ describe("reminder dates", () => {
   });
 
   it("formats dates for people", () => {
-    expect(formatIsoDate("2027-11-03")).toBe("3 Nov 2027");
+    expect(formatIsoDate("2027-11-03")).toBe("3 November 2027");
+    expect(formatIsoDate("2027-10-22")).toBe("22 October 2027");
     expect(formatIsoDate("nonsense")).toBe("nonsense");
+  });
+
+  it("counts a reminder as passed only from the day after it", () => {
+    expect(isReminderPassed("2026-11-02", now)).toBe(true);
+    expect(isReminderPassed("2026-11-03", now)).toBe(false);
+    expect(isReminderPassed("2026-11-04", now)).toBe(false);
+    expect(isReminderPassed(null, now)).toBe(false);
+    expect(isReminderPassed("nonsense", now)).toBe(false);
   });
 });

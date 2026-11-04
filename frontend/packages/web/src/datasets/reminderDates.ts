@@ -66,11 +66,21 @@ export function reminderDateProblem(
 }
 
 const longDate = new Intl.DateTimeFormat("en-GB", {
-  dateStyle: "medium",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
   timeZone: "UTC",
 });
 
-/** A `YYYY-MM-DD` date for people, e.g. "3 Nov 2027". */
+/** A `YYYY-MM-DD` date for people, with the month written out, e.g. "3 November 2027". */
 export function formatIsoDate(iso: string): string {
   return isIsoDate(iso) ? longDate.format(new Date(`${iso}T00:00:00Z`)) : iso;
+}
+
+/** Whether a reminder date is behind us: the day after the date, not on it. */
+export function isReminderPassed(
+  iso: string | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  return Boolean(iso && isIsoDate(iso) && iso < todayIso(now));
 }

@@ -74,8 +74,10 @@ export { CardGrid } from "./patterns/CardGrid";
 export { DatasetCard, type DatasetCardProps } from "./patterns/DatasetCard";
 export {
   FilterChips,
+  FilterToggle,
   type FilterChipOption,
   type FilterChipsProps,
+  type FilterToggleProps,
 } from "./patterns/FilterChips";
 export { SearchField, type SearchFieldProps } from "./patterns/SearchField";
 export {

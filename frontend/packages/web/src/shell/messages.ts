@@ -172,7 +172,7 @@ export const shellMessages = {
   catalogue: {
     addDataset: "Add a dataset",
     searchLabel: "Search datasets",
-    searchPlaceholder: "Search by title, description, keyword or category",
+    searchPlaceholder: "Search datasets\u2026",
     filterLabel: "Access level",
     access: {
       all: "All",
@@ -180,28 +180,37 @@ export const shellMessages = {
       restricted: "Restricted",
       non_public: "Non-public",
     },
-    revalidationLabel: "Revalidation",
-    revalidation: {
-      any: "Any",
-      overdue: "Overdue only",
+    accessInSentence: {
+      public: "public",
+      restricted: "restricted",
+      non_public: "non-public",
     },
+    overdueFilter: "Overdue",
     draft: "Draft",
     overdue: "Overdue",
+    overdueSince: "Revalidation overdue since",
     reminderDue: "Revalidation due",
     untitled: "Untitled dataset",
-    loading: "Loading your datasets…",
+    loading: "Loading your datasets\u2026",
     error: "The datasets could not be loaded.",
     retry: "Retry",
     empty: {
       title: "No datasets yet",
-      description: "Add your first dataset to start your catalogue.",
+      description:
+        "Your organisation's catalogue is empty. Add your first dataset to start building your Health DCAT-AP compliant catalogue.",
     },
     noMatch: {
-      title: (query: string) =>
-        query.trim()
-          ? `No datasets match \u201c${query.trim()}\u201d`
-          : "No datasets match",
-      description: "Try different words or other filters.",
+      /** `level` is the chosen access level in lower case, e.g. "public", if one is chosen. */
+      title: (query: string, level?: string) => {
+        const q = query.trim();
+        const what = level ? `${level} datasets` : "datasets";
+        if (q) return `No ${what} match \u201c${q}\u201d`;
+        return level ? `No ${what} yet` : "No datasets match";
+      },
+      description:
+        "Check the spelling or try another word, or clear your search and filters to see the whole catalogue.",
+      filterDescription:
+        "Clear the filters to see every dataset in your catalogue.",
       clear: "Clear search and filters",
     },
   },

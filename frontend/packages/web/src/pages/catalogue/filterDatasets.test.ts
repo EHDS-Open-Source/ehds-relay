@@ -50,7 +50,7 @@ const all = [
   ),
   ds("c", { title: [{ lang: "en", text: "Other" }] }),
   ds("d", "weird" as never, { title: "Old shape", description: "legacy text" }),
-].map(readCatalogueFields);
+].map((d) => readCatalogueFields(d));
 
 const ids = (q: string, access: Parameters<typeof filterDatasets>[2] = "all") =>
   filterDatasets(all, q, access).map((d) => d.id);
@@ -83,6 +83,20 @@ describe("filterDatasets", () => {
       filterDatasets(all, "cancer", "public", "overdue").map((d) => d.id),
     ).toEqual([]);
     expect(filterDatasets(all, "", "all", "any")).toHaveLength(4);
+  });
+  it("EDIT-14 counts a passed reminder date as overdue, from the day after", () => {
+    const now = new Date(2026, 10, 4, 10, 0);
+    const read = (reminder_date: string) =>
+      readCatalogueFields(ds("r", {}, { reminder_date }), now);
+    expect(read("2026-11-03")).toMatchObject({
+      overdue: true,
+      reminderPassed: true,
+    });
+    expect(read("2026-11-04")).toMatchObject({
+      overdue: false,
+      reminderPassed: false,
+    });
+    expect(read("2027-10-22").overdue).toBe(false);
   });
   it("keeps datasets without an access level under All only", () => {
     expect(ids("", "non_public")).toEqual([]);
