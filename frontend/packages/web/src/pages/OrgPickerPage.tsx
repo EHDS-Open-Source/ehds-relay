@@ -1,4 +1,4 @@
-import { PageHeader } from "@ehds-relay/ui";
+import { Icon } from "@ehds-relay/ui";
 import { Link } from "@tanstack/react-router";
 
 import { countryName } from "../orgs/countries";
@@ -12,22 +12,33 @@ export function OrgPickerPage() {
   const orgs = useSession()?.orgs ?? [];
 
   return (
-    <BareLayout>
-      <PageHeader
-        title={shellMessages.orgPicker.title}
-        description={shellMessages.orgPicker.description}
-      />
-      <ul className="flex flex-col gap-2">
+    <BareLayout
+      title={shellMessages.orgPicker.title}
+      description={shellMessages.orgPicker.description}
+      width="wide"
+    >
+      <ul className="flex flex-col">
         {orgs.map((org) => (
-          <li key={org.id}>
+          <li key={org.id} className="border-b-2 border-white last:border-b-0">
             <Link
               to="/orgs/$orgId/catalogue"
               params={{ orgId: org.id }}
-              className="flex items-baseline justify-between gap-4 rounded-2xl border bg-background px-4 py-3 hover:bg-accent"
+              className="group flex items-center justify-between gap-4 py-4"
             >
-              <span className="font-medium">{org.name}</span>
-              <span className="text-sm text-muted-foreground">
-                {countryName(org.country)}
+              <span className="flex min-w-0 flex-col gap-1">
+                <span className="text-lg font-semibold break-words text-white">
+                  {org.name}
+                </span>
+                <span className="flex items-center gap-1.5 text-sm font-semibold text-yellow">
+                  <Icon name="pin" aria-hidden />
+                  {countryName(org.country)}
+                </span>
+              </span>
+              <span
+                aria-hidden="true"
+                className="flex size-[46px] shrink-0 items-center justify-center rounded-full bg-yellow text-blue transition-colors group-hover:bg-yellow-shade"
+              >
+                <Icon name="next" />
               </span>
             </Link>
           </li>

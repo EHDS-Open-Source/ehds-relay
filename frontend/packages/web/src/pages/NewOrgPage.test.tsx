@@ -68,6 +68,19 @@ describe("NewOrgPage", () => {
     expect(posts(fetch)).toHaveLength(0);
   });
 
+  it("marks fields invalid, focuses the first and clears an error on typing", async () => {
+    stubApi(() => Response.json(created, { status: 201 }));
+    renderPage();
+    const name = await screen.findByLabelText(new RegExp(text.nameLabel));
+    await userEvent.click(screen.getByRole("button", { name: text.submit }));
+    expect(name).toHaveAttribute("aria-invalid", "true");
+    expect(name).toHaveFocus();
+    expect(name).toHaveAccessibleDescription(text.nameRequired);
+    await userEvent.type(name, "A");
+    expect(screen.queryByText(text.nameRequired)).toBeNull();
+    expect(screen.getByText(text.countryRequired)).toBeVisible();
+  });
+
   it("creates the organisation and opens its catalogue", async () => {
     const fetch = stubApi(() => Response.json(created, { status: 201 }));
     const router = renderPage();
