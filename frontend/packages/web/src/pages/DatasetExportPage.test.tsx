@@ -9,6 +9,7 @@ import {
   base,
   json,
   makeDataset,
+  findAlert,
   renderApp,
   stubApi,
 } from "./datasetTestUtils";
@@ -158,7 +159,7 @@ describe("dataset export", () => {
           }),
       });
       renderApp(path);
-      const alert = await screen.findByRole("alert");
+      const alert = await findAlert();
       expect(alert).toHaveTextContent(v.fails);
       const link = screen.getByRole("link", {
         name: shellMessages.datasetForm.fields.distributions,

@@ -120,7 +120,7 @@ function Organisation({
 }) {
   return (
     <div className="space-y-1">
-      <p className="font-medium">{org.name}</p>
+      <p className="font-semibold">{org.name}</p>
       {description ? <p>{description}</p> : null}
       {org.type ? (
         <p>
@@ -158,7 +158,7 @@ function renderValue(def: FieldDef, metadata: DatasetMetadata): ReactNode {
       return metadata[def.key as "provenance"];
     case "turtle":
       return (
-        <pre className="max-h-80 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs whitespace-pre">
+        <pre className="max-h-80 overflow-auto rounded-[14px] bg-code-bg p-4 font-mono text-xs font-normal whitespace-pre text-code-text">
           {metadata.quantum_label}
         </pre>
       );
@@ -279,12 +279,6 @@ export function DatasetRecord({ metadata }: { metadata: DatasetMetadata }) {
                 key={def.key}
                 id={`record-${def.key}`}
                 label={fieldLabel(def.key)}
-                wide={
-                  def.kind !== "boolean" &&
-                  def.kind !== "number" &&
-                  def.kind !== "accessRights" &&
-                  def.kind !== "temporal"
-                }
               >
                 {renderValue(def, metadata)}
               </DetailField>

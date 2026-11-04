@@ -1,4 +1,4 @@
-import { Button } from "@ehds-relay/ui";
+import { Button, Icon, cn } from "@ehds-relay/ui";
 import { Link } from "@tanstack/react-router";
 
 import { shellMessages } from "../shell/messages";
@@ -61,7 +61,7 @@ function ItemList({
           ) : (
             <span className="font-medium">{v.wholeRecord}</span>
           )}{" "}
-          <span className="text-muted-foreground">{item.message}</span>
+          <span className="text-ink">{item.message}</span>
         </li>
       ))}
     </ul>
@@ -79,9 +79,10 @@ export function ValidationPanel({
   const query = useDatasetValidation(orgId, datasetId);
 
   let body;
+  let tone = "bg-blue-tint-95";
   if (query.isPending) {
     body = (
-      <p role="status" className="text-muted-foreground">
+      <p role="status" className="text-ink">
         {v.checking}
       </p>
     );
@@ -89,10 +90,10 @@ export function ValidationPanel({
     // 501: the checks are not built yet on the server
     body =
       errorStatus(query.error) === 501 ? (
-        <p className="text-muted-foreground">{v.unavailable}</p>
+        <p className="text-ink">{v.unavailable}</p>
       ) : (
         <div className="flex flex-wrap items-center gap-3">
-          <p className="text-muted-foreground">{v.failed}</p>
+          <p className="text-ink">{v.failed}</p>
           <Button
             type="button"
             size="sm"
@@ -108,20 +109,35 @@ export function ValidationPanel({
     const items = itemsOf(report);
     const problems = items.filter((i) => i.severity === "violation");
     const notes = items.filter((i) => i.severity !== "violation");
+    tone = report.conforms
+      ? notes.length > 0
+        ? "bg-info-bg"
+        : "bg-success-bg"
+      : "bg-error-bg";
     body = report.conforms ? (
       <div role="status">
-        <p className="font-medium">
+        <p className="flex items-center gap-2 font-semibold text-ink">
+          <Icon
+            name={notes.length > 0 ? "info" : "tick"}
+            size="lg"
+            className={
+              notes.length > 0 ? "text-info-on-white" : "text-success-on-white"
+            }
+          />
           {notes.length > 0 ? v.warnings : v.passes}
         </p>
-        <p className="text-muted-foreground">{v.passesDetail}</p>
+        <p className="text-ink">{v.passesDetail}</p>
         {notes.length > 0 ? (
           <ItemList orgId={orgId} datasetId={datasetId} items={notes} />
         ) : null}
       </div>
     ) : (
       <div role="alert">
-        <p className="font-medium">{v.fails}</p>
-        <p className="text-muted-foreground">{v.failsDetail}</p>
+        <p className="flex items-center gap-2 font-semibold text-ink">
+          <Icon name="warning" size="lg" className="text-error-on-white" />
+          {v.fails}
+        </p>
+        <p className="text-ink">{v.failsDetail}</p>
         <ItemList
           orgId={orgId}
           datasetId={datasetId}
@@ -134,9 +150,12 @@ export function ValidationPanel({
   return (
     <section
       aria-labelledby="validation-title"
-      className="mb-6 rounded-lg border p-5"
+      className={cn("mb-6 rounded-[14px] p-5", tone)}
     >
-      <h2 id="validation-title" className="mb-2 text-lg font-semibold">
+      <h2
+        id="validation-title"
+        className="mb-2 text-[1.1em] font-bold text-blue"
+      >
         {v.title}
       </h2>
       {body}

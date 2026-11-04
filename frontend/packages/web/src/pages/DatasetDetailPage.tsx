@@ -1,22 +1,35 @@
 import {
   Button,
+  DetailPill,
   EmptyState,
+  Icon,
+  LoadingStar,
   PageHeader,
+  Ribbon,
   StatusBadge,
+  ConfirmDialog,
   buttonVariants,
+  starColour,
+  starIndexFromId,
+  useToast,
 } from "@ehds-relay/ui";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ConfirmDialog } from "@ehds-relay/ui";
 
 import { DatasetRecord } from "../datasets/DatasetRecord";
 import { MissingFields } from "../datasets/MissingFields";
 import { ReminderDialog } from "../datasets/ReminderDialog";
 import { formatIsoDate, todayIso } from "../datasets/reminderDates";
-import { errorStatus, useDataset, useDeleteDataset } from "../datasets/queries";
+import {
+  datasetKeys,
+  errorStatus,
+  useDataset,
+  useDeleteDataset,
+} from "../datasets/queries";
 import { useDatasetRoute } from "../datasets/useDatasetRoute";
+import { RibbonPortal } from "../shell/RibbonSlot";
 import { shellMessages } from "../shell/messages";
-import { useOrgName } from "./useOrgName";
 
 const m = shellMessages.datasets;
 
@@ -37,30 +50,28 @@ function deleteErrorMessage(error: unknown): string {
 }
 
 export function DatasetDetailPage() {
-  const orgName = useOrgName();
   const { orgId, datasetId, isOwner } = useDatasetRoute();
   const query = useDataset(orgId, datasetId);
   const remove = useDeleteDataset(orgId, datasetId);
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
+  const toast = useToast();
+  const queryClient = useQueryClient();
   const [reminderOpen, setReminderOpen] = useState(false);
 
   const catalogueLink = (
     <Link
       to="/orgs/$orgId/catalogue"
       params={{ orgId }}
-      className={buttonVariants({ variant: "ghost" })}
+      className={buttonVariants({ variant: "secondary" })}
     >
+      <Icon name="back" size="md" />
       {m.backToCatalogue}
     </Link>
   );
 
   if (query.isPending) {
-    return (
-      <p role="status" className="text-muted-foreground">
-        {shellMessages.loading}
-      </p>
-    );
+    return <LoadingStar size="page" message={shellMessages.loading} />;
   }
 
   if (query.isError) {
@@ -91,114 +102,155 @@ export function DatasetDetailPage() {
   const title = dataset.title ?? m.untitled;
   const missing = dataset.missing_for_publish;
   const accessRights = metadata.access_rights;
+  // Same colour as the catalogue card: its place in the list if that is cached, else from the id
+  const cachedList = queryClient.getQueryData(datasetKeys.list(orgId));
+  const listIndex = Array.isArray(cachedList)
+    ? cachedList.findIndex((d: { id: string }) => d.id === datasetId)
+    : -1;
+  const starIndex = listIndex >= 0 ? listIndex : starIndexFromId(datasetId);
 
   function confirmDelete() {
     remove.mutate(undefined, {
       onSuccess: () => {
         setConfirming(false);
+        toast.show({ tone: "success", message: m.deleteDialog.deleted });
         void navigate({ to: "/orgs/$orgId/catalogue", params: { orgId } });
       },
     });
   }
 
+  const reminderDate = dataset.reminder_date;
+  const reminderPassed = reminderDate ? reminderDate <= todayIso() : false;
+  const openReminder = () => setReminderOpen(true);
+
   return (
     <>
+      {reminderDate ? (
+        <RibbonPortal>
+          {reminderPassed ? (
+            <Ribbon
+              tone="overdue"
+              detail={m.ribbon.overdueDetail}
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="border-blue hover:bg-blue hover:text-yellow"
+                  onClick={openReminder}
+                >
+                  {m.ribbon.setNext}
+                </Button>
+              }
+            >
+              {m.ribbon.overdueSince} {formatIsoDate(reminderDate)}
+            </Ribbon>
+          ) : (
+            <Ribbon>
+              {m.ribbon.due} <strong>{formatIsoDate(reminderDate)}</strong>
+            </Ribbon>
+          )}
+        </RibbonPortal>
+      ) : null}
+
       <PageHeader
-        eyebrow={orgName}
+        eyebrow={m.context}
         title={title}
+        titleAdornment={
+          <Icon
+            name="star"
+            size="display-sm"
+            style={{ color: starColour(starIndex) }}
+          />
+        }
         description={dataset.description ?? undefined}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {catalogueLink}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setReminderOpen(true)}
-            >
-              {m.reminder.button}
+          <>
+            <Button type="button" size="record" onClick={openReminder}>
+              <Icon name="calendar" size="lg" />
+              {reminderDate ? m.reminder.update : m.reminder.button}
             </Button>
-            <Link
-              to="/orgs/$orgId/datasets/$datasetId/export"
-              params={{ orgId, datasetId }}
-              className={buttonVariants({ variant: "outline" })}
-            >
-              {m.viewOutput}
-            </Link>
             <Link
               to="/orgs/$orgId/datasets/$datasetId/edit"
               params={{ orgId, datasetId }}
-              className={buttonVariants()}
+              className={buttonVariants({
+                variant: "secondary",
+                size: "record",
+              })}
             >
+              <Icon name="edit" size="lg" />
               {m.edit}
             </Link>
-            {isOwner ? (
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => {
-                  remove.reset();
-                  setConfirming(true);
-                }}
-              >
-                {m.delete}
-              </Button>
-            ) : null}
-          </div>
+          </>
         }
       />
 
-      <dl className="mb-8 flex flex-wrap items-center gap-x-8 gap-y-3">
-        <div className="flex items-center gap-2">
-          <dt className="text-sm text-muted-foreground">{m.status}</dt>
-          <dd className="flex items-center gap-2">
-            <StatusBadge status={dataset.status} />
-            {dataset.overdue ? (
-              <span
-                title={m.overdueHint}
-                className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-semibold text-destructive"
-              >
-                {m.overdue}
-              </span>
-            ) : null}
-          </dd>
-        </div>
+      <div className="-mt-4 mb-8 flex flex-wrap items-center gap-2.5">
+        <StatusBadge status={dataset.status} />
+        {dataset.overdue ? (
+          <DetailPill
+            icon="warning"
+            className="bg-warning-bg text-warning-on-white"
+          >
+            <span title={m.overdueHint}>{m.overdue}</span>
+          </DetailPill>
+        ) : null}
         {accessRights ? (
-          <div className="flex items-center gap-2">
-            <dt className="text-sm text-muted-foreground">{m.accessLevel}</dt>
-            <dd>{m.accessRights[accessRights]}</dd>
-          </div>
+          <DetailPill icon="lock">
+            {m.accessLevel}: {m.accessRights[accessRights]}
+          </DetailPill>
         ) : null}
-        <div className="flex items-center gap-2">
-          <dt className="text-sm text-muted-foreground">{m.lastChanged}</dt>
-          <dd>
-            <time dateTime={dataset.updated_at}>
-              {dateFormat.format(new Date(dataset.updated_at))}
-            </time>
-          </dd>
-        </div>
+        <DetailPill icon="edit">
+          {m.lastChanged}{" "}
+          <time dateTime={dataset.updated_at}>
+            {dateFormat.format(new Date(dataset.updated_at))}
+          </time>
+        </DetailPill>
         {dataset.last_validated_at ? (
-          <div className="flex items-center gap-2">
-            <dt className="text-sm text-muted-foreground">{m.lastValidated}</dt>
-            <dd>
-              <time dateTime={dataset.last_validated_at}>
-                {dateFormat.format(new Date(dataset.last_validated_at))}
-              </time>
-            </dd>
-          </div>
+          <DetailPill icon="tick">
+            {m.lastValidated}{" "}
+            <time dateTime={dataset.last_validated_at}>
+              {dateFormat.format(new Date(dataset.last_validated_at))}
+            </time>
+          </DetailPill>
         ) : null}
-        <div className="flex items-center gap-2">
-          <dt className="text-sm text-muted-foreground">{m.reminder.fact}</dt>
-          <dd>
+        <DetailPill icon="calendar">
+          {m.reminder.fact}:{" "}
+          <span>
             <ReminderFact
               date={dataset.reminder_date}
               setBy={dataset.reminder_set_by_name}
             />
-          </dd>
-        </div>
-      </dl>
+          </span>
+        </DetailPill>
+      </div>
+
+      <div className="mb-8 flex flex-wrap items-center gap-3">
+        {catalogueLink}
+        <Link
+          to="/orgs/$orgId/datasets/$datasetId/export"
+          params={{ orgId, datasetId }}
+          className={buttonVariants({ variant: "secondary" })}
+        >
+          {m.viewOutput}
+        </Link>
+        {isOwner ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              remove.reset();
+              setConfirming(true);
+            }}
+          >
+            <Icon name="remove" size="md" />
+            {m.delete}
+          </Button>
+        ) : null}
+      </div>
 
       {dataset.overdue ? (
-        <p className="mb-8 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm">
+        <p className="mb-8 rounded-[14px] bg-warning-bg p-4 text-sm text-ink">
           {m.overdueHint}
         </p>
       ) : null}
@@ -206,9 +258,12 @@ export function DatasetDetailPage() {
       {dataset.status === "draft" ? (
         <section
           aria-labelledby="draft-heading"
-          className="mb-8 rounded-lg border bg-accent/40 p-5"
+          className="mb-8 rounded-[14px] bg-blue-tint-95 p-5"
         >
-          <h2 id="draft-heading" className="mb-2 text-lg font-semibold">
+          <h2
+            id="draft-heading"
+            className="mb-2 text-[1.1em] font-bold text-blue"
+          >
             {m.draft.title}
           </h2>
           <p className="mb-4">
@@ -240,7 +295,13 @@ export function DatasetDetailPage() {
           open={confirming}
           onOpenChange={setConfirming}
           title={m.deleteDialog.title}
-          description={m.deleteDialog.description}
+          icon="remove"
+          description={
+            <>
+              <p className="mb-2 font-bold">{title}</p>
+              <p>{m.deleteDialog.description}</p>
+            </>
+          }
           confirmLabel={m.deleteDialog.confirm}
           destructive
           pending={remove.isPending}

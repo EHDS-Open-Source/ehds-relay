@@ -23,5 +23,6 @@ export const messages = {
   confirm: "Confirm",
   statusDraft: "Draft",
   statusPublished: "Published",
+  detail: { empty: "Not provided" },
   feedback: { dismiss: "Dismiss", notifications: "Notifications" },
 } as const;

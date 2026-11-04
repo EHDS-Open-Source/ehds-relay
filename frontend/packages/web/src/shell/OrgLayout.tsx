@@ -17,6 +17,7 @@ import { shellMessages } from "./messages";
 import { accountNavItems, activeNavId, coreNavItems, navLabels } from "./nav";
 import { Logo } from "./Logo";
 import { renderOrgLink, renderRootLink } from "./RouterLink";
+import { RibbonSlot, RibbonSlotProvider } from "./RibbonSlot";
 
 /** Header, menu panel and content area for everything inside one organisation. */
 export function OrgLayout() {
@@ -47,61 +48,64 @@ export function OrgLayout() {
   };
 
   return (
-    <AppShell
-      header={
-        <AppHeader
-          logo={
-            <Link
-              to="/orgs/$orgId/catalogue"
-              params={{ orgId }}
-              className="no-underline"
-            >
-              <Logo />
-            </Link>
-          }
-          orgName={org.name}
-          menuOpen={menuOpen}
-          onMenuClick={() => {
-            setMenuOpen(true);
-          }}
-        />
-      }
-    >
-      <SideMenu
-        open={menuOpen}
-        onOpenChange={setMenuOpen}
-        title={shellMessages.menuTitle}
-        description={org.name}
-        footer={<HealthStatus className="text-white" />}
+    <RibbonSlotProvider>
+      <AppShell
+        ribbon={<RibbonSlot />}
+        header={
+          <AppHeader
+            logo={
+              <Link
+                to="/orgs/$orgId/catalogue"
+                params={{ orgId }}
+                className="no-underline"
+              >
+                <Logo />
+              </Link>
+            }
+            orgName={org.name}
+            menuOpen={menuOpen}
+            onMenuClick={() => {
+              setMenuOpen(true);
+            }}
+          />
+        }
       >
-        <NavList
-          label={navLabels.main}
-          items={items}
-          activeId={activeNavId(items, orgId, pathname)}
-          renderLink={renderOrgLink(orgId)}
-          onNavigate={closeMenu}
-        />
-        <SideMenuDivider />
-        {accountItems.length > 0 ? (
+        <SideMenu
+          open={menuOpen}
+          onOpenChange={setMenuOpen}
+          title={shellMessages.menuTitle}
+          description={org.name}
+          footer={<HealthStatus className="text-white" />}
+        >
           <NavList
-            label={navLabels.account}
-            items={accountItems}
-            renderLink={renderRootLink}
+            label={navLabels.main}
+            items={items}
+            activeId={activeNavId(items, orgId, pathname)}
+            renderLink={renderOrgLink(orgId)}
             onNavigate={closeMenu}
           />
-        ) : null}
-        <Button
-          type="button"
-          size="lg"
-          onBlue
-          className="self-start"
-          onClick={signOut}
-        >
-          {shellMessages.logOut}
-          <Icon name="logOut" size="xl" />
-        </Button>
-      </SideMenu>
-      <Outlet />
-    </AppShell>
+          <SideMenuDivider />
+          {accountItems.length > 0 ? (
+            <NavList
+              label={navLabels.account}
+              items={accountItems}
+              renderLink={renderRootLink}
+              onNavigate={closeMenu}
+            />
+          ) : null}
+          <Button
+            type="button"
+            size="lg"
+            onBlue
+            className="self-start"
+            onClick={signOut}
+          >
+            {shellMessages.logOut}
+            <Icon name="logOut" size="xl" />
+          </Button>
+        </SideMenu>
+        <Outlet />
+      </AppShell>
+    </RibbonSlotProvider>
   );
 }

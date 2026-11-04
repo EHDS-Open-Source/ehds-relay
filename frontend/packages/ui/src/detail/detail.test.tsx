@@ -6,6 +6,8 @@ import { CodeBlock } from "./CodeBlock";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DetailField } from "./DetailField";
 import { DetailSection } from "./DetailSection";
+import { Ribbon } from "../layout/Ribbon";
+import { DetailPill } from "./DetailPill";
 import { StatusBadge } from "./StatusBadge";
 
 describe("StatusBadge", () => {
@@ -128,5 +130,68 @@ describe("ConfirmDialog focus and content", () => {
     expect(
       screen.getByRole("alertdialog").querySelector("[data-icon=remove]"),
     ).not.toBeNull();
+  });
+});
+
+describe("DetailField empty value", () => {
+  it("shows a dash that is read out as not provided", () => {
+    render(
+      <DetailSection title="Main">
+        <DetailField label="Notes">{null}</DetailField>
+      </DetailSection>,
+    );
+    expect(screen.getByText("—")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByText("Not provided")).toBeInTheDocument();
+  });
+});
+
+describe("StatusBadge look", () => {
+  it("tells Published and Draft apart by more than the word", () => {
+    const { rerender } = render(<StatusBadge status="published" />);
+    const published = screen.getByText("Published");
+    expect(published).toHaveAttribute("data-variant", "success");
+    expect(published.querySelector("[data-icon=tick]")).not.toBeNull();
+    rerender(<StatusBadge status="draft" />);
+    const draft = screen.getByText("Draft");
+    expect(draft).toHaveAttribute("data-variant", "secondary");
+    expect(draft.querySelector("[data-icon=edit]")).not.toBeNull();
+  });
+});
+
+describe("DetailPill", () => {
+  it("shows its text with an optional icon", () => {
+    render(<DetailPill icon="lock">Restricted</DetailPill>);
+    expect(screen.getByText("Restricted")).toBeVisible();
+    expect(
+      screen.getByText("Restricted").querySelector("[data-icon=lock]"),
+    ).not.toBeNull();
+  });
+});
+
+describe("Ribbon", () => {
+  it("announces the normal strip as a status", () => {
+    render(
+      <Ribbon>
+        Due <strong>1 May 2027</strong>
+      </Ribbon>,
+    );
+    const ribbon = screen.getByRole("status");
+    expect(ribbon).toHaveAttribute("data-tone", "due");
+    expect(ribbon).toHaveTextContent("Due 1 May 2027");
+    expect(ribbon.querySelector("[data-icon=calendar-tick]")).not.toBeNull();
+  });
+
+  it("goes yellow when overdue and carries a second line and an action", () => {
+    render(
+      <Ribbon tone="overdue" detail="Do it" action={<button>Next</button>}>
+        Overdue since 1 May 2025
+      </Ribbon>,
+    );
+    const ribbon = screen.getByRole("status");
+    expect(ribbon).toHaveAttribute("data-tone", "overdue");
+    expect(ribbon.className).toContain("bg-yellow");
+    expect(ribbon.querySelector("[data-icon=calendar-alert]")).not.toBeNull();
+    expect(screen.getByText("Do it")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Next" })).toBeVisible();
   });
 });

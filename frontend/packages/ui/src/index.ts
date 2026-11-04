@@ -39,6 +39,7 @@ export {
 export { TagInput, type TagInputProps } from "./form/TagInput";
 export { AppHeader, type AppHeaderProps } from "./layout/AppHeader";
 export { AppShell, type AppShellProps } from "./layout/AppShell";
+export { Ribbon, type RibbonProps } from "./layout/Ribbon";
 export { EmptyState, type EmptyStateProps } from "./layout/EmptyState";
 export { NavList, type NavListProps } from "./layout/NavList";
 export { PageHeader, type PageHeaderProps } from "./layout/PageHeader";
@@ -63,6 +64,7 @@ export { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/tabs";
 export { CodeBlock, type CodeBlockProps } from "./detail/CodeBlock";
 export { ConfirmDialog, type ConfirmDialogProps } from "./detail/ConfirmDialog";
 export { DetailField, type DetailFieldProps } from "./detail/DetailField";
+export { DetailPill, type DetailPillProps } from "./detail/DetailPill";
 export { DetailSection, type DetailSectionProps } from "./detail/DetailSection";
 export { StatusBadge, type StatusBadgeProps } from "./detail/StatusBadge";
 export { cn } from "./lib/utils";

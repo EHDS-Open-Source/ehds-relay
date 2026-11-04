@@ -2,6 +2,8 @@ import {
   Button,
   CodeBlock,
   EmptyState,
+  Icon,
+  LoadingStar,
   PageHeader,
   Tabs,
   TabsContent,
@@ -29,7 +31,6 @@ import {
 } from "../datasets/queries";
 import { useDatasetRoute } from "../datasets/useDatasetRoute";
 import { shellMessages } from "../shell/messages";
-import { useOrgName } from "./useOrgName";
 
 const m = shellMessages.datasets;
 
@@ -47,11 +48,7 @@ function OutputTab({
   const label = m.output.tabs[format];
 
   if (query.isPending) {
-    return (
-      <p role="status" className="text-muted-foreground">
-        {m.output.loading}
-      </p>
-    );
+    return <LoadingStar size="page" message={m.output.loading} />;
   }
   if (query.isError) {
     const status = errorStatus(query.error);
@@ -81,7 +78,9 @@ function OutputTab({
       actions={
         <Button
           type="button"
+          variant="secondary"
           size="sm"
+          onBlue
           onClick={() => {
             downloadText(
               query.data,
@@ -98,7 +97,6 @@ function OutputTab({
 }
 
 export function DatasetExportPage() {
-  const orgName = useOrgName();
   const { orgId, datasetId } = useDatasetRoute();
   const query = useDataset(orgId, datasetId);
   const search = useSearch({ from: "/orgs/$orgId/datasets/$datasetId/export" });
@@ -111,18 +109,15 @@ export function DatasetExportPage() {
     <Link
       to="/orgs/$orgId/datasets/$datasetId"
       params={{ orgId, datasetId }}
-      className={buttonVariants({ variant: "ghost" })}
+      className={buttonVariants({ variant: "secondary" })}
     >
+      <Icon name="back" size="md" />
       {m.backToRecord}
     </Link>
   );
 
   if (query.isPending) {
-    return (
-      <p role="status" className="text-muted-foreground">
-        {shellMessages.loading}
-      </p>
-    );
+    return <LoadingStar size="page" message={shellMessages.loading} />;
   }
   if (query.isError) {
     const notFound = errorStatus(query.error) === 404;
@@ -141,13 +136,13 @@ export function DatasetExportPage() {
   return (
     <>
       <PageHeader
-        eyebrow={orgName}
+        eyebrow={m.output.title}
         title={dataset.title ?? m.untitled}
         description={m.output.description}
         actions={backToRecord}
       />
       {missing.length > 0 ? (
-        <div className="rounded-lg border bg-accent/40 p-5">
+        <div className="rounded-[14px] bg-blue-tint-95 p-5">
           <p className="mb-4">{m.output.incomplete}</p>
           <MissingFields
             orgId={orgId}
