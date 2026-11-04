@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../components/alert-dialog";
+import { Icon, type IconName } from "../icons";
 import { Button } from "../components/button";
 import { messages } from "../messages";
 
@@ -16,7 +17,10 @@ export interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description: string;
+  /** Can hold emphasis, e.g. the name of what is being removed in bold. */
+  description: ReactNode;
+  /** Sits left of the title and matches the action. */
+  icon?: IconName;
   confirmLabel?: string;
   cancelLabel?: string;
   /** Style the confirm button as a destructive action. */
@@ -35,6 +39,7 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
+  icon,
   confirmLabel = messages.confirm,
   cancelLabel = messages.cancel,
   destructive,
@@ -46,11 +51,17 @@ export function ConfirmDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
+          <AlertDialogTitle>
+            {icon ? <Icon name={icon} size="xl" /> : null}
+            {title}
+          </AlertDialogTitle>
+          {/* A div, so the description may hold block content. */}
+          <AlertDialogDescription asChild>
+            <div className="text-ink">{description}</div>
+          </AlertDialogDescription>
         </AlertDialogHeader>
         {error ? (
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="text-sm font-semibold text-destructive">
             {error}
           </p>
         ) : null}

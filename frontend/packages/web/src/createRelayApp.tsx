@@ -1,3 +1,4 @@
+import { ToastProvider } from "@ehds-relay/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 
@@ -32,7 +33,9 @@ export function createRelayApp(options: RelayAppOptions = {}) {
   return function RelayApp() {
     return (
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
       </QueryClientProvider>
     );
   };

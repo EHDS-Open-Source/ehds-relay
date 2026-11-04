@@ -104,3 +104,29 @@ describe("ConfirmDialog", () => {
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
   });
 });
+
+describe("ConfirmDialog focus and content", () => {
+  it("focuses Cancel first and takes rich content and an icon", () => {
+    render(
+      <ConfirmDialog
+        open
+        onOpenChange={() => {}}
+        title="Remove?"
+        icon="remove"
+        description={
+          <p>
+            Remove <strong>Marco</strong>?
+          </p>
+        }
+        destructive
+        confirmLabel="Remove user"
+        onConfirm={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    expect(screen.getByText("Marco").tagName).toBe("STRONG");
+    expect(
+      screen.getByRole("alertdialog").querySelector("[data-icon=remove]"),
+    ).not.toBeNull();
+  });
+});
