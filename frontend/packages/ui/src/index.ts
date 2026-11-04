@@ -89,6 +89,10 @@ export {
 export { STAR_PALETTE, starColour, starIndexFromId } from "./brand/starPalette";
 export { LoadingStar } from "./feedback/LoadingStar";
 export {
+  MINIMUM_PENDING_MS,
+  useMinimumPending,
+} from "./feedback/useMinimumPending";
+export {
   ToastProvider,
   useToast,
   type ToastOptions,
