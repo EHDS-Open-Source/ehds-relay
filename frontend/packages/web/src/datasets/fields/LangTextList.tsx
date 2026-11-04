@@ -5,6 +5,7 @@ import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel } from "../fields";
 import type { DatasetFormValues } from "../formValues";
 import { GroupPanel, TextInput } from "./common";
+import { useGroupState } from "./formState";
 
 const text = shellMessages.datasetForm;
 
@@ -13,10 +14,19 @@ export function LangTextField({ name }: { name: "title" | "description" }) {
   const { control } = useFormContext<DatasetFormValues>();
   const { fields, append, remove } = useFieldArray({ control, name });
   const label = fieldLabel(name);
+  const { invalid, error, errorId } = useGroupState(name);
   return (
-    <Field label={label} anchorId={fieldAnchorId(name)} required>
+    <Field
+      label={label}
+      anchorId={fieldAnchorId(name)}
+      required
+      invalid={invalid}
+      describedBy={error ? errorId : undefined}
+    >
       <RepeatableList
         items={fields}
+        error={error}
+        errorId={errorId}
         minItems={1}
         addLabel={text.addLanguage}
         removeLabel={(i) => `${text.remove} ${label} ${i + 1}`}

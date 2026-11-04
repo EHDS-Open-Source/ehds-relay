@@ -1,4 +1,9 @@
-import { SectionNav, cn, scrollBehavior } from "@ehds-relay/ui";
+import {
+  FormMessage,
+  SectionNav,
+  scrollBehavior,
+  useActiveSection,
+} from "@ehds-relay/ui";
 import { useState } from "react";
 import {
   FormProvider,
@@ -7,6 +12,7 @@ import {
   type Resolver,
 } from "react-hook-form";
 
+import { useSavedFlash } from "../pages/useSavedFlash";
 import { shellMessages } from "../shell/messages";
 import { datasetSections, fieldKeys, sectionAnchorId } from "./fields";
 import { inputId } from "./fields/formState";
@@ -33,6 +39,7 @@ import {
 } from "./validate";
 
 const text = shellMessages.datasetForm;
+const sectionIds = datasetSections.map((s) => sectionAnchorId(s.id));
 
 /** What the form shows above its sections after a save. */
 export type SaveFeedback =
@@ -101,9 +108,12 @@ export function DatasetForm({
   const [feedback, setFeedback] = useState<SaveFeedback | undefined>(
     initialFeedback,
   );
+  const [saved, flashSaved, clearSaved] = useSavedFlash();
+  const activeId = useActiveSection(sectionIds);
 
   async function save(values: DatasetFormValues, publish: boolean) {
     const { metadata, indexMap } = mapToMetadata(values);
+    clearSaved();
     setFeedback({ type: "saving" });
     const result = await onSubmit({ metadata, publish });
     switch (result.kind) {
@@ -112,6 +122,7 @@ export function DatasetForm({
         if (status === "published") setFeedback({ type: "published" });
         else if (publish) setFeedback({ type: "incomplete", missing });
         else setFeedback({ type: "draft" });
+        flashSaved();
         break;
       }
       case "invalid": {
@@ -138,6 +149,7 @@ export function DatasetForm({
   }
 
   function onInvalid() {
+    clearSaved();
     const result = validateForSave(form.getValues());
     if (result.ok) return;
     const titleOnly = result.issues.some(
@@ -170,10 +182,11 @@ export function DatasetForm({
   return (
     <FormProvider {...form}>
       <div className="flex flex-col md:flex-row">
-        {/* Contents on phones, so the menu strip sticks to the top of the whole form */}
-        <aside className="contents md:block md:w-[260px] md:shrink-0">
+        {/* Contents on phones, so the menu strip sticks under the header for the whole form */}
+        <aside className="contents md:block md:w-[260px] md:shrink-0 md:border-r md:border-line">
           <SectionNav
             label={text.sectionNavLabel}
+            activeId={activeId}
             sections={datasetSections.map((s) => ({
               id: sectionAnchorId(s.id),
               label: s.title,
@@ -189,20 +202,24 @@ export function DatasetForm({
           <div className="flex flex-col gap-4">
             <SaveMenu
               busy={busy}
+              saved={saved}
               onSave={onSave}
               onClear={onClear}
               isEmpty={isEmpty}
               datasetTitle={datasetTitle}
             />
-            <p
-              role="status"
-              className={cn(
-                "min-h-5 text-[0.95em] font-semibold",
-                feedback?.type === "error" ? "text-destructive" : "text-ink",
+            {/* One live line for the whole form; an error leads with the asterisk */}
+            <div role="status" className="min-h-5">
+              {feedback?.type === "error" ? (
+                <FormMessage role={undefined} className="text-[0.95em]">
+                  {feedback.message}
+                </FormMessage>
+              ) : (
+                <p className="text-[0.95em] font-semibold text-ink">
+                  {feedbackText(feedback)}
+                </p>
               )}
-            >
-              {feedbackText(feedback)}
-            </p>
+            </div>
             {feedback?.type === "incomplete" ? (
               <MissingList missing={feedback.missing} />
             ) : null}

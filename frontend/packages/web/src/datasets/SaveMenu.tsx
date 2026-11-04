@@ -6,6 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Icon,
+  SaveButton,
 } from "@ehds-relay/ui";
 
 import { useRef, useState } from "react";
@@ -16,16 +17,20 @@ const text = shellMessages.datasetForm.actions;
 
 /**
  * "Save changes" (Save draft, Save and Publish) and Clear. Clear asks first, unless the
- * form is already empty.
+ * form is already empty. The save runs once the menu has closed and handed focus back, so
+ * a save that finds problems can move focus to the first one, for mouse users too.
  */
 export function SaveMenu({
   busy,
+  saved = false,
   onSave,
   onClear,
   isEmpty,
   datasetTitle,
 }: {
   busy: boolean;
+  /** Shows "Saved" in the success colours for a moment after a save. */
+  saved?: boolean;
   onSave: (publish: boolean) => void;
   onClear: () => void;
   /** Whether the form has nothing in it, so clearing needs no confirmation. */
@@ -33,36 +38,49 @@ export function SaveMenu({
   /** Named in bold in the confirmation, when the dataset has a title. */
   datasetTitle?: string;
 }) {
-  const menu = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  // The save chosen in the menu, run when the menu has closed
+  const chosen = useRef<boolean | null>(null);
   const [confirming, setConfirming] = useState(false);
   return (
     <div className="flex flex-wrap items-center gap-3">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button type="button" busy={busy}>
-            {busy ? null : <Icon name="save" size="sm" />}
-            {text.saveMenu}
-          </Button>
+          <SaveButton
+            ref={trigger}
+            type="button"
+            variant="secondary"
+            busy={busy}
+            saved={saved}
+            label={text.saveMenu}
+            busyLabel={text.saving}
+            savedLabel={text.saved}
+          />
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          ref={menu}
           align="start"
           onCloseAutoFocus={(event) => {
-            // If saving moved focus to a field that needs fixing, leave it there
-            const active = document.activeElement;
-            if (
-              active &&
-              active !== document.body &&
-              !menu.current?.contains(active)
-            ) {
-              event.preventDefault();
-            }
+            const publish = chosen.current;
+            if (publish === null) return;
+            chosen.current = null;
+            // Focus goes back to the button first; a save with problems then moves it on
+            event.preventDefault();
+            trigger.current?.focus({ preventScroll: true });
+            onSave(publish);
           }}
         >
-          <DropdownMenuItem onSelect={() => onSave(false)}>
+          <DropdownMenuItem
+            onSelect={() => {
+              chosen.current = false;
+            }}
+          >
             {text.saveDraft}
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => onSave(true)}>
+          <DropdownMenuItem
+            onSelect={() => {
+              chosen.current = true;
+            }}
+          >
             {text.saveAndPublish}
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -73,8 +91,8 @@ export function SaveMenu({
         disabled={busy}
         onClick={() => (isEmpty?.() ? onClear() : setConfirming(true))}
       >
-        <Icon name="eraser" size="sm" />
         {text.clear}
+        <Icon name="eraser" size="md" />
       </Button>
       <ConfirmDialog
         open={confirming}

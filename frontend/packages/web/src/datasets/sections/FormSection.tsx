@@ -21,7 +21,7 @@ export function FormSection({
       id={anchor}
       tabIndex={-1}
       aria-labelledby={`${anchor}-title`}
-      className="scroll-mt-24 outline-none"
+      className="scroll-mt-36 outline-none md:scroll-mt-24"
     >
       <h2
         id={`${anchor}-title`}

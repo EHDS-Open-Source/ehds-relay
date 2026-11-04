@@ -116,12 +116,13 @@ export function TagField({
   const { control } = useFormContext<DatasetFormValues>();
   const error = useFieldError(name);
   const id = inputId(name);
+  const noun = text.tagNouns[name];
   return (
     <Field
       label={fieldLabel(name)}
       htmlFor={id}
       anchorId={fieldAnchorId(name)}
-      hint={text.tagHint}
+      hint={text.tagHint(noun.one)}
       required={required}
       error={error}
       errorId={fieldErrorId(id)}
@@ -135,8 +136,8 @@ export function TagField({
             value={field.value}
             onChange={field.onChange}
             onBlur={field.onBlur}
+            noun={noun}
             invalid={Boolean(error)}
-            aria-describedby={error ? fieldErrorId(id) : undefined}
           />
         )}
       />

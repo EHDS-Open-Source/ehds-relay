@@ -39,3 +39,37 @@ export function useGroupError(path: string): string | undefined {
   const root = useFieldError(`${path}.root`);
   return own ?? root;
 }
+
+/** Whether anything at or beneath a form value path has an error, e.g. any sub-field of a group. */
+export function useHasErrorUnder(path: string): boolean {
+  const { errors } = useFormState<DatasetFormValues>({
+    name: path as FormPath,
+  });
+  return hasError(get<unknown>(errors, path));
+}
+
+function hasError(node: unknown): boolean {
+  if (typeof node !== "object" || node === null) return false;
+  if (typeof (node as { message?: unknown }).message === "string") return true;
+  // `ref` points at the input element, not at more errors
+  return Object.entries(node).some(
+    ([key, value]) => key !== "ref" && hasError(value),
+  );
+}
+
+/**
+ * What a group of inputs at `path` needs to show its errors: `invalid` turns its required
+ * star magenta while any sub-field is wrong, `error` is the group's own message (shown under
+ * its Add button) and `errorId` the id that message has.
+ */
+export function useGroupState(path: string): {
+  invalid: boolean;
+  error: string | undefined;
+  errorId: string;
+} {
+  return {
+    invalid: useHasErrorUnder(path),
+    error: useGroupError(path),
+    errorId: fieldErrorId(inputId(path)),
+  };
+}
