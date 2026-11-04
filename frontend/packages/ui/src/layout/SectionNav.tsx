@@ -1,6 +1,6 @@
 import type { MouseEvent } from "react";
 
-import { cn } from "../lib/utils";
+import { cn, scrollBehavior } from "../lib/utils";
 
 export interface SectionNavItem {
   /** Id of the section element on the page. */
@@ -20,7 +20,7 @@ export interface SectionNavProps {
 export function jumpTo(id: string): void {
   const target = document.getElementById(id);
   if (!target) return;
-  target.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  target.scrollIntoView?.({ behavior: scrollBehavior(), block: "start" });
   target.focus({ preventScroll: true });
 }
 

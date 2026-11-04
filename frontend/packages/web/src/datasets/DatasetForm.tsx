@@ -1,4 +1,4 @@
-import { SectionNav, cn } from "@ehds-relay/ui";
+import { SectionNav, cn, scrollBehavior } from "@ehds-relay/ui";
 import { useState } from "react";
 import {
   FormProvider,
@@ -77,7 +77,7 @@ function focusIssue(issues: readonly FormIssue[]): void {
   if (!first) return;
   const input = document.getElementById(inputId(first.path));
   if (input) {
-    input.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    input.scrollIntoView?.({ behavior: scrollBehavior(), block: "center" });
     input.focus({ preventScroll: true });
   } else {
     focusField(first.path.split(".")[0]!);

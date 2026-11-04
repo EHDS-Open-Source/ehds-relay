@@ -1,3 +1,5 @@
+import { scrollBehavior } from "@ehds-relay/ui";
+
 import { fieldAnchorId } from "./fields";
 
 /** Scrolls to the element with this id and moves focus to its first input. */
@@ -5,7 +7,7 @@ export function focusAnchor(id: string): void {
   const anchor = document.getElementById(id);
   if (!anchor) return;
   const input = anchor.querySelector<HTMLElement>("input, textarea, select");
-  anchor.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  anchor.scrollIntoView?.({ behavior: scrollBehavior(), block: "center" });
   (input ?? anchor).focus({ preventScroll: true });
 }
 
