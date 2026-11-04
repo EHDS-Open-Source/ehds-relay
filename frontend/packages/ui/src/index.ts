@@ -68,10 +68,18 @@ export { FormMessage } from "./components/form-message";
 export { NativeSelect } from "./components/native-select";
 export { Badge, badgeVariants } from "./components/badge";
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/tabs";
-export { CodeBlock, type CodeBlockProps } from "./detail/CodeBlock";
+export {
+  CodeBlock,
+  CodeBlockButton,
+  type CodeBlockProps,
+} from "./detail/CodeBlock";
 export { ConfirmDialog, type ConfirmDialogProps } from "./detail/ConfirmDialog";
 export { DetailField, type DetailFieldProps } from "./detail/DetailField";
-export { DetailPill, type DetailPillProps } from "./detail/DetailPill";
+export {
+  DetailPill,
+  KeywordPill,
+  type DetailPillProps,
+} from "./detail/DetailPill";
 export { DetailSection, type DetailSectionProps } from "./detail/DetailSection";
 export { StatusBadge, type StatusBadgeProps } from "./detail/StatusBadge";
 export { cn, scrollBehavior } from "./lib/utils";

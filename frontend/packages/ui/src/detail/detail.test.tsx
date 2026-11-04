@@ -40,6 +40,21 @@ describe("DetailSection", () => {
     expect(screen.getByText("Title").tagName).toBe("DT");
     expect(screen.getByText("Hello").tagName).toBe("DD");
   });
+
+  it("sets long text in regular weight and short values in semibold", () => {
+    render(
+      <DetailSection title="Main">
+        <DetailField label="Name">Short</DetailField>
+        <DetailField label="Notes" long>
+          A longer piece of running text
+        </DetailField>
+      </DetailSection>,
+    );
+    expect(screen.getByText("Short").className).toContain("font-semibold");
+    const long = screen.getByText("A longer piece of running text");
+    expect(long.className).toContain("font-normal");
+    expect(long).toHaveAttribute("data-long", "true");
+  });
 });
 
 describe("CodeBlock", () => {
@@ -49,8 +64,9 @@ describe("CodeBlock", () => {
       value: { writeText },
       configurable: true,
     });
-    render(<CodeBlock text="a b" label="Turtle" />);
+    render(<CodeBlock text="a b" label="Turtle" formatLabel="text/turtle" />);
     expect(screen.getByLabelText("Turtle")).toHaveTextContent("a b");
+    expect(screen.getByText("text/turtle")).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Copy" }));
     expect(writeText).toHaveBeenCalledWith("a b");
     expect(await screen.findByText("Copied")).toBeVisible();
@@ -231,29 +247,33 @@ describe("DetailPill", () => {
   it("shows its text with an optional icon", () => {
     render(<DetailPill icon="lock">Restricted</DetailPill>);
     expect(screen.getByText("Restricted")).toBeVisible();
-    expect(
-      screen.getByText("Restricted").querySelector("[data-icon=lock]"),
-    ).not.toBeNull();
+    const pill = screen
+      .getByText("Restricted")
+      .closest("[data-slot=detail-pill]");
+    expect(pill?.querySelector("[data-icon=lock]")).not.toBeNull();
   });
 });
 
 describe("Ribbon", () => {
   it("announces the normal strip as a status", () => {
-    render(
-      <Ribbon>
-        Due <strong>1 May 2027</strong>
-      </Ribbon>,
-    );
+    render(<Ribbon label="Due">1 May 2027</Ribbon>);
     const ribbon = screen.getByRole("status");
     expect(ribbon).toHaveAttribute("data-tone", "due");
-    expect(ribbon).toHaveTextContent("Due 1 May 2027");
+    expect(ribbon).toHaveTextContent("Due1 May 2027");
+    // Label regular, date in the strip's semibold.
+    expect(screen.getByText("Due").className).toContain("font-normal");
     expect(ribbon.querySelector("[data-icon=calendar-tick]")).not.toBeNull();
   });
 
   it("goes yellow when overdue and carries a second line and an action", () => {
     render(
-      <Ribbon tone="overdue" detail="Do it" action={<button>Next</button>}>
-        Overdue since 1 May 2025
+      <Ribbon
+        tone="overdue"
+        label="Overdue since"
+        detail="Do it"
+        action={<button>Next</button>}
+      >
+        1 May 2025
       </Ribbon>,
     );
     const ribbon = screen.getByRole("status");
