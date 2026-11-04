@@ -4,7 +4,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { STAR_PALETTE } from "@ehds-relay/ui";
+import { datasetStarColour } from "@ehds-relay/ui";
 import { noRevalidationData } from "../datasets/fakeServer";
 import { createRelayRouter } from "../router/router";
 import { createTestSessionStore } from "../session/testing";
@@ -154,11 +154,14 @@ describe("catalogue", () => {
     ).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("EDIT-14 shows the Overdue chip on overdue cards only", async () => {
+  it("EDIT-14 shows the overdue band on overdue cards only", async () => {
     stubDatasets(() => json(sample));
     renderAt("/orgs/demo/catalogue");
     await screen.findByText("Diabetes Registry");
-    expect(screen.getAllByText(text.overdue)).toHaveLength(1);
+    const flagged = screen
+      .getAllByRole("listitem")
+      .filter((item) => item.querySelector("[data-band='overdue']"));
+    expect(flagged).toHaveLength(1);
     expect(
       screen.getByRole("link", { name: /Cancer Cohort/ }),
     ).toHaveTextContent(text.overdue);
@@ -168,18 +171,41 @@ describe("catalogue", () => {
     stubDatasets(() => json(sample));
     const router = renderAt("/orgs/demo/catalogue");
     await screen.findByText("Diabetes Registry");
-    await userEvent.click(
-      screen.getByRole("button", { name: text.revalidation.overdue }),
-    );
+    const toggle = screen.getByRole("button", { name: text.overdueFilter });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await userEvent.click(toggle);
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
     expect(screen.getByText("Cancer Cohort")).toBeVisible();
     await waitFor(() =>
       expect(router.state.location.search).toEqual({ overdue: true }),
     );
     await userEvent.click(
-      screen.getByRole("button", { name: text.revalidation.any }),
+      screen.getByRole("button", { name: text.overdueFilter }),
     );
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
+  });
+
+  it("offers the overdue filter only when something is overdue", async () => {
+    stubDatasets(() => json([sample[0], sample[2]]));
+    renderAt("/orgs/demo/catalogue");
+    await screen.findByText("Diabetes Registry");
+    expect(
+      screen.queryByRole("button", { name: text.overdueFilter }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("EDIT-14 marks a card overdue once its reminder date has passed", async () => {
+    stubDatasets(() =>
+      json([{ ...sample[2], reminder_date: "2020-06-30", overdue: false }]),
+    );
+    renderAt("/orgs/demo/catalogue");
+    const card = await screen.findByRole("link", { name: /Unlabelled/ });
+    expect(card).toHaveTextContent(`${text.overdueSince} 30 June 2020`);
+    expect(card.querySelector("[data-band='overdue']")).not.toBeNull();
+    expect(card.querySelector("[data-icon='calendarAlert']")).not.toBeNull();
+    expect(
+      card.querySelector("[data-band] [data-icon='star']") as SVGElement,
+    ).toHaveStyle({ color: "var(--blue)" });
   });
 
   it("EDIT-14 restores the overdue filter from the URL", async () => {
@@ -188,7 +214,7 @@ describe("catalogue", () => {
     expect(await screen.findByText("Cancer Cohort")).toBeVisible();
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
     expect(
-      screen.getByRole("button", { name: text.revalidation.overdue }),
+      screen.getByRole("button", { name: text.overdueFilter }),
     ).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -205,7 +231,30 @@ describe("catalogue", () => {
     expect(screen.getByRole("searchbox")).toHaveFocus();
   });
 
-  it("gives each card a palette star by catalogue position and shows the reminder date", async () => {
+  it("puts focus back on the opened card when coming back", async () => {
+    stubDatasets(() => json(sample));
+    const router = renderAt("/orgs/demo/catalogue");
+    await userEvent.click(
+      await screen.findByRole("link", { name: /Cancer Cohort/ }),
+    );
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe("/orgs/demo/datasets/d2"),
+    );
+    router.history.back();
+    const card = await screen.findByRole("link", { name: /Cancer Cohort/ });
+    await waitFor(() => expect(card).toHaveFocus());
+  });
+
+  it("names the chosen access level when nothing matches", async () => {
+    stubDatasets(() => json(sample));
+    renderAt("/orgs/demo/catalogue?q=zzz&access=public");
+    expect(
+      await screen.findByText("No public datasets match \u201czzz\u201d"),
+    ).toBeVisible();
+    expect(screen.getByText(text.noMatch.description)).toBeVisible();
+  });
+
+  it("gives each card the star colour of its dataset and shows the reminder date", async () => {
     stubDatasets(() =>
       json([
         sample[0],
@@ -215,9 +264,9 @@ describe("catalogue", () => {
     );
     renderAt("/orgs/demo/catalogue");
     const card = await screen.findByRole("link", { name: /Cancer Cohort/ });
-    expect(card).toHaveTextContent(`${text.reminderDue} 4 Mar 2027`);
+    expect(card).toHaveTextContent(`${text.reminderDue} 4 March 2027`);
     expect(card.querySelector("[data-icon='star']") as SVGElement).toHaveStyle({
-      color: STAR_PALETTE[1],
+      color: datasetStarColour("d2"),
     });
   });
 

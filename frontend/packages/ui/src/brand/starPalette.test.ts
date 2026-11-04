@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { STAR_PALETTE, starColour, starIndexFromId } from "./starPalette";
+import {
+  STAR_PALETTE,
+  datasetStarColour,
+  starColour,
+  starIndexFromId,
+} from "./starPalette";
 
 describe("starColour", () => {
   it("is stable for the same position", () => {
@@ -32,5 +37,14 @@ describe("starIndexFromId", () => {
     expect(i).toBe(starIndexFromId("0f6c-example"));
     expect(i).toBeGreaterThanOrEqual(0);
     expect(i).toBeLessThan(STAR_PALETTE.length);
+  });
+});
+
+describe("datasetStarColour", () => {
+  it("gives a dataset the same palette colour every time", () => {
+    const id = "1e3beeb8-0559-46ec-8be3-bd438d1253be";
+    expect(datasetStarColour(id)).toBe(datasetStarColour(id));
+    expect(STAR_PALETTE).toContain(datasetStarColour(id));
+    expect(datasetStarColour(id)).toBe(starColour(starIndexFromId(id)));
   });
 });

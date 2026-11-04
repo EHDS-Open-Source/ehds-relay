@@ -75,8 +75,10 @@ export { CardGrid } from "./patterns/CardGrid";
 export { DatasetCard, type DatasetCardProps } from "./patterns/DatasetCard";
 export {
   FilterChips,
+  FilterToggle,
   type FilterChipOption,
   type FilterChipsProps,
+  type FilterToggleProps,
 } from "./patterns/FilterChips";
 export { SearchField, type SearchFieldProps } from "./patterns/SearchField";
 export {
@@ -87,7 +89,12 @@ export {
   type IconProps,
   type IconSize,
 } from "./icons";
-export { STAR_PALETTE, starColour, starIndexFromId } from "./brand/starPalette";
+export {
+  STAR_PALETTE,
+  datasetStarColour,
+  starColour,
+  starIndexFromId,
+} from "./brand/starPalette";
 export { LoadingStar } from "./feedback/LoadingStar";
 export {
   ToastProvider,

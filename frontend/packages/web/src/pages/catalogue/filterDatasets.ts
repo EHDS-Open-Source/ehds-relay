@@ -1,5 +1,7 @@
 import type { Schemas } from "@ehds-relay/api-client";
 
+import { isReminderPassed } from "../../datasets/reminderDates";
+
 export type Dataset = Schemas["DatasetDTO"];
 export type AccessRights = Schemas["AccessRights"];
 export type AccessFilter = "all" | AccessRights;
@@ -11,7 +13,7 @@ export const accessFilters: readonly AccessFilter[] = [
   "non_public",
 ];
 
-/** The revalidation chip: every dataset, or only those overdue for revalidation. */
+/** The revalidation filter: every dataset, or only those overdue for revalidation. */
 export type RevalidationFilter = "any" | "overdue";
 export const revalidationFilters: readonly RevalidationFilter[] = [
   "any",
@@ -30,12 +32,12 @@ export interface CatalogueFields {
   categories: string[];
   access: AccessRights | null;
   draft: boolean;
-  /** Published and not validated for a year. */
+  /** Due for revalidation: the reminder date has passed, or it has not been validated for a year. */
   overdue: boolean;
   /** The revalidation reminder (`YYYY-MM-DD`), if one is set. */
   reminderDate: string | null;
-  /** Position in the whole catalogue, so a dataset keeps its star colour while filtering. */
-  index: number;
+  /** The reminder date is before today. */
+  reminderPassed: boolean;
   /** Every title and description text, for matching. */
   searchable: string;
 }
@@ -61,7 +63,7 @@ function strings(value: unknown): string[] {
  */
 export function readCatalogueFields(
   dataset: Dataset,
-  index = 0,
+  now: Date = new Date(),
 ): CatalogueFields {
   const metadata: Record<string, unknown> =
     dataset.metadata && typeof dataset.metadata === "object"
@@ -81,6 +83,8 @@ export function readCatalogueFields(
       ? null
       : metadata.access_rights
     : null;
+  const reminderDate = dataset.reminder_date ?? null;
+  const reminderPassed = isReminderPassed(reminderDate, now);
   const searchable = [
     ...titles,
     ...descriptions,
@@ -99,9 +103,9 @@ export function readCatalogueFields(
     categories,
     access,
     draft: dataset.status === "draft",
-    overdue: dataset.overdue === true,
-    reminderDate: dataset.reminder_date ?? null,
-    index,
+    overdue: reminderPassed || dataset.overdue === true,
+    reminderDate,
+    reminderPassed,
     searchable,
   };
 }

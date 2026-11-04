@@ -9,11 +9,9 @@ import {
   StatusBadge,
   ConfirmDialog,
   buttonVariants,
-  starColour,
-  starIndexFromId,
+  datasetStarColour,
   useToast,
 } from "@ehds-relay/ui";
-import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -21,12 +19,7 @@ import { DatasetRecord } from "../datasets/DatasetRecord";
 import { MissingFields } from "../datasets/MissingFields";
 import { ReminderDialog } from "../datasets/ReminderDialog";
 import { formatIsoDate, todayIso } from "../datasets/reminderDates";
-import {
-  datasetKeys,
-  errorStatus,
-  useDataset,
-  useDeleteDataset,
-} from "../datasets/queries";
+import { errorStatus, useDataset, useDeleteDataset } from "../datasets/queries";
 import { useDatasetRoute } from "../datasets/useDatasetRoute";
 import { RibbonPortal } from "../shell/RibbonSlot";
 import { shellMessages } from "../shell/messages";
@@ -56,7 +49,6 @@ export function DatasetDetailPage() {
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
   const toast = useToast();
-  const queryClient = useQueryClient();
   const [reminderOpen, setReminderOpen] = useState(false);
 
   const catalogueLink = (
@@ -102,12 +94,6 @@ export function DatasetDetailPage() {
   const title = dataset.title ?? m.untitled;
   const missing = dataset.missing_for_publish;
   const accessRights = metadata.access_rights;
-  // Same colour as the catalogue card: its place in the list if that is cached, else from the id
-  const cachedList = queryClient.getQueryData(datasetKeys.list(orgId));
-  const listIndex = Array.isArray(cachedList)
-    ? cachedList.findIndex((d: { id: string }) => d.id === datasetId)
-    : -1;
-  const starIndex = listIndex >= 0 ? listIndex : starIndexFromId(datasetId);
 
   function confirmDelete() {
     remove.mutate(undefined, {
@@ -160,7 +146,7 @@ export function DatasetDetailPage() {
           <Icon
             name="star"
             size="display-sm"
-            style={{ color: starColour(starIndex) }}
+            style={{ color: datasetStarColour(datasetId) }}
           />
         }
         description={dataset.description ?? undefined}
