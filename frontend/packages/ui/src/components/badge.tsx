@@ -3,15 +3,19 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@ehds-relay/ui/lib/utils";
 import { Slot } from "radix-ui";
 
+// Tags: pale blue pill with blue text. Roles and keywords all use this one style.
 const badgeVariants = cva(
-  "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap [&>svg]:pointer-events-none [&>svg]:size-3",
+  "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-3 py-1 text-[0.85em] leading-tight font-semibold whitespace-nowrap [&>svg]:pointer-events-none [&>svg]:size-[var(--icon-xs)]",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground",
-        secondary: "border-transparent bg-secondary text-secondary-foreground",
-        destructive: "border-transparent bg-destructive text-white",
-        outline: "text-foreground",
+        default: "bg-blue-tint-90 text-blue",
+        secondary: "bg-blue-tint-90 text-blue",
+        destructive: "bg-error-bg text-error-on-white",
+        success: "bg-success-bg text-success-on-white",
+        warning: "bg-warning-bg text-warning-on-white",
+        info: "bg-info-bg text-info-on-white",
+        outline: "border-blue-tint-80 text-blue",
       },
     },
     defaultVariants: {

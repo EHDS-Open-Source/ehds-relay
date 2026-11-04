@@ -68,3 +68,13 @@ export {
   type FilterChipsProps,
 } from "./patterns/FilterChips";
 export { SearchField, type SearchFieldProps } from "./patterns/SearchField";
+export {
+  Icon,
+  iconSizes,
+  glyphs,
+  type IconName,
+  type IconProps,
+  type IconSize,
+} from "./icons";
+export { STAR_PALETTE, starColour, starIndexFromId } from "./brand/starPalette";
+export { LoadingStar } from "./feedback/LoadingStar";

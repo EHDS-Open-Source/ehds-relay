@@ -3,50 +3,97 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@ehds-relay/ui/lib/utils";
 import { Slot } from "radix-ui";
 
+import { LoadingStar } from "../feedback/LoadingStar";
+
+// Pills in Poppins 600 with a 2px border. Types: primary, secondary, row, icon, destructive
+// (destructive only inside confirmations). `default`, `outline`, `ghost` and `link` are older
+// names kept as aliases for the types above.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border-2 font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow] duration-150 disabled:pointer-events-none disabled:opacity-50 aria-busy:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
-        outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+        primary:
+          "border-yellow bg-primary text-primary-foreground hover:border-blue hover:bg-blue hover:text-yellow",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "border-blue-tint-80 bg-transparent text-blue hover:border-blue hover:bg-blue-tint-90",
+        row: "border-blue bg-blue text-white hover:border-blue-shade hover:bg-blue-shade",
+        icon: "border-yellow bg-yellow text-blue hover:border-yellow-shade hover:bg-yellow-shade",
+        destructive:
+          "border-destructive bg-destructive text-white hover:opacity-90",
+        link: "border-transparent text-blue underline underline-offset-4 hover:no-underline",
+        // Older names.
+        default:
+          "border-yellow bg-primary text-primary-foreground hover:border-blue hover:bg-blue hover:text-yellow",
+        outline:
+          "border-blue-tint-80 bg-transparent text-blue hover:border-blue hover:bg-blue-tint-90",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "border-blue-tint-80 bg-transparent text-blue hover:border-blue hover:bg-blue-tint-90",
+      },
+      surface: {
+        white: "",
+        blue: "",
       },
       size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        xs: "h-6 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
-        "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm": "size-8",
-        "icon-lg": "size-10",
+        sm: "h-[34px] px-4 text-[0.88em]",
+        default: "h-10 px-5 text-[0.95em]",
+        record: "h-[46px] px-6 text-base",
+        lg: "h-[50px] px-7 text-[1.05em]",
+        xs: "h-6 gap-1 px-2 text-xs",
+        // Icon-only sizes; the circle is 44px for the standard icon button.
+        icon: "size-11 p-0",
+        "icon-xs": "size-6 p-0",
+        "icon-sm": "size-8 p-0",
+        "icon-lg": "size-12 p-0",
       },
     },
+    compoundVariants: [
+      {
+        variant: ["primary", "default"],
+        surface: "blue",
+        className:
+          "hover:border-yellow-shade hover:bg-yellow-shade hover:text-blue",
+      },
+      {
+        variant: ["secondary", "outline", "ghost"],
+        surface: "blue",
+        className:
+          "border-white/45 text-white hover:border-white hover:bg-white/10",
+      },
+      {
+        variant: "icon",
+        surface: "blue",
+        className: "hover:border-white hover:bg-white",
+      },
+    ],
     defaultVariants: {
-      variant: "default",
+      variant: "primary",
       size: "default",
+      surface: "white",
     },
   },
 );
 
+type ButtonProps = React.ComponentProps<"button"> &
+  Omit<VariantProps<typeof buttonVariants>, "surface"> & {
+    asChild?: boolean;
+    /** The button sits on a blue surface. */
+    onBlue?: boolean;
+    /** Work is in progress: shows the spinning star, disables the button and marks it busy. */
+    busy?: boolean;
+  };
+
 function Button({
   className,
-  variant = "default",
+  variant = "primary",
   size = "default",
+  onBlue = false,
+  busy = false,
   asChild = false,
+  children,
+  disabled,
   ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  }) {
+}: ButtonProps) {
   const Comp = asChild ? Slot.Root : "button";
 
   return (
@@ -54,9 +101,29 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      aria-busy={busy || undefined}
+      disabled={asChild ? undefined : disabled || busy}
+      className={cn(
+        buttonVariants({
+          variant,
+          size,
+          surface: onBlue ? "blue" : "white",
+          className,
+        }),
+      )}
       {...props}
-    />
+    >
+      {asChild ? (
+        children
+      ) : (
+        <>
+          {busy ? (
+            <LoadingStar size={size === "lg" ? "large-button" : "button"} />
+          ) : null}
+          {children}
+        </>
+      )}
+    </Comp>
   );
 }
 

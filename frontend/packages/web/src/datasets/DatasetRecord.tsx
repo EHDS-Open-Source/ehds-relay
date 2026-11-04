@@ -83,12 +83,7 @@ function ExternalLink({
   children: ReactNode;
 }) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-primary underline-offset-4 hover:underline"
-    >
+    <a href={href} target="_blank" rel="noopener noreferrer" className="link">
       {children}
     </a>
   );

@@ -1,3 +1,7 @@
+@import "@fontsource/poppins/latin-400.css";
+@import "@fontsource/poppins/latin-500.css";
+@import "@fontsource/poppins/latin-600.css";
+@import "@fontsource/poppins/latin-700.css";
 @import "@ehds-relay/ui/styles.css";
 
 /* Scan the shared ui package too, or its components render unstyled. */
