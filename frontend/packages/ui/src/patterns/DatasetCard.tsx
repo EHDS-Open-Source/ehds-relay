@@ -1,16 +1,23 @@
 import type { ReactNode } from "react";
 
+import { Icon } from "../icons";
 import { messages } from "../messages";
 
 export interface DatasetCardProps {
   title: string;
   description?: string;
+  /** Colour of the card star, from the dataset's place in the catalogue. */
+  starColour?: string;
   /** Shows the Draft chip. */
   draft?: boolean;
   draftLabel?: string;
-  /** Shows the Overdue chip: the dataset is due for revalidation. */
+  /** The dataset is due for revalidation: the footer says so. */
   overdue?: boolean;
   overdueLabel?: string;
+  /** The reminder date, already formatted for people. Adds the footer band. */
+  reminderDate?: string;
+  /** Read out before the date, e.g. "Revalidation due". */
+  reminderLabel?: string;
   /**
    * Renders the link around the card content, so the app picks the router.
    * Receives the class names to put on the link.
@@ -18,47 +25,94 @@ export interface DatasetCardProps {
   renderLink: (props: { className: string; children: ReactNode }) => ReactNode;
 }
 
+function CardStar({
+  colour,
+  className,
+}: {
+  colour: string;
+  className: string;
+}) {
+  return (
+    <Icon
+      name="star"
+      className={className}
+      style={{ width: 26, height: 26, color: colour }}
+    />
+  );
+}
+
 /** One catalogue entry: a list item whose whole body is a link. */
 export function DatasetCard({
   title,
   description,
+  starColour = "var(--blue-tint-80)",
   draft = false,
   draftLabel = messages.datasetCard.draft,
   overdue = false,
   overdueLabel = messages.datasetCard.overdue,
+  reminderDate,
+  reminderLabel = messages.datasetCard.reminder,
   renderLink,
 }: DatasetCardProps) {
+  const band = overdue || Boolean(reminderDate);
   return (
     <li className="list-none">
       {renderLink({
         className:
-          "flex h-full flex-col gap-3 rounded-2xl border bg-card p-5 text-card-foreground transition-shadow outline-none hover:shadow-md focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          "group relative flex h-full flex-col rounded-[var(--radius-card)] bg-white text-ink shadow-card transition-shadow duration-150 outline-none hover:shadow-md focus-visible:shadow-md",
         children: (
           <>
-            <span className="flex items-start justify-between gap-3">
-              <span className="text-base font-semibold tracking-tight">
-                {title}
+            <span
+              className={`flex flex-1 flex-col gap-4 p-8 ${band ? "" : "pb-[54px]"}`}
+            >
+              <span className="flex items-start justify-between gap-3">
+                <span
+                  role="heading"
+                  aria-level={2}
+                  className="text-[length:var(--h4-size)] leading-[1.3] font-bold text-blue"
+                >
+                  {title}
+                </span>
+                {draft ? (
+                  <span className="shrink-0 rounded-full bg-blue-tint-90 px-3 py-0.5 text-[0.85em] font-semibold text-blue">
+                    {draftLabel}
+                  </span>
+                ) : null}
               </span>
-              {draft || overdue ? (
-                <span className="flex shrink-0 gap-1.5">
-                  {draft ? (
-                    <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
-                      {draftLabel}
-                    </span>
-                  ) : null}
-                  {overdue ? (
-                    <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-semibold text-destructive">
-                      {overdueLabel}
-                    </span>
-                  ) : null}
+              {description ? (
+                <span className="line-clamp-4 text-[0.94em] leading-[1.6] text-ink">
+                  {description}
                 </span>
               ) : null}
             </span>
-            {description ? (
-              <span className="line-clamp-2 text-sm text-muted-foreground">
-                {description}
+            {band ? (
+              <span className="flex min-h-[62px] items-center justify-between gap-3 border-t border-blue-tint-95 px-8 py-3">
+                <span
+                  className={`flex items-center gap-2 text-[0.94em] font-semibold transition-colors duration-150 ${
+                    overdue
+                      ? "text-destructive"
+                      : "text-blue-hint group-hover:text-blue group-focus-visible:text-blue"
+                  }`}
+                >
+                  <Icon name="calendar" />
+                  <span>
+                    {overdue ? (
+                      <span>{overdueLabel}</span>
+                    ) : (
+                      <span className="sr-only">{reminderLabel} </span>
+                    )}
+                    {overdue && reminderDate ? " " : null}
+                    {reminderDate ? <span>{reminderDate}</span> : null}
+                  </span>
+                </span>
+                <CardStar colour={starColour} className="" />
               </span>
-            ) : null}
+            ) : (
+              <CardStar
+                colour={starColour}
+                className="absolute right-5 bottom-5"
+              />
+            )}
           </>
         ),
       })}

@@ -14,7 +14,7 @@ export interface FilterChipsProps<T extends string> {
   label: string;
 }
 
-/** A row of toggle buttons where exactly one is selected. */
+/** A row of outline pills where exactly one is selected; the active one is filled blue. */
 export function FilterChips<T extends string>({
   options,
   value,
@@ -22,7 +22,7 @@ export function FilterChips<T extends string>({
   label,
 }: FilterChipsProps<T>) {
   return (
-    <div role="group" aria-label={label} className="flex flex-wrap gap-2">
+    <div role="group" aria-label={label} className="flex flex-wrap gap-3">
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -32,10 +32,10 @@ export function FilterChips<T extends string>({
             aria-pressed={selected}
             onClick={() => onChange(option.value)}
             className={cn(
-              "h-9 rounded-full border px-4 text-sm font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+              "h-10 rounded-full border-2 px-5 text-[0.95em] font-semibold transition-[color,background-color,border-color] duration-150",
               selected
-                ? "border-primary bg-primary text-primary-foreground"
-                : "bg-background hover:bg-accent hover:text-accent-foreground",
+                ? "border-blue bg-blue text-white"
+                : "border-blue-tint-80 bg-transparent text-blue hover:border-blue hover:bg-blue-tint-90",
             )}
           >
             {option.label}
