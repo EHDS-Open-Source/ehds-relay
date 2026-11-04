@@ -6,10 +6,10 @@ import {
   EmptyState,
   Field,
   FormMessage,
-  Icon,
   Input,
   LoadingStar,
   PageHeader,
+  SaveButton,
   Toggle,
   fieldErrorId,
   useToast,
@@ -70,6 +70,7 @@ function ProfileForm({
     const trimmed = name.trim();
     if (!zMeUpdateDto.safeParse({ name: trimmed }).success) {
       setError({ name: trimmed === "" ? text.nameRequired : text.nameTooLong });
+      document.getElementById("account-name")?.focus();
       return;
     }
     setError({});
@@ -148,18 +149,13 @@ function ProfileForm({
           {saved ? text.savedAnnouncement : null}
         </p>
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" busy={busy}>
-            {busy ? (
-              text.saving
-            ) : saved ? (
-              <>
-                <Icon name="tick" size="sm" />
-                {text.saved}
-              </>
-            ) : (
-              text.save
-            )}
-          </Button>
+          <SaveButton
+            busy={busy}
+            saved={saved}
+            label={text.save}
+            busyLabel={text.saving}
+            savedLabel={text.saved}
+          />
           <Button
             type="button"
             variant="secondary"

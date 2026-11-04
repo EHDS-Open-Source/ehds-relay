@@ -1,12 +1,11 @@
 import {
-  Button,
   EmptyState,
   Field,
   FormMessage,
-  Icon,
   Input,
   NativeSelect,
   PageHeader,
+  SaveButton,
   fieldErrorId,
 } from "@ehds-relay/ui";
 import { useParams } from "@tanstack/react-router";
@@ -68,7 +67,13 @@ function SettingsForm({ org }: { org: SessionOrg }) {
       ...(country === "" && { country: text.countryRequired }),
     };
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (found.name || found.country) {
+      // Take people to the first answer that needs fixing
+      document
+        .getElementById(found.name ? "settings-name" : "settings-country")
+        ?.focus();
+      return;
+    }
     update.mutate(
       { name: trimmed, country },
       {
@@ -137,18 +142,13 @@ function SettingsForm({ org }: { org: SessionOrg }) {
         {saved ? text.savedAnnouncement : null}
       </p>
       <div>
-        <Button type="submit" busy={update.isPending}>
-          {update.isPending ? (
-            text.saving
-          ) : saved ? (
-            <>
-              <Icon name="tick" size="sm" />
-              {text.saved}
-            </>
-          ) : (
-            text.save
-          )}
-        </Button>
+        <SaveButton
+          busy={update.isPending}
+          saved={saved}
+          label={text.save}
+          busyLabel={text.saving}
+          savedLabel={text.saved}
+        />
       </div>
     </form>
   );

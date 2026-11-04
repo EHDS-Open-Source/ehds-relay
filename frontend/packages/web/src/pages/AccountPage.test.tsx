@@ -147,6 +147,7 @@ describe("AccountPage", () => {
 
     expect(screen.getByText(text.nameRequired)).toBeVisible();
     expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input).toHaveFocus();
     expect(patches(fetch)).toHaveLength(0);
   });
 

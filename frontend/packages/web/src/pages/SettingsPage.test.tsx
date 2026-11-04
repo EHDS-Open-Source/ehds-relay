@@ -131,6 +131,7 @@ describe("MGT-6 organisation settings", () => {
     await userEvent.clear(await screen.findByLabelText(nameLabel));
     await save();
     expect(screen.getByText(text.nameRequired)).toBeVisible();
+    expect(screen.getByLabelText(nameLabel)).toHaveFocus();
     expect(patches).toHaveLength(0);
   });
 

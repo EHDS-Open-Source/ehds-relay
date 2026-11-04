@@ -255,6 +255,8 @@ describe("invitations", () => {
       screen.getByRole("button", { name: m.invitations.send }),
     );
     expect(await screen.findByText(m.invitations.emailRequired)).toBeVisible();
+    // Clicking Send takes people to the field that needs fixing
+    expect(screen.getByLabelText(emailLabel)).toHaveFocus();
     await userEvent.type(screen.getByLabelText(emailLabel), "nope");
     await userEvent.click(
       screen.getByRole("button", { name: m.invitations.send }),
