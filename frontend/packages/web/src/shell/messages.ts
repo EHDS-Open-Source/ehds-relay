@@ -265,6 +265,8 @@ export const shellMessages = {
     nameLabel: "Organisation name",
     countryLabel: "Country",
     countryPlaceholder: "Choose a country",
+    countryHint:
+      "Where the organisation is based. People see it when they choose an organisation.",
     save: "Save changes",
     saving: "Saving…",
     saved: "Saved",
