@@ -38,6 +38,7 @@ export {
 } from "./form/RepeatableList";
 export { TagInput, type TagInputProps } from "./form/TagInput";
 export { AppHeader, type AppHeaderProps } from "./layout/AppHeader";
+export { BrandCard, type BrandCardProps } from "./layout/BrandCard";
 export { AppShell, type AppShellProps } from "./layout/AppShell";
 export { Ribbon, type RibbonProps } from "./layout/Ribbon";
 export { EmptyState, type EmptyStateProps } from "./layout/EmptyState";

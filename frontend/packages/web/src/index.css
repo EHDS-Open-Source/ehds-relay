@@ -6,3 +6,21 @@
 
 /* Scan the shared ui package too, or its components render unstyled. */
 @source "../../ui/src";
+
+/* Placeholder ring of stars behind the sign-in screens: turns once every 140 seconds,
+   and stays still when the person prefers reduced motion. */
+@keyframes star-ring-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.star-ring {
+  animation: star-ring-turn var(--motion-ambient) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star-ring {
+    animation: none !important;
+  }
+}

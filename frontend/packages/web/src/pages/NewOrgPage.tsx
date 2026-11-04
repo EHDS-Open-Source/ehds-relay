@@ -1,10 +1,11 @@
 import {
   Button,
+  Field,
   FormMessage,
+  Icon,
   Input,
-  Label,
   NativeSelect,
-  PageHeader,
+  fieldErrorId,
 } from "@ehds-relay/ui";
 import { useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
@@ -38,7 +39,10 @@ export function NewOrgPage() {
       ...(country === "" && { country: text.countryRequired }),
     };
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (Object.keys(found).length > 0) {
+      document.getElementById(found.name ? "org-name" : "org-country")?.focus();
+      return;
+    }
 
     setBusy(true);
     try {
@@ -64,44 +68,54 @@ export function NewOrgPage() {
   };
 
   return (
-    <BareLayout>
-      <PageHeader title={text.title} description={text.description} />
-      <p className="-mt-6 mb-8 text-sm text-muted-foreground">
-        {text.invitedHint}
-      </p>
+    <BareLayout title={text.title} description={text.description}>
+      <p className="-mt-4 mb-8 text-sm text-white">{text.invitedHint}</p>
       <form
         noValidate
         onSubmit={(event) => {
           void submit(event);
         }}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-6"
       >
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="org-name">{text.nameLabel}</Label>
+        <Field
+          tone="onBlue"
+          label={text.nameLabel}
+          htmlFor="org-name"
+          error={errors.name}
+        >
           <Input
+            tone="onBlue"
             id="org-name"
             value={name}
             maxLength={200}
             autoComplete="organization"
             aria-invalid={errors.name ? true : undefined}
-            aria-describedby={errors.name ? "org-name-error" : undefined}
+            aria-describedby={
+              errors.name ? fieldErrorId("org-name") : undefined
+            }
             onChange={(event) => {
               setName(event.target.value);
+              setErrors((current) => ({ ...current, name: undefined }));
             }}
           />
-          {errors.name ? (
-            <FormMessage id="org-name-error">{errors.name}</FormMessage>
-          ) : null}
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="org-country">{text.countryLabel}</Label>
+        </Field>
+        <Field
+          tone="onBlue"
+          label={text.countryLabel}
+          htmlFor="org-country"
+          error={errors.country}
+        >
           <NativeSelect
+            tone="onBlue"
             id="org-country"
             value={country}
             aria-invalid={errors.country ? true : undefined}
-            aria-describedby={errors.country ? "org-country-error" : undefined}
+            aria-describedby={
+              errors.country ? fieldErrorId("org-country") : undefined
+            }
             onChange={(event) => {
               setCountry(event.target.value);
+              setErrors((current) => ({ ...current, country: undefined }));
             }}
           >
             <option value="">{text.countryPlaceholder}</option>
@@ -111,13 +125,13 @@ export function NewOrgPage() {
               </option>
             ))}
           </NativeSelect>
-          {errors.country ? (
-            <FormMessage id="org-country-error">{errors.country}</FormMessage>
-          ) : null}
-        </div>
-        {errors.form ? <FormMessage>{errors.form}</FormMessage> : null}
+        </Field>
+        {errors.form ? (
+          <FormMessage className="text-error">{errors.form}</FormMessage>
+        ) : null}
         <div>
-          <Button type="submit" disabled={busy}>
+          <Button type="submit" size="lg" onBlue busy={busy}>
+            {busy ? null : <Icon name="plus" aria-hidden />}
             {busy ? text.submitting : text.submit}
           </Button>
         </div>

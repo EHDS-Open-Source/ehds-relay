@@ -1,4 +1,4 @@
-import { Button, EmptyState, FormMessage, PageHeader } from "@ehds-relay/ui";
+import { Button, FormMessage, LoadingStar } from "@ehds-relay/ui";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 
 import {
@@ -25,8 +25,8 @@ function Notice({
   action?: React.ReactNode;
 }) {
   return (
-    <BareLayout>
-      <EmptyState title={title} description={description} action={action} />
+    <BareLayout title={title} description={description}>
+      {action}
     </BareLayout>
   );
 }
@@ -51,9 +51,7 @@ export function AcceptInvitationPage() {
   if (preview.isPending) {
     return (
       <BareLayout>
-        <p role="status" className="text-muted-foreground">
-          {m.loading}
-        </p>
+        <LoadingStar size="page" message={m.loading} />
       </BareLayout>
     );
   }
@@ -72,11 +70,11 @@ export function AcceptInvitationPage() {
       {...m.gone[status]}
       action={
         session ? (
-          <Button asChild>
+          <Button asChild onBlue>
             <Link to="/orgs">{m.goToOrganisations}</Link>
           </Button>
         ) : (
-          <Button asChild>
+          <Button asChild onBlue>
             <a href={loginUrl({ redirect: "/" })}>{m.signIn}</a>
           </Button>
         )
@@ -99,6 +97,7 @@ export function AcceptInvitationPage() {
         )}
         action={
           <Button
+            onBlue
             onClick={() => {
               void signOut();
             }}
@@ -118,19 +117,22 @@ export function AcceptInvitationPage() {
   ].join(" ");
 
   return (
-    <BareLayout>
-      <PageHeader
-        title={m.title(invitation.organisation_name)}
-        description={joinAs}
-      />
-      <p className="-mt-6 mb-8 text-sm text-muted-foreground">
+    <BareLayout
+      title={m.title(invitation.organisation_name)}
+      description={joinAs}
+    >
+      <p className="-mt-4 mb-8 text-sm text-white">
         {m.forAddress(invitation.email)}
       </p>
       {session ? (
         <div className="flex flex-col items-start gap-4">
-          {accept.isError ? <FormMessage>{m.failed}</FormMessage> : null}
+          {accept.isError ? (
+            <FormMessage className="text-error">{m.failed}</FormMessage>
+          ) : null}
           <Button
-            disabled={accept.isPending}
+            size="lg"
+            onBlue
+            busy={accept.isPending}
             onClick={() => {
               accept.mutate(undefined, {
                 onSuccess: (org) => {
@@ -147,12 +149,12 @@ export function AcceptInvitationPage() {
         </div>
       ) : (
         <div className="flex flex-col items-start gap-4">
-          <p className="text-sm">{m.signInHint}</p>
+          <p className="text-sm text-white">{m.signInHint}</p>
           <div className="flex flex-wrap gap-3">
-            <Button asChild>
+            <Button asChild size="lg" onBlue>
               <a href={loginUrl({ redirect })}>{m.signIn}</a>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild size="lg" variant="secondary" onBlue>
               <a href={loginUrl({ redirect, signup: true })}>
                 {m.createAccount}
               </a>
