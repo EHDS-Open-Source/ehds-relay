@@ -88,7 +88,11 @@ describe("dataset detail", () => {
     stubApi({ [`GET ${base}`]: () => json({ detail: "no" }, 404) });
     renderApp(path);
     expect(await screen.findByText(m.notFound.title)).toBeVisible();
-    expect(screen.getByRole("link", { name: m.backToCatalogue })).toBeVisible();
+    expect(
+      within(screen.getByRole("main")).getByRole("link", {
+        name: m.backToCatalogue,
+      }),
+    ).toBeVisible();
   });
 
   it("has Edit, View output and Back to catalogue links", async () => {

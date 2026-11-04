@@ -93,9 +93,15 @@ describe("MGT-6 organisation settings", () => {
       name: "Acme Health",
       country: "EL",
     });
-    expect(
-      within(screen.getByRole("banner")).getByText("Acme Health"),
-    ).toBeVisible();
+    await userEvent.click(
+      within(screen.getByRole("banner")).getByRole("button", {
+        name: "Open menu",
+      }),
+    );
+    expect(screen.getByRole("dialog")).toHaveAccessibleDescription(
+      "Acme Health",
+    );
+    await userEvent.keyboard("{Escape}");
 
     await router.navigate({ to: "/orgs" });
     await waitFor(() => {

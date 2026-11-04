@@ -5,6 +5,11 @@ export const shellMessages = {
   menuTitle: "Menu",
   signOut: "Sign out",
   logOut: "Log out",
+  header: {
+    backToCatalogue: "Back to catalogue",
+    // Shown instead on phones, where the header is narrow
+    backToCatalogueShort: "Catalogue",
+  },
   notBuilt: {
     title: "Not built yet",
     description: "This screen is a placeholder and will be filled in soon.",

@@ -54,6 +54,7 @@ export {
   SideMenu,
   SideMenuDivider,
   SideMenuItem,
+  SideMenuLogOut,
   menuItemClass,
   type SideMenuProps,
 } from "./layout/SideMenu";

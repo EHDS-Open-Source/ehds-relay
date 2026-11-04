@@ -69,7 +69,9 @@ describe("org routes", () => {
       await screen.findByRole("heading", { level: 1, name: title }),
     ).toBeVisible();
     const header = screen.getByRole("banner");
-    expect(within(header).getByText("Demo org")).toBeVisible();
+    expect(
+      within(header).getByRole("button", { name: "Open menu" }),
+    ).toBeVisible();
     expect(screen.getByRole("main")).toContainElement(
       screen.getByRole("heading", { level: 1 }),
     );
@@ -235,8 +237,10 @@ describe("not found", () => {
     });
     expect(screen.getByRole("main")).toContainElement(heading);
     expect(
-      within(screen.getByRole("banner")).getByText("Demo org"),
-    ).toBeVisible();
+      within(screen.getByRole("banner")).getByRole("link", {
+        name: shellMessages.header.backToCatalogue,
+      }),
+    ).toHaveAttribute("href", "/orgs/demo/catalogue");
   });
 
   it("treats an organisation the user is not in as missing", async () => {
@@ -386,5 +390,108 @@ describe("menu", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/sign-in");
     });
+  });
+});
+
+describe("header", () => {
+  const back = shellMessages.header.backToCatalogue;
+
+  it("has no way back on the catalogue itself", async () => {
+    renderApp("/orgs/demo/catalogue");
+    await screen.findByRole("heading", { name: "Dataset Catalogue" });
+    expect(
+      within(screen.getByRole("banner")).queryByRole("link", { name: back }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("goes back to the catalogue from the other organisation pages", async () => {
+    renderApp("/orgs/demo/members");
+    await screen.findByRole("heading", { level: 1 });
+    expect(
+      within(screen.getByRole("banner")).getByRole("link", { name: back }),
+    ).toHaveAttribute("href", "/orgs/demo/catalogue");
+  });
+
+  it("does not name the organisation", async () => {
+    renderApp("/orgs/demo/catalogue");
+    await screen.findByRole("heading", { name: "Dataset Catalogue" });
+    expect(
+      within(screen.getByRole("banner")).queryByText("Demo org"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("lists the menu in one list, account before the organisation pages", async () => {
+    renderApp("/orgs/demo/catalogue", twoOrgs);
+    await screen.findByRole("heading", { name: "Dataset Catalogue" });
+    await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getAllByRole("navigation")).toHaveLength(1);
+    expect(
+      within(dialog)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual([
+      "Catalogue",
+      "Manage my account",
+      "Manage users",
+      "Settings",
+      "Switch organisation",
+    ]);
+  });
+});
+
+describe("account header", () => {
+  it("has the menu with the account entries and Log out, without an organisation", async () => {
+    renderApp("/account", twoOrgs);
+    await screen.findByRole("heading", {
+      level: 1,
+      name: shellMessages.account.title,
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    const dialog = screen.getByRole("dialog", {
+      name: shellMessages.menuTitle,
+    });
+    expect(dialog).not.toHaveAccessibleDescription();
+    expect(
+      within(dialog)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["Manage my account", "Switch organisation"]);
+    expect(
+      within(dialog).getByRole("link", { name: "Manage my account" }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(
+      within(dialog).getByRole("button", { name: shellMessages.logOut }),
+    ).toBeVisible();
+  });
+
+  it("goes back to the only organisation's catalogue", async () => {
+    renderApp("/account");
+    await screen.findByRole("heading", { level: 1 });
+    expect(
+      within(screen.getByRole("banner")).getByRole("link", {
+        name: shellMessages.header.backToCatalogue,
+      }),
+    ).toHaveAttribute("href", "/orgs/demo/catalogue");
+  });
+
+  it("goes back to the organisation list with several", async () => {
+    renderApp("/account", twoOrgs);
+    await screen.findByRole("heading", { level: 1 });
+    expect(
+      within(screen.getByRole("banner")).getByRole("link", {
+        name: shellMessages.header.backToCatalogue,
+      }),
+    ).toHaveAttribute("href", "/orgs");
+  });
+
+  it("has no way back without an organisation", async () => {
+    renderApp("/account", { ...demoSession, orgs: [] });
+    await screen.findByRole("heading", { level: 1 });
+    expect(
+      within(screen.getByRole("banner")).queryByRole("link", {
+        name: shellMessages.header.backToCatalogue,
+      }),
+    ).not.toBeInTheDocument();
   });
 });

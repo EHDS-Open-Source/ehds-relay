@@ -40,7 +40,11 @@ export function BareLayout({
         className={`relative mx-auto flex min-h-screen w-full flex-col justify-center gap-6 px-4 py-12 sm:px-6 ${width === "wide" ? "max-w-2xl" : "max-w-xl"}`}
       >
         {title ? (
-          <BrandCard logo={<Logo />} title={title} description={description}>
+          <BrandCard
+            logo={<Logo size="card" />}
+            title={title}
+            description={description}
+          >
             {children}
           </BrandCard>
         ) : (

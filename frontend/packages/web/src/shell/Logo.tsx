@@ -1,14 +1,21 @@
 import { shellMessages } from "./messages";
 
+const heights = {
+  // 34px in the header, 24px on phones
+  header: "h-6 md:h-[34px]",
+  // 40px on the sign-in card, 30px on phones
+  card: "h-[30px] md:h-10",
+} as const;
+
 /** The EHDS Relay logo: white lettering with the yellow asterisk, for the blue header and card. */
-export function Logo() {
+export function Logo({ size = "header" }: { size?: keyof typeof heights }) {
   return (
     <svg
       viewBox="0 0 197 31"
       role="img"
       aria-label={shellMessages.appName}
       data-slot="logo"
-      className="h-7 w-auto"
+      className={`${heights[size]} block w-auto`}
     >
       <path
         d="M156.424 4.93198L149.326 18.66V25.4364H144.331V18.66L137.234 4.93198H142.9L146.872 13.5193L150.816 4.93198H156.424Z"
