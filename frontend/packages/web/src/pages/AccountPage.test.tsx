@@ -1,3 +1,4 @@
+import { ToastProvider } from "@ehds-relay/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router";
 import { render, screen, waitFor, within } from "@testing-library/react";
@@ -11,6 +12,8 @@ import { demoSession, makeOrg } from "../session/testing";
 import { shellMessages } from "../shell/messages";
 
 const text = shellMessages.account;
+// The required star adds hidden text to the label, so match on the start.
+const nameLabel = new RegExp(`^${text.nameLabel}`);
 
 /** Answers PATCH /me like the API: the user with the name that was sent. */
 async function renameOk(request: Request): Promise<Response> {
@@ -76,7 +79,9 @@ function renderPage(navigateExternal: (url: string) => void = vi.fn()) {
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
     </QueryClientProvider>,
   );
   return { router, session };
@@ -86,7 +91,7 @@ const patches = (fetch: ReturnType<typeof stubApi>) =>
   fetch.mock.calls.filter(([request]) => request.method === "PATCH");
 
 async function nameInput() {
-  return screen.findByLabelText(text.nameLabel);
+  return screen.findByLabelText(nameLabel);
 }
 
 describe("AccountPage", () => {
@@ -121,7 +126,9 @@ describe("AccountPage", () => {
     await userEvent.type(input, "  Dana Demo  ");
     await userEvent.click(screen.getByRole("button", { name: text.save }));
 
-    expect(await screen.findByText(text.saved)).toBeVisible();
+    expect(
+      await screen.findByRole("button", { name: text.saved }),
+    ).toBeVisible();
     const [request] = patches(fetch)[0]!;
     expect(await request.json()).toEqual({ name: "Dana Demo" });
     expect(input).toHaveValue("Dana Demo");
@@ -168,7 +175,7 @@ describe("AccountPage", () => {
       await userEvent.type(input, "x");
       await userEvent.click(screen.getByRole("button", { name: text.save }));
 
-      expect(await screen.findByRole("alert")).toHaveTextContent(message);
+      expect(await screen.findByText(message)).toBeVisible();
       expect(screen.queryByText("raw server text")).not.toBeInTheDocument();
       expect(session.get()?.user.name).toBe(demoSession.user.name);
     },
@@ -215,29 +222,33 @@ describe("AccountPage", () => {
     renderPage();
     await nameInput();
     const rows = within(
-      screen.getByRole("table", { name: undefined }),
-    ).getAllByRole("row");
-    expect(rows).toHaveLength(3);
-    expect(rows[1]).toHaveTextContent("Alpha Health");
-    expect(rows[1]).toHaveTextContent("France");
-    expect(rows[1]).toHaveTextContent("Owner");
-    expect(rows[2]).toHaveTextContent("Beta Care");
-    expect(rows[2]).toHaveTextContent("Germany");
-    expect(rows[2]).toHaveTextContent("Standard");
+      screen.getByRole("list", { name: text.orgs.title }),
+    ).getAllByRole("listitem");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent("Alpha Health");
+    expect(rows[0]).toHaveTextContent("France");
+    expect(rows[0]).toHaveTextContent("Owner");
+    expect(rows[1]).toHaveTextContent("Beta Care");
+    expect(rows[1]).toHaveTextContent("Germany");
+    expect(rows[1]).toHaveTextContent("Standard");
   });
 
   it("ACC-4 says so when the user is in no organisation", async () => {
     stubApi(undefined, { orgs: [] });
     renderPage();
     expect(await screen.findByText(text.orgs.none)).toBeVisible();
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("list", { name: text.orgs.title }),
+    ).not.toBeInTheDocument();
   });
 
   it("ACC-5 shows a labelled switch that is on by default", async () => {
     stubApi();
     renderPage();
     const sw = await screen.findByRole("switch", {
-      name: text.notifications.kinds.revalidation_reminder!.label,
+      name: new RegExp(
+        `^${text.notifications.kinds.revalidation_reminder!.label}`,
+      ),
     });
     expect(sw).toBeChecked();
   });
@@ -263,9 +274,7 @@ describe("AccountPage", () => {
     renderPage();
     const sw = await screen.findByRole("switch");
     await userEvent.click(sw);
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      text.notifications.failed,
-    );
+    expect(await screen.findByText(text.notifications.failed)).toBeVisible();
     expect(screen.queryByText("raw server text")).not.toBeInTheDocument();
     expect(sw).toBeChecked();
   });
