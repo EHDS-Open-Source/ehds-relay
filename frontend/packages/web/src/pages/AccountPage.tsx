@@ -1,11 +1,18 @@
 import { zMeUpdateDto } from "@ehds-relay/api-client";
 import {
+  Badge,
+  Banner,
   Button,
+  EmptyState,
   Field,
   FormMessage,
+  Icon,
   Input,
+  LoadingStar,
   PageHeader,
+  Toggle,
   fieldErrorId,
+  useToast,
 } from "@ehds-relay/ui";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -16,6 +23,7 @@ import { countryName } from "../orgs/countries";
 import { useSession, useSessionStore, useSignOut } from "../session/useSession";
 import { AccountLayout } from "../shell/AccountLayout";
 import { shellMessages } from "../shell/messages";
+import { useSavedFlash } from "./useSavedFlash";
 
 const text = shellMessages.account;
 
@@ -53,12 +61,12 @@ function ProfileForm({
   const signOut = useSignOut();
   const [name, setName] = useState(savedName);
   const [error, setError] = useState<{ name?: string; form?: string }>({});
-  const [saved, setSaved] = useState(false);
+  const [saved, flashSaved, clearSaved] = useSavedFlash();
   const [busy, setBusy] = useState(false);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    setSaved(false);
+    clearSaved();
     const trimmed = name.trim();
     if (!zMeUpdateDto.safeParse({ name: trimmed }).success) {
       setError({ name: trimmed === "" ? text.nameRequired : text.nameTooLong });
@@ -80,7 +88,7 @@ function ProfileForm({
         return;
       }
       setName(data.name);
-      setSaved(true);
+      flashSaved();
       // So the rest of the app shows the new name. The name is saved even if this fails;
       // the next page load picks it up.
       await store.refresh().catch(() => null);
@@ -92,7 +100,8 @@ function ProfileForm({
   };
 
   return (
-    <div className="max-w-[480px]">
+    <div className="max-w-[480px] rounded-xl border-2 border-blue-tint-90 bg-white p-6">
+      <h2 className="mb-4 text-lg font-semibold">{text.detailsTitle}</h2>
       <form
         noValidate
         aria-label={text.title}
@@ -101,7 +110,12 @@ function ProfileForm({
         }}
         className="flex flex-col gap-5"
       >
-        <Field label={text.nameLabel} htmlFor="account-name" error={error.name}>
+        <Field
+          label={text.nameLabel}
+          htmlFor="account-name"
+          required
+          error={error.name}
+        >
           <Input
             id="account-name"
             value={name}
@@ -112,7 +126,7 @@ function ProfileForm({
             }
             onChange={(event) => {
               setName(event.target.value);
-              setSaved(false);
+              clearSaved();
             }}
           />
         </Field>
@@ -130,16 +144,25 @@ function ProfileForm({
           />
         </Field>
         {error.form ? <FormMessage>{error.form}</FormMessage> : null}
-        <p role="status" className="min-h-5 text-sm">
-          {saved ? text.saved : null}
+        <p role="status" className="sr-only">
+          {saved ? text.savedAnnouncement : null}
         </p>
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" disabled={busy}>
-            {busy ? text.saving : text.save}
+          <Button type="submit" busy={busy}>
+            {busy ? (
+              text.saving
+            ) : saved ? (
+              <>
+                <Icon name="tick" size="sm" />
+                {text.saved}
+              </>
+            ) : (
+              text.save
+            )}
           </Button>
           <Button
             type="button"
-            variant="ghost"
+            variant="secondary"
             onClick={() => {
               void signOut();
             }}
@@ -157,43 +180,31 @@ function OrganisationsSection() {
   const orgs = useSession()?.orgs ?? [];
   const copy = text.orgs;
   return (
-    <section aria-labelledby="account-orgs" className="mt-10 max-w-[640px]">
+    <section aria-labelledby="account-orgs" className="mt-10 max-w-[480px]">
       <h2 id="account-orgs" className="mb-3 text-lg font-semibold">
         {copy.title}
       </h2>
       {orgs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{copy.none}</p>
+        <EmptyState compact title={copy.none} />
       ) : (
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b text-muted-foreground">
-              <th scope="col" className="py-2 pr-4 font-medium">
-                {copy.name}
-              </th>
-              <th scope="col" className="py-2 pr-4 font-medium">
-                {copy.country}
-              </th>
-              <th scope="col" className="py-2 font-medium">
-                {copy.role}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {orgs.map((org) => (
-              <tr key={org.id} className="border-b">
-                <th scope="row" className="py-2 pr-4 font-medium">
+        <ul aria-label={copy.title} className="flex flex-col gap-3">
+          {orgs.map((org) => (
+            <li
+              key={org.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-blue-tint-90 bg-white px-5 py-4"
+            >
+              <div className="min-w-0">
+                <p className="text-[1.15em] font-semibold break-words text-blue">
                   {org.name}
-                </th>
-                <td className="py-2 pr-4">
+                </p>
+                <p className="text-[0.9em] font-semibold text-ink-3">
                   {org.country ? countryName(org.country) : copy.unknownCountry}
-                </td>
-                <td className="py-2">
-                  {shellMessages.members.roles[org.role]}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </p>
+              </div>
+              <Badge>{shellMessages.members.roles[org.role]}</Badge>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );
@@ -213,12 +224,9 @@ function NotificationsSection() {
   });
   const [changed, setChanged] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
-    null,
-  );
+  const toast = useToast();
 
   const toggle = async (kind: string, enabled: boolean) => {
-    setMessage(null);
     setBusy(kind);
     try {
       const { data, response } = await api.PUT("/api/v1/me/notifications", {
@@ -228,15 +236,15 @@ function NotificationsSection() {
       });
       if (!data) {
         if (response.status !== 401)
-          setMessage({ ok: false, text: copy.failed });
+          toast.show({ tone: "error", message: copy.failed });
         return;
       }
       setChanged(
         Object.fromEntries(data.settings.map((s) => [s.kind, s.enabled])),
       );
-      setMessage({ ok: true, text: copy.saved });
+      toast.show({ tone: "success", message: copy.saved });
     } catch {
-      setMessage({ ok: false, text: copy.failed });
+      toast.show({ tone: "error", message: copy.failed });
     } finally {
       setBusy(null);
     }
@@ -251,62 +259,49 @@ function NotificationsSection() {
         {copy.title}
       </h2>
       <p className="mb-3 text-sm text-muted-foreground">{copy.description}</p>
-      {query.isPending ? <p className="text-sm">{copy.loading}</p> : null}
+      {query.isPending ? (
+        <LoadingStar size="page" message={copy.loading} />
+      ) : null}
       {query.isError ? (
-        <div className="flex flex-col items-start gap-2">
-          <FormMessage>{copy.loadFailed}</FormMessage>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              void query.refetch();
-            }}
-          >
-            {copy.retry}
-          </Button>
-        </div>
+        <Banner
+          tone="error"
+          action={
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                void query.refetch();
+              }}
+            >
+              {copy.retry}
+            </Button>
+          }
+        >
+          {copy.loadFailed}
+        </Banner>
       ) : null}
       {query.data ? (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-4 rounded-xl border-2 border-blue-tint-90 bg-white p-6">
           {query.data.map((setting) => {
-            const id = `notification-${setting.kind}`;
             const kind = copy.kinds[setting.kind];
             return (
-              <li key={setting.kind} className="flex items-start gap-3">
-                <input
-                  id={id}
-                  type="checkbox"
-                  role="switch"
-                  className="mt-1 size-4"
+              <li key={setting.kind}>
+                <Toggle
+                  id={`notification-${setting.kind}`}
+                  label={kind?.label ?? setting.kind}
+                  description={kind?.hint}
                   checked={changed[setting.kind] ?? setting.enabled}
                   disabled={busy === setting.kind}
-                  aria-describedby={`${id}-hint`}
                   onChange={(event) => {
                     void toggle(setting.kind, event.target.checked);
                   }}
                 />
-                <div>
-                  <label htmlFor={id} className="font-medium">
-                    {kind?.label ?? setting.kind}
-                  </label>
-                  <p
-                    id={`${id}-hint`}
-                    className="text-sm text-muted-foreground"
-                  >
-                    {kind?.hint}
-                  </p>
-                </div>
               </li>
             );
           })}
         </ul>
       ) : null}
-      <p
-        role={message && !message.ok ? "alert" : "status"}
-        className="mt-3 min-h-5 text-sm"
-      >
-        {message?.text}
-      </p>
       <p className="mt-8 text-sm">
         <Link to="/orgs" className="underline underline-offset-4">
           {text.back}

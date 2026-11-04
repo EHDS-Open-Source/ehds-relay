@@ -14,6 +14,8 @@ import {
 } from "./datasetTestUtils";
 
 const m = shellMessages.members;
+// The required star adds hidden text to the label, so match on the start.
+const emailLabel = new RegExp(`^${m.invitations.emailLabel}`);
 const path = `/orgs/${ORG}/members`;
 const membersUrl = `/api/v1/organisations/${ORG}/members`;
 const invitesUrl = `/api/v1/organisations/${ORG}/invitations`;
@@ -36,11 +38,24 @@ describe("members", () => {
     renderAs(path, demoSession);
     expect(await screen.findByText("Bob Standard")).toBeVisible();
     expect(screen.getByText("bob@example.org")).toBeVisible();
-    expect(screen.getByText("10 Feb 2026")).toBeVisible();
+    expect(screen.getByText(m.list.joinedOn("10 Feb 2026"))).toBeVisible();
     expect(
       screen.getByRole("combobox", { name: m.list.roleFor("Bob Standard") }),
     ).toHaveValue("standard");
     expect(screen.getByText(`(${m.list.you})`)).toBeVisible();
+  });
+
+  it("gives the role select room for the longest role name", async () => {
+    stubApi({
+      [`GET ${membersUrl}`]: () => json([ada, bob]),
+      [`GET ${invitesUrl}`]: () => json([]),
+    });
+    renderAs(path, demoSession);
+    const select = await screen.findByRole("combobox", {
+      name: m.list.roleFor("Bob Standard"),
+    });
+    expect(select).toHaveClass("w-44");
+    expect(select).toHaveClass("shrink-0");
   });
 
   it("changes a role and refreshes the list", async () => {
@@ -66,6 +81,9 @@ describe("members", () => {
     });
     const patch = calls.find((c) => c.method === "PATCH");
     expect(patch).toBeDefined();
+    expect(
+      await screen.findByText(m.roleChanged("Bob Standard", "owner")),
+    ).toBeVisible();
     expect(
       calls.filter((c) => c.method === "GET" && c.url.endsWith("/members"))
         .length,
@@ -115,6 +133,7 @@ describe("members", () => {
       expect(screen.queryByText("Bob Standard")).not.toBeInTheDocument();
     });
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(await screen.findByText(m.removed("Bob Standard"))).toBeVisible();
   });
 
   it.each([
@@ -146,7 +165,9 @@ describe("members", () => {
     renderAs(path, standardSession);
     expect(await screen.findByText(m.ownersOnly)).toBeVisible();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Remove / }),
+    ).not.toBeInTheDocument();
     expect(calls.filter((c) => c.url.includes("/members"))).toHaveLength(0);
   });
 });
@@ -178,7 +199,7 @@ describe("invitations", () => {
   it("lists email, role, date sent and status, and filters by status", async () => {
     const calls = open();
     expect(await screen.findByText("new@example.org")).toBeVisible();
-    expect(screen.getByText("3 Feb 2026")).toBeVisible();
+    expect(screen.getByText(m.invitations.sentOn("3 Feb 2026"))).toBeVisible();
     expect(screen.getByText("old@example.org")).toBeVisible();
     await userEvent.click(
       screen.getByRole("button", { name: m.invitations.filters.expired }),
@@ -201,7 +222,7 @@ describe("invitations", () => {
     });
     await screen.findByText("new@example.org");
     await userEvent.type(
-      screen.getByLabelText(m.invitations.emailLabel),
+      screen.getByLabelText(emailLabel),
       "carol@example.org",
     );
     await userEvent.selectOptions(
@@ -234,10 +255,7 @@ describe("invitations", () => {
       screen.getByRole("button", { name: m.invitations.send }),
     );
     expect(await screen.findByText(m.invitations.emailRequired)).toBeVisible();
-    await userEvent.type(
-      screen.getByLabelText(m.invitations.emailLabel),
-      "nope",
-    );
+    await userEvent.type(screen.getByLabelText(emailLabel), "nope");
     await userEvent.click(
       screen.getByRole("button", { name: m.invitations.send }),
     );
@@ -257,10 +275,7 @@ describe("invitations", () => {
   ])("explains the 409 %s", async (detail, message) => {
     open({ [`POST ${invitesUrl}`]: () => json({ detail }, 409) });
     await screen.findByText("new@example.org");
-    await userEvent.type(
-      screen.getByLabelText(m.invitations.emailLabel),
-      "x@example.org",
-    );
+    await userEvent.type(screen.getByLabelText(emailLabel), "x@example.org");
     await userEvent.click(
       screen.getByRole("button", { name: m.invitations.send }),
     );

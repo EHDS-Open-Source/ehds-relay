@@ -1,4 +1,11 @@
-import { Button, ConfirmDialog, NativeSelect } from "@ehds-relay/ui";
+import {
+  Banner,
+  Button,
+  ConfirmDialog,
+  LoadingStar,
+  NativeSelect,
+  useToast,
+} from "@ehds-relay/ui";
 import { useState } from "react";
 
 import { shellMessages } from "../shell/messages";
@@ -25,24 +32,27 @@ export function MembersSection({
   const members = useMembers(orgId);
   const changeRole = useChangeRole(orgId);
   const removeMember = useRemoveMember(orgId);
+  const toast = useToast();
   const [removing, setRemoving] = useState<Member | null>(null);
 
   if (members.isPending) {
-    return <p role="status">{shellMessages.loading}</p>;
+    return <LoadingStar size="page" message={shellMessages.loading} />;
   }
   if (members.isError) {
     return (
-      <p role="alert" className="text-sm text-destructive">
+      <Banner tone="error">
         {errorStatus(members.error) === 403 ? m.ownersOnly : m.loadFailed}
-      </p>
+      </Banner>
     );
   }
 
   const confirmRemove = () => {
     if (!removing) return;
+    const { name } = removing;
     removeMember.mutate(removing.user_id, {
       onSuccess: () => {
         setRemoving(null);
+        toast.show({ tone: "success", message: m.removed(name) });
       },
     });
   };
@@ -52,83 +62,94 @@ export function MembersSection({
       <h2 id="members-heading" className="mb-4 text-xl font-semibold">
         {m.list.title}
       </h2>
-      {changeRole.isError ? (
-        <p role="alert" className="mb-3 text-sm text-destructive">
-          {memberErrorMessage(changeRole.error)}
-        </p>
-      ) : null}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="text-muted-foreground">
-            <tr>
-              <th className="py-2 pr-4 font-medium">{m.list.name}</th>
-              <th className="py-2 pr-4 font-medium">{m.list.email}</th>
-              <th className="py-2 pr-4 font-medium">{m.list.role}</th>
-              <th className="py-2 pr-4 font-medium">{m.list.joined}</th>
-              <th className="py-2 font-medium">{m.list.actions}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.data.map((member) => (
-              <tr key={member.user_id} className="border-t">
-                <td className="py-3 pr-4">
-                  {member.name}
-                  {member.user_id === currentUserId ? (
-                    <span className="ml-2 text-muted-foreground">
-                      ({m.list.you})
-                    </span>
-                  ) : null}
-                </td>
-                <td className="py-3 pr-4">{member.email}</td>
-                <td className="py-3 pr-4">
-                  <NativeSelect
-                    aria-label={m.list.roleFor(member.name)}
-                    className="w-32"
-                    value={member.role}
-                    disabled={changeRole.isPending}
-                    onChange={(event) => {
-                      changeRole.mutate({
-                        userId: member.user_id,
-                        role: event.target.value as MemberRole,
-                      });
-                    }}
-                  >
-                    {roleOptions.map((role) => (
-                      <option key={role} value={role}>
-                        {m.roles[role]}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                </td>
-                <td className="py-3 pr-4">
-                  {dateFormat.format(new Date(member.joined_at))}
-                </td>
-                <td className="py-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    aria-label={`${m.list.remove} ${member.name}`}
-                    onClick={() => {
-                      removeMember.reset();
-                      setRemoving(member);
-                    }}
-                  >
-                    {m.list.remove}
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ul className="flex flex-col gap-3">
+        {members.data.map((member) => (
+          <li
+            key={member.user_id}
+            className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-lg border-2 border-blue-tint-90 bg-white px-5 py-4"
+          >
+            <div className="min-w-0">
+              <p className="text-[1.15em] font-semibold break-words text-blue">
+                {member.name}
+                {member.user_id === currentUserId ? (
+                  <span className="ml-2 text-[0.8em] font-medium text-ink-3">
+                    ({m.list.you})
+                  </span>
+                ) : null}
+              </p>
+              <p className="text-[0.9em] font-semibold break-all text-ink-3">
+                {member.email}
+              </p>
+              <p className="text-[0.85em] text-ink-3">
+                {m.list.joinedOn(dateFormat.format(new Date(member.joined_at)))}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Wide enough for "Standard" beside the chevron. */}
+              <NativeSelect
+                aria-label={m.list.roleFor(member.name)}
+                className="w-44 shrink-0"
+                value={member.role}
+                disabled={changeRole.isPending}
+                onChange={(event) => {
+                  const role = event.target.value as MemberRole;
+                  changeRole.mutate(
+                    { userId: member.user_id, role },
+                    {
+                      onSuccess: () => {
+                        toast.show({
+                          tone: "success",
+                          message: m.roleChanged(member.name, role),
+                        });
+                      },
+                      onError: (error) => {
+                        toast.show({
+                          tone: "error",
+                          message: memberErrorMessage(error),
+                        });
+                      },
+                    },
+                  );
+                }}
+              >
+                {roleOptions.map((role) => (
+                  <option key={role} value={role}>
+                    {m.roles[role]}
+                  </option>
+                ))}
+              </NativeSelect>
+              <Button
+                type="button"
+                variant="row"
+                size="sm"
+                aria-label={`${m.list.remove} ${member.name}`}
+                onClick={() => {
+                  removeMember.reset();
+                  setRemoving(member);
+                }}
+              >
+                {m.list.remove}
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(open) => {
           if (!open) setRemoving(null);
         }}
-        title={m.removeDialog.title}
-        description={removing ? m.removeDialog.description(removing.name) : ""}
+        title={removing ? m.removeDialog.title(removing.name) : ""}
+        description={
+          removing ? (
+            <>
+              <strong>{removing.name}</strong> {m.removeDialog.consequence}
+            </>
+          ) : (
+            ""
+          )
+        }
+        icon="remove"
         confirmLabel={m.removeDialog.confirm}
         destructive
         pending={removeMember.isPending}

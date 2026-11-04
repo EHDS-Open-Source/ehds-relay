@@ -1,7 +1,9 @@
+import { ToastProvider } from "@ehds-relay/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Fragment } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -41,9 +43,14 @@ function renderApp(
     navigateExternal,
     history: createMemoryHistory({ initialEntries: [path] }),
   });
+  // Signed-in pages can show toasts. Its alert region would confuse the sign-in message
+  // tests, so signed-out visitors render without it.
+  const Toasts = session === null ? Fragment : ToastProvider;
   render(
     <QueryClientProvider client={router.options.context.queryClient}>
-      <RouterProvider router={router} />
+      <Toasts>
+        <RouterProvider router={router} />
+      </Toasts>
     </QueryClientProvider>,
   );
   return router;
@@ -262,7 +269,7 @@ describe("menu", () => {
     await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
     await userEvent.click(screen.getByRole("link", { name: "Manage users" }));
 
-    await screen.findByRole("heading", { level: 1, name: "Members" });
+    await screen.findByRole("heading", { level: 1, name: "Manage users" });
     expect(router.state.location.pathname).toBe("/orgs/demo/members");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
