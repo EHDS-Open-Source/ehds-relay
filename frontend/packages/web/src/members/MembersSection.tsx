@@ -44,21 +44,23 @@ export function MembersSection({
     // About this list only, so said here rather than in a page banner.
     const forbidden = errorStatus(members.error) === 403;
     return (
-      <EmptyState
-        status
-        title={forbidden ? m.ownersOnly : m.loadFailed}
-        action={
-          forbidden ? undefined : (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => void members.refetch()}
-            >
-              {m.retry}
-            </Button>
-          )
-        }
-      />
+      <div className="mb-12">
+        <EmptyState
+          status
+          title={forbidden ? m.ownersOnly : m.loadFailed}
+          action={
+            forbidden ? undefined : (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void members.refetch()}
+              >
+                {m.retry}
+              </Button>
+            )
+          }
+        />
+      </div>
     );
   }
 

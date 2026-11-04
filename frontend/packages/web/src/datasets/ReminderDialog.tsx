@@ -176,8 +176,8 @@ export function ReminderDialog({
           {save.isError && !confirmingClear ? (
             <FormMessage>{saveErrorMessage(save.error)}</FormMessage>
           ) : null}
-          {/* Cancel on the left; Clear reminder and Save on the right. */}
-          <AlertDialogFooter className="justify-between max-[480px]:flex-col-reverse">
+          {/* Cancel on the left, Clear reminder and Save on the right; they wrap on phones. */}
+          <AlertDialogFooter className="-mt-2 justify-between max-[480px]:flex-row max-[480px]:*:w-auto">
             <AlertDialogCancel
               type="button"
               size="sm"
@@ -185,7 +185,7 @@ export function ReminderDialog({
             >
               {m.cancel}
             </AlertDialogCancel>
-            <div className="flex flex-wrap gap-2 max-[480px]:flex-col-reverse max-[480px]:*:w-full">
+            <div className="flex flex-wrap gap-2">
               {current ? (
                 <Button
                   type="button"
