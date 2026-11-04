@@ -79,46 +79,50 @@ function ToastItem({
     };
   }, [id, tone, paused, onDismiss]);
 
+  const urgent = sticky(tone);
+
   return (
-    <div
+    <li
       data-slot="toast"
       data-tone={tone}
       data-surface="blue"
+      // Each toast is its own live region: warnings and errors interrupt, the rest wait.
+      role={urgent ? "alert" : "status"}
+      aria-live={urgent ? "assertive" : "polite"}
+      aria-atomic="true"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="pointer-events-auto flex w-full items-start gap-3 rounded-card bg-blue px-4 py-3 font-semibold text-white shadow-overlay duration-(--motion-enter) ease-(--ease-out) animate-in fade-in-0 slide-in-from-bottom-2 motion-reduce:animate-none"
+      className="pointer-events-auto flex w-full items-center gap-3 rounded-card bg-blue py-4 pr-3 pl-4 text-[0.95em] leading-[1.4] font-semibold text-white shadow-overlay duration-(--motion-enter) ease-(--ease-out) animate-in fade-in-0 slide-in-from-bottom-2 motion-reduce:animate-none md:w-[min(440px,calc(100vw-32px))] [&_:focus-visible]:outline-yellow"
     >
       <Icon
         name={icons[tone]}
-        className={`mt-0.5 ${iconColours[tone]}`}
+        className={iconColours[tone]}
         style={{ width: 22, height: 22 }}
       />
-      <div className="min-w-0 flex-1">
-        <div>{toast.message}</div>
-        {toast.action ? (
-          <button
-            type="button"
-            className="mt-1 font-semibold text-yellow underline-offset-4 hover:underline"
-            onClick={() => {
-              toast.action?.onClick();
-              onDismiss(id);
-            }}
-          >
-            {toast.action.label}
-          </button>
-        ) : null}
-      </div>
+      <div className="min-w-0 flex-1">{toast.message}</div>
+      {toast.action ? (
+        <button
+          type="button"
+          className="rounded-[8px] p-2 font-bold whitespace-nowrap text-yellow underline-offset-[3px] hover:underline"
+          onClick={() => {
+            toast.action?.onClick();
+            onDismiss(id);
+          }}
+        >
+          {toast.action.label}
+        </button>
+      ) : null}
       <button
         type="button"
         aria-label={messages.feedback.dismiss}
-        className="-m-1 rounded-full p-1 text-white hover:bg-white/15"
+        className="inline-flex shrink-0 rounded-full p-2 text-white/80 hover:bg-white/12 hover:text-white"
         onClick={() => onDismiss(id)}
       >
         <Icon name="close" size="sm" />
       </button>
-    </div>
+    </li>
   );
 }
 
@@ -141,28 +145,21 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const api = useMemo(() => ({ show, dismiss }), [show, dismiss]);
 
-  const polite = toasts.filter((t) => !sticky(t.tone));
-  const assertive = toasts.filter((t) => sticky(t.tone));
-
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <div
-        role="region"
+      {/* One list in the order shown, newest at the bottom: 24px from the corner, or full
+          width 12px in from the edges on phones. */}
+      <section
         aria-label={messages.feedback.notifications}
-        className="pointer-events-none fixed inset-x-4 bottom-4 z-[60] flex flex-col items-stretch gap-2 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[440px] sm:max-w-[calc(100vw-3rem)]"
+        className="pointer-events-none fixed inset-x-3 bottom-[calc(12px+env(safe-area-inset-bottom,0px))] z-[60] md:inset-x-auto md:right-6 md:bottom-[calc(24px+env(safe-area-inset-bottom,0px))]"
       >
-        <div role="status" aria-live="polite" className="flex flex-col gap-2">
-          {polite.map((t) => (
+        <ol className="flex flex-col items-stretch gap-3 md:items-end">
+          {toasts.map((t) => (
             <ToastItem key={t.id} toast={t} onDismiss={dismiss} />
           ))}
-        </div>
-        <div role="alert" aria-live="assertive" className="flex flex-col gap-2">
-          {assertive.map((t) => (
-            <ToastItem key={t.id} toast={t} onDismiss={dismiss} />
-          ))}
-        </div>
-      </div>
+        </ol>
+      </section>
     </ToastContext.Provider>
   );
 }

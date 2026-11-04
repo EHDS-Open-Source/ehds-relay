@@ -30,7 +30,10 @@ const tones: Record<BannerTone, string> = {
   error: "bg-error-bg [&_[data-slot=icon]]:text-error-on-white",
 };
 
-/** A lasting message about the whole page, placed under the header. */
+/**
+ * A lasting message about the whole page (e.g. offline), placed under the header. Not for a
+ * section of a page: say that in the section itself.
+ */
 export function Banner({
   tone = "info",
   children,
@@ -45,7 +48,7 @@ export function Banner({
       data-slot="banner"
       data-tone={tone}
       className={cn(
-        "flex items-center gap-3 rounded-card px-4 py-3 font-semibold text-ink",
+        "flex items-center gap-4 rounded-card py-4 pr-4 pl-5 text-[0.95em] leading-[1.45] font-semibold text-ink max-md:flex-wrap",
         tones[tone],
         className,
       )}
@@ -57,7 +60,7 @@ export function Banner({
         <button
           type="button"
           aria-label={messages.feedback.dismiss}
-          className="rounded-full p-1 hover:bg-black/5"
+          className="inline-flex shrink-0 rounded-full p-2 text-ink hover:bg-black/6"
           onClick={onDismiss}
         >
           <Icon name="close" size="sm" />

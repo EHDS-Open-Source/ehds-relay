@@ -67,6 +67,24 @@ describe("Toast", () => {
     setup();
     add({ tone: "success", message: "Fine" });
     expect(screen.getByRole("status")).toHaveTextContent("Fine");
+    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+  });
+
+  it("keeps every tone in one list, newest at the bottom", () => {
+    setup();
+    add({ tone: "success", message: "one" });
+    add({ tone: "error", message: "two" });
+    add({ tone: "info", message: "three" });
+    const region = screen.getByRole("region", { name: "Notifications" });
+    const items = region.querySelectorAll("[data-slot=toast]");
+    expect([...items].map((i) => i.textContent)).toEqual([
+      "one",
+      "two",
+      "three",
+    ]);
+    expect(items[1]).toHaveAttribute("role", "alert");
+    expect(items[1]).toHaveAttribute("aria-live", "assertive");
+    expect(items[0]).toHaveAttribute("role", "status");
   });
 
   it("shows at most three, dropping the oldest", () => {
