@@ -226,7 +226,6 @@ export function DatasetDetailPage() {
       </div>
 
       <div className="mb-8 flex flex-wrap items-center gap-3">
-        {catalogueLink}
         <Link
           to="/orgs/$orgId/datasets/$datasetId/export"
           params={{ orgId, datasetId }}

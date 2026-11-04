@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { AppHeader } from "./AppHeader";
-import { SideMenu, SideMenuItem } from "./SideMenu";
+import { SideMenu, SideMenuItem, SideMenuLogOut } from "./SideMenu";
 
 function Harness() {
   const [open, setOpen] = useState(false);
@@ -78,5 +78,29 @@ describe("SideMenu", () => {
     expect(overlay).not.toBeNull();
     await userEvent.click(overlay!);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("draws Log out as a content-width pill with the exit icon after the label", () => {
+    render(<SideMenuLogOut>Log out</SideMenuLogOut>);
+    const button = screen.getByRole("button", { name: "Log out" });
+    expect(button).toHaveClass("self-start", "h-12");
+    expect(button.lastElementChild).toHaveAttribute("data-icon", "logOut");
+  });
+});
+
+describe("AppHeader", () => {
+  it("puts page actions before the menu button", () => {
+    render(
+      <AppHeader
+        logo="Relay"
+        actions={<a href="/back">Back</a>}
+        onMenuClick={() => {}}
+      />,
+    );
+    const back = screen.getByRole("link", { name: "Back" });
+    const menu = screen.getByRole("button", { name: "Open menu" });
+    expect(
+      back.compareDocumentPosition(menu) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });

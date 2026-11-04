@@ -96,9 +96,15 @@ describe("NewOrgPage", () => {
 
     await screen.findByRole("heading", { name: "Dataset Catalogue" });
     expect(router.state.location.pathname).toBe("/orgs/new-org/catalogue");
-    expect(
-      within(screen.getByRole("banner")).getByText("Acme Health"),
-    ).toBeVisible();
+    await userEvent.click(
+      within(screen.getByRole("banner")).getByRole("button", {
+        name: "Open menu",
+      }),
+    );
+    expect(screen.getByRole("dialog")).toHaveAccessibleDescription(
+      "Acme Health",
+    );
+    await userEvent.keyboard("{Escape}");
 
     const [request] = posts(fetch)[0]!;
     expect(request.headers.get("X-Requested-By")).toBe("ehds-relay");

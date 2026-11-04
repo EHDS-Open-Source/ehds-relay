@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { api } from "./api";
@@ -31,9 +32,12 @@ describe("createRelayApp", () => {
     expect(
       await screen.findByRole("heading", { name: "Dataset Catalogue" }),
     ).toBeVisible();
-    expect(
-      within(screen.getByRole("banner")).getByText("Demo org"),
-    ).toBeVisible();
+    await userEvent.click(
+      within(screen.getByRole("banner")).getByRole("button", {
+        name: "Open menu",
+      }),
+    );
+    expect(screen.getByRole("dialog")).toHaveAccessibleDescription("Demo org");
   });
 
   it("shows the sign-in page when the API says 401", async () => {

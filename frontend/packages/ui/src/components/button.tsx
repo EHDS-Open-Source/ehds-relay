@@ -61,9 +61,10 @@ const buttonVariants = cva(
           "border-white/45 text-white hover:border-white hover:bg-white/10",
       },
       {
+        // On blue the icon button darkens like on white; a close button may opt into white.
         variant: "icon",
         surface: "blue",
-        className: "hover:border-white hover:bg-white",
+        className: "hover:border-yellow-shade hover:bg-yellow-shade",
       },
     ],
     defaultVariants: {
