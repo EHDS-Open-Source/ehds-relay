@@ -24,7 +24,7 @@ export function MissingFields({
               to="/orgs/$orgId/datasets/$datasetId/edit"
               params={{ orgId, datasetId }}
               hash={fieldAnchorId(key)}
-              className="text-primary underline-offset-4 hover:underline"
+              className="link"
             >
               {fieldLabel(key)}
             </Link>

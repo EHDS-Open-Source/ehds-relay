@@ -28,3 +28,18 @@ describe("single light theme", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe("links", () => {
+  it("styles inline links blue, never with the yellow primary colour", () => {
+    const css = readFileSync(join(src, "styles.css"), "utf8");
+    expect(css).toMatch(
+      /a:where\(:not\(\[class\]\)\),\s*\.link\s*\{[^}]*color:\s*var\(--blue\)/,
+    );
+    const offenders = tsxFiles(join(src, "..", "..", "web", "src")).filter(
+      (file) =>
+        !file.endsWith(".test.tsx") &&
+        /text-primary(?!-foreground)\b/.test(readFileSync(file, "utf8")),
+    );
+    expect(offenders).toEqual([]);
+  });
+});

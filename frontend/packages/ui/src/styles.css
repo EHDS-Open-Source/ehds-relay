@@ -223,6 +223,24 @@ html {
   }
 }
 
+/* Inline links: blue on white, yellow on blue, always underlined (dotted, solid on hover).
+   Bare anchors get this; classed ones (buttons, cards, nav) opt in with .link. */
+a:where(:not([class])),
+.link {
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: underline dotted 2px;
+  text-underline-offset: 3px;
+}
+a:where(:not([class])):hover,
+.link:hover {
+  text-decoration-style: solid;
+}
+[data-surface="blue"] a:where(:not([class])),
+[data-surface="blue"] .link {
+  color: var(--yellow);
+}
+
 /* The loading star spins; with reduced motion it pulses instead. */
 @keyframes star-spin {
   to {

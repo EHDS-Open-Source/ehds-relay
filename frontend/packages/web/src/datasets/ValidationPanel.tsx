@@ -54,7 +54,7 @@ function ItemList({
               to="/orgs/$orgId/datasets/$datasetId/edit"
               params={{ orgId, datasetId }}
               hash={fieldAnchorId(item.field)}
-              className="font-medium text-primary underline-offset-4 hover:underline"
+              className="link"
             >
               {fieldLabel(item.field)}
             </Link>

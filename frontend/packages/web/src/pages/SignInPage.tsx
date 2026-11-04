@@ -26,10 +26,7 @@ export function SignInPage() {
         </Button>
         <p className="text-sm text-muted-foreground">
           {shellMessages.signIn.noAccount}{" "}
-          <a
-            href={loginUrl({ redirect, signup: true })}
-            className="font-medium text-primary underline-offset-4 hover:underline"
-          >
+          <a href={loginUrl({ redirect, signup: true })} className="link">
             {shellMessages.signIn.createAccount}
           </a>
         </p>

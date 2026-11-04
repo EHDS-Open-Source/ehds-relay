@@ -27,3 +27,8 @@ Status: foundation done and pushed on this branch. Nothing else started.
   existing screen changes colour. Row, size and wording changes come with the screen steps.
 - Icons and the favicon are drawn placeholders until the brand files arrive; swap them in
   `ui/src/icons/glyphs.tsx` and `web/index.html`.
+
+## Link fix
+- Inline links on white are now blue, 600, dotted underline (solid on hover); on blue
+  surfaces (`data-surface="blue"`) they are yellow. Bare `<a>` get this from the base layer;
+  anchors with classes use the `link` class. Guarded by a test in `ui/src/theme.test.ts`.
