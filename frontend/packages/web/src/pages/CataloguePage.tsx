@@ -4,13 +4,17 @@ import {
   DatasetCard,
   EmptyState,
   FilterChips,
+  Icon,
+  LoadingStar,
   PageHeader,
   SearchField,
+  starColour,
 } from "@ehds-relay/ui";
 import { Link, getRouteApi, useNavigate } from "@tanstack/react-router";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useRef, useState } from "react";
 
 import { $api } from "../api";
+import { formatIsoDate } from "../datasets/reminderDates";
 import { shellMessages } from "../shell/messages";
 import {
   accessFilters,
@@ -40,6 +44,7 @@ export function CataloguePage() {
     setSeenQ(q);
     setTyped(q);
   }
+  const searchRef = useRef<HTMLInputElement>(null);
   const deferredQuery = useDeferredValue(typed);
 
   const setSearch = (next: {
@@ -64,7 +69,10 @@ export function CataloguePage() {
   });
 
   const cards = useMemo(
-    () => (Array.isArray(list.data) ? list.data.map(readCatalogueFields) : []),
+    () =>
+      Array.isArray(list.data)
+        ? list.data.map((d, i) => readCatalogueFields(d, i))
+        : [],
     [list.data],
   );
   const visible = useMemo(
@@ -73,8 +81,14 @@ export function CataloguePage() {
   );
 
   const addButton = (
-    <Button asChild>
-      <Link to="/orgs/$orgId/datasets/new" params={{ orgId }}>
+    <Button asChild size="lg">
+      <Link to="/orgs/$orgId/datasets/new" params={{ orgId }} className="group">
+        <span
+          aria-hidden="true"
+          className="flex size-7 items-center justify-center rounded-full bg-blue text-yellow transition-colors duration-150 group-hover:bg-yellow group-hover:text-blue"
+        >
+          <Icon name="plus" size="sm" />
+        </span>
         {text.addDataset}
       </Link>
     </Button>
@@ -82,7 +96,7 @@ export function CataloguePage() {
 
   let body;
   if (list.isPending) {
-    body = <p role="status">{text.loading}</p>;
+    body = <LoadingStar size="page" message={text.loading} />;
   } else if (list.isError) {
     body = (
       <div role="alert" className="flex items-center gap-4">
@@ -102,8 +116,9 @@ export function CataloguePage() {
     );
   } else {
     body = (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 [&>:last-child]:mt-4">
         <SearchField
+          ref={searchRef}
           value={typed}
           onChange={(value) => {
             setTyped(value);
@@ -132,7 +147,8 @@ export function CataloguePage() {
         />
         {visible.length === 0 ? (
           <EmptyState
-            title={text.noMatch.title}
+            status
+            title={text.noMatch.title(deferredQuery)}
             description={text.noMatch.description}
             action={
               <Button
@@ -140,6 +156,7 @@ export function CataloguePage() {
                 onClick={() => {
                   setTyped("");
                   setSearch({ q: "", access: "all", overdue: false });
+                  searchRef.current?.focus();
                 }}
               >
                 {text.noMatch.clear}
@@ -155,6 +172,11 @@ export function CataloguePage() {
                 description={d.description}
                 draft={d.draft}
                 overdue={d.overdue}
+                starColour={starColour(d.index)}
+                reminderDate={
+                  d.reminderDate ? formatIsoDate(d.reminderDate) : undefined
+                }
+                reminderLabel={text.reminderDue}
                 draftLabel={text.draft}
                 overdueLabel={text.overdue}
                 renderLink={({ className, children }) => (

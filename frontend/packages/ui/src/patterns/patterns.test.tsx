@@ -16,6 +16,18 @@ describe("SearchField", () => {
   });
 });
 
+describe("SearchField icon", () => {
+  it("draws the search icon after the input", () => {
+    const { container } = render(<SearchField value="" onChange={vi.fn()} />);
+    const input = container.querySelector("input")!;
+    expect(
+      input.compareDocumentPosition(
+        container.querySelector("[data-icon='search']")!,
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+});
+
 describe("FilterChips", () => {
   const options = [
     { value: "all", label: "All" },
@@ -93,5 +105,50 @@ describe("DatasetCard", () => {
     expect(screen.getByRole("link", { name: /Fresh/ })).not.toHaveTextContent(
       "Overdue",
     );
+  });
+
+  it("shows the reminder date with screen-reader text and the card star colour", () => {
+    render(
+      <CardGrid>
+        <DatasetCard
+          title="Due"
+          reminderDate="4 Mar 2027"
+          starColour="#E3A6E4"
+          renderLink={renderLink}
+        />
+      </CardGrid>,
+    );
+    const link = screen.getByRole("link", { name: /Due/ });
+    expect(link).toHaveTextContent("Revalidation due 4 Mar 2027");
+    expect(screen.getByText("Revalidation due")).toHaveClass("sr-only");
+    expect(link.querySelector("[data-icon='star']")).toHaveStyle({
+      color: "#E3A6E4",
+    });
+  });
+
+  it("says Overdue in the footer in words, with the date when there is one", () => {
+    render(
+      <DatasetCard
+        title="Late"
+        overdue
+        reminderDate="1 Jan 2026"
+        renderLink={renderLink}
+      />,
+    );
+    expect(screen.getByRole("link")).toHaveTextContent("Overdue 1 Jan 2026");
+  });
+
+  it("has no footer band without a reminder or overdue", () => {
+    render(<DatasetCard title="Plain" renderLink={renderLink} />);
+    expect(
+      screen.getByRole("link").querySelector("[data-icon='calendar']"),
+    ).toBeNull();
+  });
+
+  it("marks the title as a level 2 heading", () => {
+    render(<DatasetCard title="Head" renderLink={renderLink} />);
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Head" }),
+    ).toBeVisible();
   });
 });

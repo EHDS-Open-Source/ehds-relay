@@ -7,7 +7,11 @@ export const messages = {
   closeMenu: "Close menu",
   menuTitle: "Menu",
   search: { label: "Search" },
-  datasetCard: { draft: "Draft", overdue: "Overdue" },
+  datasetCard: {
+    draft: "Draft",
+    overdue: "Overdue",
+    reminder: "Revalidation due",
+  },
   tagInput: { remove: "Remove" },
   repeatableList: { add: "Add", remove: "Remove" },
   required: "(required)",

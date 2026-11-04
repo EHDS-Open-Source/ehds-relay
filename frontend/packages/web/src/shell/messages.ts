@@ -160,7 +160,7 @@ export const shellMessages = {
     },
   },
   catalogue: {
-    addDataset: "+ Add new dataset",
+    addDataset: "Add a dataset",
     searchLabel: "Search datasets",
     searchPlaceholder: "Search by title, description, keyword or category",
     filterLabel: "Access level",
@@ -177,8 +177,9 @@ export const shellMessages = {
     },
     draft: "Draft",
     overdue: "Overdue",
+    reminderDue: "Revalidation due",
     untitled: "Untitled dataset",
-    loading: "Loading datasets...",
+    loading: "Loading your datasets…",
     error: "The datasets could not be loaded.",
     retry: "Retry",
     empty: {
@@ -186,7 +187,10 @@ export const shellMessages = {
       description: "Add your first dataset to start your catalogue.",
     },
     noMatch: {
-      title: "No datasets match",
+      title: (query: string) =>
+        query.trim()
+          ? `No datasets match \u201c${query.trim()}\u201d`
+          : "No datasets match",
       description: "Try different words or other filters.",
       clear: "Clear search and filters",
     },

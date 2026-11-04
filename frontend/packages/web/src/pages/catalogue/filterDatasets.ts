@@ -32,6 +32,10 @@ export interface CatalogueFields {
   draft: boolean;
   /** Published and not validated for a year. */
   overdue: boolean;
+  /** The revalidation reminder (`YYYY-MM-DD`), if one is set. */
+  reminderDate: string | null;
+  /** Position in the whole catalogue, so a dataset keeps its star colour while filtering. */
+  index: number;
   /** Every title and description text, for matching. */
   searchable: string;
 }
@@ -55,7 +59,10 @@ function strings(value: unknown): string[] {
  * The fields the catalogue shows and searches. The metadata is an untyped record on the
  * wire and older rows may have another shape, so every read is defensive.
  */
-export function readCatalogueFields(dataset: Dataset): CatalogueFields {
+export function readCatalogueFields(
+  dataset: Dataset,
+  index = 0,
+): CatalogueFields {
   const metadata: Record<string, unknown> =
     dataset.metadata && typeof dataset.metadata === "object"
       ? dataset.metadata
@@ -93,6 +100,8 @@ export function readCatalogueFields(dataset: Dataset): CatalogueFields {
     access,
     draft: dataset.status === "draft",
     overdue: dataset.overdue === true,
+    reminderDate: dataset.reminder_date ?? null,
+    index,
     searchable,
   };
 }

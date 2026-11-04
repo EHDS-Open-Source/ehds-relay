@@ -4,6 +4,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { STAR_PALETTE } from "@ehds-relay/ui";
 import { noRevalidationData } from "../datasets/fakeServer";
 import { createRelayRouter } from "../router/router";
 import { createTestSessionStore } from "../session/testing";
@@ -194,12 +195,30 @@ describe("catalogue", () => {
   it("shows the no-match state and clears it", async () => {
     stubDatasets(() => json(sample));
     renderAt("/orgs/demo/catalogue?q=zzz");
-    expect(await screen.findByText(text.noMatch.title)).toBeVisible();
+    expect(await screen.findByText(text.noMatch.title("zzz"))).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("\u201czzz\u201d");
     await userEvent.click(
       screen.getByRole("button", { name: text.noMatch.clear }),
     );
     expect(await screen.findAllByRole("listitem")).toHaveLength(3);
     expect(screen.getByRole("searchbox")).toHaveValue("");
+    expect(screen.getByRole("searchbox")).toHaveFocus();
+  });
+
+  it("gives each card a palette star by catalogue position and shows the reminder date", async () => {
+    stubDatasets(() =>
+      json([
+        sample[0],
+        { ...sample[1], reminder_date: "2027-03-04", overdue: false },
+        sample[2],
+      ]),
+    );
+    renderAt("/orgs/demo/catalogue");
+    const card = await screen.findByRole("link", { name: /Cancer Cohort/ });
+    expect(card).toHaveTextContent(`${text.reminderDue} 4 Mar 2027`);
+    expect(card.querySelector("[data-icon='star']") as SVGElement).toHaveStyle({
+      color: STAR_PALETTE[1],
+    });
   });
 
   it("shows the empty state without search or filters", async () => {
