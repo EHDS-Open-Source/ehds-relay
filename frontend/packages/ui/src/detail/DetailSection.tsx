@@ -7,18 +7,24 @@ export interface DetailSectionProps {
   children: ReactNode;
 }
 
-/** A titled group of fields on a record. */
+/** A titled group of fields on a record: a blue tab sitting on a one-column table. */
 export function DetailSection({ id, title, children }: DetailSectionProps) {
   const headingId = id ? `${id}-heading` : undefined;
   return (
-    <section id={id} aria-labelledby={headingId} className="mb-8">
+    <section
+      id={id}
+      aria-labelledby={headingId}
+      className="mb-8 max-w-[1280px]"
+    >
       <h2
         id={headingId}
-        className="mb-4 border-b pb-2 text-lg font-semibold tracking-tight"
+        className="inline-block rounded-t-[10px] bg-blue px-5 py-2.5 text-[1.1em] leading-tight font-bold text-white"
       >
         {title}
       </h2>
-      <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2">{children}</dl>
+      <dl className="overflow-hidden rounded-r-[14px] rounded-b-[14px] bg-white shadow-xs">
+        {children}
+      </dl>
     </section>
   );
 }
