@@ -161,27 +161,36 @@ export function Field({
       ) : null}
     </>
   );
-  // The control first, then its error directly under it, then the hint 8px below.
+  // The control first, then its error directly under it (12px on blue), then the hint 8px below.
   const body = (
     <>
       {children}
       {error ? (
-        <FormMessage
-          id={errId}
-          className={cn("mt-1", onBlue ? "text-error" : undefined)}
-        >
+        <FormMessage id={errId} className={onBlue ? "mt-2 text-error" : "mt-1"}>
           {error}
         </FormMessage>
       ) : null}
       {hint ? (
-        <FieldHint id={hintId} onBlue={onBlue}>
+        <FieldHint
+          id={hintId}
+          onBlue={onBlue}
+          className={onBlue ? "mt-1" : undefined}
+        >
           {hint}
         </FieldHint>
       ) : null}
     </>
   );
-  const classes = cn("flex scroll-mt-24 flex-col gap-2", className);
-  const labelClass = cn("gap-0", onBlue ? "text-white" : undefined);
+  // On blue the label sits 4px above the underline field and is a little larger.
+  const classes = cn(
+    "flex scroll-mt-24 flex-col",
+    onBlue ? "gap-1" : "gap-2",
+    className,
+  );
+  const labelClass = cn(
+    "gap-0",
+    onBlue ? "text-[1.05em] leading-[1.6] text-white" : undefined,
+  );
   const ownIds = joinIds(error && errId, hint && hintId);
 
   if (htmlFor) {

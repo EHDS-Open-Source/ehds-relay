@@ -2,8 +2,11 @@ import { Button, FormMessage, Icon } from "@ehds-relay/ui";
 import { useSearch } from "@tanstack/react-router";
 
 import { loginUrl } from "../session/login";
-import { BareLayout } from "../shell/BareLayout";
+import { BareLayout, BelowCard, belowCardLinkClass } from "../shell/BareLayout";
+import { cardButtonClass } from "../shell/cardButton";
 import { shellMessages } from "../shell/messages";
+
+const text = shellMessages.signIn;
 
 /** Our own entry page. Both links leave the app: the API sends the browser on to Keycloak. */
 export function SignInPage() {
@@ -11,31 +14,35 @@ export function SignInPage() {
 
   return (
     <BareLayout
-      title={shellMessages.signIn.title}
-      description={shellMessages.signIn.description}
-    >
-      {error === "signin_failed" ? (
-        <FormMessage className="mb-6 text-error">
-          {shellMessages.signIn.failed}
-        </FormMessage>
-      ) : null}
-      <div className="flex flex-col items-start gap-6">
-        <Button asChild size="lg" onBlue>
-          <a href={loginUrl({ redirect })}>
-            <Icon name="signIn" aria-hidden />
-            {shellMessages.signIn.action}
-          </a>
-        </Button>
-        <p className="text-sm text-white">
-          {shellMessages.signIn.noAccount}{" "}
+      title={text.title}
+      description={
+        <>
+          {text.description.lead}
+          <strong>{text.description.strong}</strong>
+          {text.description.tail}
+        </>
+      }
+      below={
+        <BelowCard>
+          {text.noAccount}{" "}
           <a
             href={loginUrl({ redirect, signup: true })}
-            className="font-semibold text-yellow no-underline hover:underline"
+            className={belowCardLinkClass}
           >
-            {shellMessages.signIn.createAccount}
+            {text.createAccount}
           </a>
-        </p>
-      </div>
+        </BelowCard>
+      }
+    >
+      {error === "signin_failed" ? (
+        <FormMessage className="mb-6 text-error">{text.failed}</FormMessage>
+      ) : null}
+      <Button asChild size="lg" onBlue className={cardButtonClass}>
+        <a href={loginUrl({ redirect })}>
+          {text.action}
+          <Icon name="signIn" size="lg" aria-hidden />
+        </a>
+      </Button>
     </BareLayout>
   );
 }

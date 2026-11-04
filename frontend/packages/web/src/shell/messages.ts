@@ -233,28 +233,38 @@ export const shellMessages = {
   },
   signIn: {
     title: "Sign in",
-    description: "Sign in to manage your organisation's health datasets.",
+    // The description reads lead + strong + tail, with the middle part in bold.
+    description: {
+      lead: "Set up and manage your ",
+      strong: "Health DCAT-AP dataset catalogue",
+      tail: " for your organisation",
+    },
     action: "Sign in",
-    noAccount: "New to EHDS Relay?",
+    noAccount: "Don’t have an organisation?",
     createAccount: "Create one",
     failed: "Sign-in failed. Please try again.",
   },
   orgPicker: {
     title: "Select your organisation",
-    description: "Choose which organisation you want to work in.",
+    // Lead, then the bold part.
+    description: {
+      lead: "Your account belongs to more than one organisation. Choose which one you want to work in — ",
+      strong: "you can switch at any time from the menu.",
+    },
     signOutHint: "Not you?",
   },
   newOrg: {
-    title: "Create an organisation",
-    description: "Set up a new organisation to publish datasets from.",
-    invitedHint: "If you were invited, use the link in your invitation email.",
+    title: "Create your organisation",
+    description:
+      "Set up a new organisation to publish datasets from. If you were invited, use the link in your invitation email instead.",
     nameLabel: "Organisation name",
+    namePlaceholder: "e.g. National Cancer Registry",
     countryLabel: "Country",
-    countryPlaceholder: "Choose a country",
+    countryPlaceholder: "Select a country",
     submit: "Create my organisation",
     submitting: "Creating organisation…",
-    nameRequired: "Enter the name of your organisation.",
-    countryRequired: "Choose the country your organisation is in.",
+    nameRequired: "Enter your organisation name.",
+    countryRequired: "Select a country.",
     invalid:
       "The organisation could not be created. Check the details and try again.",
     failed: "Something went wrong. Please try again.",

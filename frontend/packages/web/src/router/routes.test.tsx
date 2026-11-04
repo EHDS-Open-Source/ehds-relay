@@ -131,6 +131,23 @@ describe("signed out", () => {
     );
   });
 
+  it("puts the icon after the Sign in label and Create one under the card", async () => {
+    renderApp("/sign-in", null);
+    const signIn = await screen.findByRole("link", {
+      name: shellMessages.signIn.action,
+    });
+    expect(signIn.lastElementChild).toHaveAttribute("data-icon", "signIn");
+    expect(signIn).toHaveAttribute("data-size", "lg");
+    const card = signIn.closest("[data-slot=brand-card]");
+    const createOne = screen.getByRole("link", {
+      name: shellMessages.signIn.createAccount,
+    });
+    expect(card).not.toContainElement(createOne);
+    expect(createOne.closest("[data-slot=below-card]")).toHaveTextContent(
+      shellMessages.signIn.noAccount,
+    );
+  });
+
   it("ignores a redirect to another site", async () => {
     renderApp("/sign-in?redirect=https://evil.example/", null);
     expect(
@@ -155,9 +172,9 @@ describe("signed out", () => {
 describe("organisation picker", () => {
   it("sends someone with no organisation to create one", async () => {
     const router = renderApp("/orgs", { ...demoSession, orgs: [] });
-    await screen.findByRole("heading", { name: "Create an organisation" });
+    await screen.findByRole("heading", { name: shellMessages.newOrg.title });
     expect(router.state.location.pathname).toBe("/orgs/new");
-    expect(screen.getByText(shellMessages.newOrg.invitedHint)).toBeVisible();
+    expect(screen.getByText(shellMessages.newOrg.description)).toBeVisible();
   });
 
   it("sends someone with one organisation to its catalogue", async () => {
@@ -175,6 +192,15 @@ describe("organisation picker", () => {
     expect(screen.getByRole("link", { name: /Other org/ })).toHaveTextContent(
       "Greece",
     );
+    // Every row, the last included, has the rule under it; Sign out sits under the card.
+    for (const row of screen.getAllByRole("link", { name: /org/ })) {
+      expect(row).toHaveClass("border-b-2");
+    }
+    expect(
+      screen
+        .getByRole("button", { name: shellMessages.signOut })
+        .closest("[data-slot=brand-card]"),
+    ).toBeNull();
     await userEvent.click(screen.getByRole("link", { name: /Other org/ }));
     await screen.findByRole("heading", { name: "Dataset Catalogue" });
     expect(router.state.location.pathname).toBe("/orgs/other/catalogue");
