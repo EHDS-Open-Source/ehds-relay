@@ -300,6 +300,11 @@ export const shellMessages = {
     invalid: "Check your name and try again.",
     failed: "Your name could not be saved. Try again in a moment.",
     detailsTitle: "User details",
+    role: {
+      label: "Role in this organisation",
+      ownerHint: "You can change roles in Manage users.",
+      standardHint: "Roles are managed by the organisation's owner.",
+    },
     orgs: {
       title: "My organisations",
       none: "You do not belong to any organisation yet.",

@@ -188,7 +188,7 @@ describe("AccountPage", () => {
     const { session } = renderPage(navigateExternal);
     await nameInput();
     await userEvent.click(
-      screen.getByRole("button", { name: shellMessages.signOut }),
+      screen.getByRole("button", { name: shellMessages.logOut }),
     );
     await waitFor(() => {
       expect(navigateExternal).toHaveBeenCalledWith("https://idp.test/out");
@@ -234,10 +234,67 @@ describe("AccountPage", () => {
     expect(rows[1]).toHaveTextContent("Standard");
   });
 
+  it.each([
+    ["owner", text.role.ownerHint],
+    ["standard", text.role.standardHint],
+  ] as const)(
+    "shows the %s role in the only organisation as a tag with a hint",
+    async (role, hint) => {
+      stubApi(undefined, { orgs: [makeOrg({ role })] });
+      renderPage();
+      await nameInput();
+      const label = screen.getByText(text.role.label);
+      const row = label.parentElement!;
+      const tag = within(row).getByText(shellMessages.members.roles[role]);
+      expect(tag).toHaveAttribute("data-slot", "badge");
+      expect(within(row).getByText(hint)).toBeVisible();
+      // A reminder only, never a control.
+      expect(within(row).queryByRole("combobox")).not.toBeInTheDocument();
+    },
+  );
+
+  it("leaves the role out when the user is in several organisations", async () => {
+    stubApi(undefined, {
+      orgs: [makeOrg({ id: "a" }), makeOrg({ id: "b", name: "Beta" })],
+    });
+    renderPage();
+    await nameInput();
+    expect(screen.queryByText(text.role.label)).not.toBeInTheDocument();
+  });
+
+  it("puts the details in a 560px card with Save changes and Log out below it", async () => {
+    stubApi();
+    renderPage();
+    const card = (await nameInput()).closest("[class*=shadow-card]")!;
+    expect(card).toHaveClass("max-w-[560px]", "rounded-card");
+    const save = screen.getByRole("button", { name: text.save });
+    expect(card).not.toContainElement(save);
+    expect(save.lastElementChild).toHaveAttribute("data-icon", "save");
+    expect(
+      screen.getByRole("button", { name: shellMessages.logOut }),
+    ).toHaveAttribute("data-variant", "secondary");
+    expect(
+      screen.getByRole("heading", { level: 2, name: text.detailsTitle }),
+    ).toHaveClass("font-bold", "text-blue");
+  });
+
+  it("offers a way back only when the header has none", async () => {
+    stubApi();
+    renderPage();
+    await nameInput();
+    expect(
+      screen.queryByRole("link", { name: text.back }),
+    ).not.toBeInTheDocument();
+  });
+
   it("ACC-4 says so when the user is in no organisation", async () => {
     stubApi(undefined, { orgs: [] });
     renderPage();
     expect(await screen.findByText(text.orgs.none)).toBeVisible();
+    expect(screen.getByRole("link", { name: text.back })).toHaveAttribute(
+      "href",
+      "/orgs",
+    );
     expect(
       screen.queryByRole("list", { name: text.orgs.title }),
     ).not.toBeInTheDocument();
