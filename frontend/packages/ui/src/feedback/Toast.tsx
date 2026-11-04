@@ -88,7 +88,7 @@ function ToastItem({
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="pointer-events-auto flex w-full items-start gap-3 rounded-lg bg-blue px-4 py-3 font-semibold text-white shadow-2xl duration-[180ms] animate-in fade-in-0 slide-in-from-bottom-2 motion-reduce:animate-none"
+      className="pointer-events-auto flex w-full items-start gap-3 rounded-card bg-blue px-4 py-3 font-semibold text-white shadow-overlay duration-(--motion-enter) ease-(--ease-out) animate-in fade-in-0 slide-in-from-bottom-2 motion-reduce:animate-none"
     >
       <Icon
         name={icons[tone]}

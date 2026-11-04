@@ -85,7 +85,7 @@ export function CataloguePage() {
       <Link to="/orgs/$orgId/datasets/new" params={{ orgId }} className="group">
         <span
           aria-hidden="true"
-          className="flex size-7 items-center justify-center rounded-full bg-blue text-yellow transition-colors duration-150 group-hover:bg-yellow group-hover:text-blue"
+          className="flex size-7 items-center justify-center rounded-full bg-blue text-yellow transition-colors group-hover:bg-yellow group-hover:text-blue"
         >
           <Icon name="plus" size="sm" />
         </span>

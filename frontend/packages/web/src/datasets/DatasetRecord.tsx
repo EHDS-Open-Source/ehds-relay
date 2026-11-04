@@ -158,7 +158,7 @@ function renderValue(def: FieldDef, metadata: DatasetMetadata): ReactNode {
       return metadata[def.key as "provenance"];
     case "turtle":
       return (
-        <pre className="max-h-80 overflow-auto rounded-[14px] bg-code-bg p-4 font-mono text-xs font-normal whitespace-pre text-code-text">
+        <pre className="max-h-80 overflow-auto rounded-[18px] bg-code-bg p-4 font-mono text-xs font-normal whitespace-pre text-code-text">
           {metadata.quantum_label}
         </pre>
       );

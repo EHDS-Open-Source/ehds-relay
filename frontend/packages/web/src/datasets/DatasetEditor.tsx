@@ -146,7 +146,7 @@ function LoadedEditor({
       {problem === "conflict" ? (
         <div
           role="alert"
-          className="mb-6 rounded-lg border border-destructive/50 bg-destructive/5 p-4"
+          className="mb-6 rounded-card border border-destructive/50 bg-destructive/5 p-4"
         >
           <p className="font-medium">{m.save.conflictTitle}</p>
           <p className="mt-1 mb-3 text-sm">{m.save.conflictBody}</p>

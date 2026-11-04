@@ -250,7 +250,7 @@ export function DatasetDetailPage() {
       </div>
 
       {dataset.overdue ? (
-        <p className="mb-8 rounded-[14px] bg-warning-bg p-4 text-sm text-ink">
+        <p className="mb-8 rounded-card bg-warning-bg p-4 text-sm text-ink">
           {m.overdueHint}
         </p>
       ) : null}
@@ -258,7 +258,7 @@ export function DatasetDetailPage() {
       {dataset.status === "draft" ? (
         <section
           aria-labelledby="draft-heading"
-          className="mb-8 rounded-[14px] bg-blue-tint-95 p-5"
+          className="mb-8 rounded-card bg-blue-tint-95 p-5"
         >
           <h2
             id="draft-heading"

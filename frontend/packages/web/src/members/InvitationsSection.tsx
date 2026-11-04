@@ -172,7 +172,7 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
           {invitations.data.map((invitation) => (
             <li
               key={invitation.id}
-              className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-lg border-2 border-blue-tint-90 bg-white px-5 py-4"
+              className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-card bg-white px-5 py-4 shadow-card"
             >
               <div className="min-w-0">
                 <p className="text-[1.15em] font-semibold break-all text-blue">

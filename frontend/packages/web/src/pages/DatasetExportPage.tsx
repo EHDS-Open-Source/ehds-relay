@@ -142,7 +142,7 @@ export function DatasetExportPage() {
         actions={backToRecord}
       />
       {missing.length > 0 ? (
-        <div className="rounded-[14px] bg-blue-tint-95 p-5">
+        <div className="rounded-card bg-blue-tint-95 p-5">
           <p className="mb-4">{m.output.incomplete}</p>
           <MissingFields
             orgId={orgId}

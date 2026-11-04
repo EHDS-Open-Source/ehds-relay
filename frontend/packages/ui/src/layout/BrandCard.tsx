@@ -24,7 +24,7 @@ export function BrandCard({
       data-slot="brand-card"
       data-surface="blue"
       className={cn(
-        "relative w-full rounded-[22px] bg-blue px-6 py-9 text-white sm:rounded-[28px] sm:px-12 sm:py-12",
+        "relative w-full rounded-[22px] bg-blue px-6 py-10 text-white md:rounded-signin md:px-16 md:py-14",
         className,
       )}
     >

@@ -100,7 +100,7 @@ function ProfileForm({
   };
 
   return (
-    <div className="max-w-[480px] rounded-xl border-2 border-blue-tint-90 bg-white p-6">
+    <div className="max-w-[480px] rounded-card bg-white p-6 shadow-card">
       <h2 className="mb-4 text-lg font-semibold">{text.detailsTitle}</h2>
       <form
         noValidate
@@ -191,7 +191,7 @@ function OrganisationsSection() {
           {orgs.map((org) => (
             <li
               key={org.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-blue-tint-90 bg-white px-5 py-4"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-card bg-white px-5 py-4 shadow-card"
             >
               <div className="min-w-0">
                 <p className="text-[1.15em] font-semibold break-words text-blue">
@@ -282,7 +282,7 @@ function NotificationsSection() {
         </Banner>
       ) : null}
       {query.data ? (
-        <ul className="flex flex-col gap-4 rounded-xl border-2 border-blue-tint-90 bg-white p-6">
+        <ul className="flex flex-col gap-4 rounded-card bg-white p-6 shadow-card">
           {query.data.map((setting) => {
             const kind = copy.kinds[setting.kind];
             return (

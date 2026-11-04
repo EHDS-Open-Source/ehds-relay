@@ -32,7 +32,7 @@ export function FilterChips<T extends string>({
             aria-pressed={selected}
             onClick={() => onChange(option.value)}
             className={cn(
-              "h-10 rounded-full border-2 px-5 text-[0.95em] font-semibold transition-[color,background-color,border-color] duration-150",
+              "h-10 rounded-full border-2 px-5 text-[0.95em] font-semibold transition-[color,background-color,border-color]",
               selected
                 ? "border-blue bg-blue text-white"
                 : "border-blue-tint-80 bg-transparent text-blue hover:border-blue hover:bg-blue-tint-90",

@@ -14,15 +14,15 @@ export function DetailSection({ id, title, children }: DetailSectionProps) {
     <section
       id={id}
       aria-labelledby={headingId}
-      className="mb-8 max-w-[1280px]"
+      className="mb-10 max-w-[1280px] filter-(--shadow-section) md:mb-12"
     >
       <h2
         id={headingId}
-        className="inline-block rounded-t-[10px] bg-blue px-5 py-2.5 text-[1.1em] leading-tight font-bold text-white"
+        className="inline-block rounded-t-[10px] bg-blue px-6 py-4 text-[1.1em] leading-tight font-bold text-white"
       >
         {title}
       </h2>
-      <dl className="overflow-hidden rounded-r-[14px] rounded-b-[14px] bg-white shadow-xs">
+      <dl className="overflow-hidden rounded-card rounded-tl-none bg-white">
         {children}
       </dl>
     </section>

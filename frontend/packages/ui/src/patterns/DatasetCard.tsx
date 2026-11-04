@@ -59,11 +59,11 @@ export function DatasetCard({
     <li className="list-none">
       {renderLink({
         className:
-          "group relative flex h-full flex-col rounded-[var(--radius-card)] bg-white text-ink shadow-card transition-shadow duration-150 outline-none hover:shadow-md focus-visible:shadow-md",
+          "group relative flex h-full flex-col rounded-card bg-white text-ink shadow-card transition-shadow outline-none hover:shadow-card-hover focus-visible:shadow-card-hover",
         children: (
           <>
             <span
-              className={`flex flex-1 flex-col gap-4 p-8 ${band ? "" : "pb-[54px]"}`}
+              className={`flex flex-1 flex-col gap-4 p-8 ${band ? "" : "pb-14"}`}
             >
               <span className="flex items-start justify-between gap-3">
                 <span
@@ -88,7 +88,7 @@ export function DatasetCard({
             {band ? (
               <span className="flex min-h-[62px] items-center justify-between gap-3 border-t border-blue-tint-95 px-8 py-3">
                 <span
-                  className={`flex items-center gap-2 text-[0.94em] font-semibold transition-colors duration-150 ${
+                  className={`flex items-center gap-2 text-[0.94em] font-semibold transition-colors ${
                     overdue
                       ? "text-destructive"
                       : "text-blue-hint group-hover:text-blue group-focus-visible:text-blue"

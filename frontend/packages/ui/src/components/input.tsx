@@ -16,10 +16,10 @@ function Input({
       data-slot="input"
       data-tone={tone}
       className={cn(
-        "w-full min-w-0 text-base transition-[color,border-color] duration-150 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+        "w-full min-w-0 text-base transition-[color,border-color] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
         tone === "onBlue"
           ? "h-11 rounded-none border-0 border-b-2 border-white bg-transparent px-0 py-2 text-yellow caret-yellow placeholder:text-white/70 aria-invalid:border-b-[3px] aria-invalid:border-error"
-          : "h-11 rounded-md border-2 border-input bg-white px-4 py-2 text-foreground selection:bg-blue selection:text-white file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-blue aria-invalid:border-destructive focus-visible:aria-invalid:border-destructive",
+          : "h-[51px] rounded-field border-2 border-input bg-white px-4 py-3 text-foreground selection:bg-blue selection:text-white file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-blue aria-invalid:border-destructive focus-visible:aria-invalid:border-destructive",
         className,
       )}
       {...props}

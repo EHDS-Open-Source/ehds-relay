@@ -30,7 +30,7 @@ export function DetailField({
   return (
     <div
       id={id}
-      className="border-t border-blue-tint-95 px-5 py-3.5 first:border-t-0 sm:grid sm:grid-cols-[minmax(10rem,16rem)_1fr] sm:gap-x-6"
+      className="border-t border-blue-tint-95 px-6 py-4 first:border-t-0 sm:grid sm:grid-cols-[minmax(10rem,16rem)_1fr] sm:gap-x-6"
     >
       <dt className="text-[0.8em] leading-snug font-normal tracking-wider text-blue uppercase sm:pt-0.5">
         {label}

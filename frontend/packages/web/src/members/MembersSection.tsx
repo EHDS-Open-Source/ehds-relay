@@ -66,7 +66,7 @@ export function MembersSection({
         {members.data.map((member) => (
           <li
             key={member.user_id}
-            className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-lg border-2 border-blue-tint-90 bg-white px-5 py-4"
+            className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-card bg-white px-5 py-4 shadow-card"
           >
             <div className="min-w-0">
               <p className="text-[1.15em] font-semibold break-words text-blue">

@@ -9,7 +9,7 @@ import { LoadingStar } from "../feedback/LoadingStar";
 // (destructive only inside confirmations). `default`, `outline`, `ghost` and `link` are older
 // names kept as aliases for the types above.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border-2 font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow] duration-150 disabled:pointer-events-none disabled:opacity-50 aria-busy:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center justify-center gap-3 rounded-full border-2 font-semibold whitespace-nowrap transition-[color,background-color,border-color] disabled:pointer-events-none disabled:opacity-50 aria-busy:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -20,7 +20,7 @@ const buttonVariants = cva(
         row: "border-blue bg-blue text-white hover:border-blue-shade hover:bg-blue-shade",
         icon: "border-yellow bg-yellow text-blue hover:border-yellow-shade hover:bg-yellow-shade",
         destructive:
-          "border-destructive bg-destructive text-white hover:opacity-90",
+          "border-destructive bg-destructive text-white hover:border-error-on-white-shade hover:bg-error-on-white-shade focus-visible:outline-error-on-white",
         link: "border-transparent text-blue underline underline-offset-4 hover:no-underline",
         // Older names.
         default:
