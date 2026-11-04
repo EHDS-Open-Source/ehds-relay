@@ -10,6 +10,8 @@ export const messages = {
   datasetCard: { draft: "Draft", overdue: "Overdue" },
   tagInput: { remove: "Remove" },
   repeatableList: { add: "Add", remove: "Remove" },
+  required: "(required)",
+  loading: "Loading…",
   copy: "Copy",
   copied: "Copied",
   copyFailed: "Could not copy",
