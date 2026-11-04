@@ -33,7 +33,7 @@ export function SideMenu({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-foreground/40 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-scrim duration-(--motion-enter) ease-(--ease-out) data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
           data-surface="blue"
           onOpenAutoFocus={() => {
@@ -45,7 +45,7 @@ export function SideMenu({
           }}
           // Radix wants a description; opt out explicitly when there is none.
           {...(description ? {} : { "aria-describedby": undefined })}
-          className="fixed inset-y-0 right-0 z-50 flex w-[400px] max-w-full flex-col bg-blue text-white outline-none duration-[180ms] data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right max-md:w-full"
+          className="fixed inset-y-0 right-0 z-50 flex w-[400px] max-w-full flex-col bg-blue text-white outline-none duration-(--motion-enter) ease-(--ease-out) data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right max-md:w-full"
         >
           <div className="flex items-start justify-between gap-4 px-8 pt-8 pb-4">
             <div className="min-w-0 pt-2">
@@ -84,7 +84,7 @@ export function SideMenu({
 /** A link in the blue panel: white, turning yellow on hover, with room for an icon. */
 export function menuLinkClass({ active = false }: { active?: boolean } = {}) {
   return cn(
-    "flex w-full items-center gap-3 py-4 text-left text-[1.05em] font-semibold no-underline transition-colors duration-150 hover:text-yellow",
+    "flex w-full items-center gap-3 py-4 text-left text-[1.05em] font-semibold no-underline transition-colors hover:text-yellow",
     active ? "text-yellow" : "text-white",
   );
 }
@@ -94,7 +94,7 @@ export function menuItemClass({
   danger = false,
 }: { active?: boolean; danger?: boolean } = {}) {
   return cn(
-    "flex w-full items-center gap-2.5 rounded-2xl px-3.5 py-3 text-left text-sm font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+    "flex w-full items-center gap-3 rounded-field px-4 py-3 text-left text-sm font-medium transition-colors",
     danger
       ? "text-destructive hover:bg-destructive/10"
       : "hover:bg-accent hover:text-accent-foreground",

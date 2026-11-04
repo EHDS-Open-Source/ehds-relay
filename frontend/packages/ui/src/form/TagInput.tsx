@@ -52,7 +52,7 @@ export function TagInput({
     <div
       data-slot="tag-input"
       aria-invalid={invalid || undefined}
-      className="flex min-h-[52px] cursor-text flex-wrap items-center gap-2 rounded-xl border-2 border-input bg-white p-2 transition-colors duration-150 focus-within:border-blue aria-invalid:border-destructive"
+      className="flex min-h-[52px] cursor-text flex-wrap items-center gap-2 rounded-field border-2 border-input bg-white px-3 py-2 transition-colors focus-within:border-blue aria-invalid:border-destructive"
       onClick={(event) => {
         if (event.target === event.currentTarget)
           document.getElementById(id)?.focus();

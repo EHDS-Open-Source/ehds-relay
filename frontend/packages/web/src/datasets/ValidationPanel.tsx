@@ -150,7 +150,7 @@ export function ValidationPanel({
   return (
     <section
       aria-labelledby="validation-title"
-      className={cn("mb-6 rounded-[14px] p-5", tone)}
+      className={cn("mb-6 rounded-card p-5", tone)}
     >
       <h2
         id="validation-title"

@@ -27,8 +27,8 @@ export function EmptyState({
       data-slot="empty-state"
       data-compact={compact ? "" : undefined}
       className={cn(
-        "rounded-lg border-2 border-dashed border-blue-tint-80 bg-white text-center",
-        compact ? "px-5 py-6" : "px-6 py-14",
+        "rounded-card border-2 border-dashed border-blue-tint-80 bg-white text-center",
+        compact ? "px-6 py-8" : "px-6 py-14",
       )}
     >
       <Icon

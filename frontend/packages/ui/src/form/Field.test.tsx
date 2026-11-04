@@ -94,7 +94,7 @@ describe("Field", () => {
     );
   });
 
-  it("shows a hint in grey ink with an icon that an input can reference", () => {
+  it("shows a hint in the blue hint colour with an icon that an input can reference", () => {
     render(
       <Field label="Code" htmlFor="c" hint="Use the short code">
         <input id="c" aria-describedby={fieldHintId("c")} />
@@ -105,7 +105,7 @@ describe("Field", () => {
     );
     expect(document.querySelector('[data-icon="info"]')).not.toBeNull();
     expect(screen.getByText("Use the short code").parentElement).toHaveClass(
-      "text-ink-3",
+      "text-blue-hint",
     );
   });
 

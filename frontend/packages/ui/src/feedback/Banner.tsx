@@ -45,7 +45,7 @@ export function Banner({
       data-slot="banner"
       data-tone={tone}
       className={cn(
-        "flex items-center gap-3 rounded-lg px-4 py-3 font-semibold text-ink",
+        "flex items-center gap-3 rounded-card px-4 py-3 font-semibold text-ink",
         tones[tone],
         className,
       )}

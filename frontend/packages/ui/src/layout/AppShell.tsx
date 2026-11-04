@@ -32,7 +32,7 @@ export function AppShell({
       {ribbon}
       <div className="flex flex-1">
         {sidebar ? (
-          <aside className="w-64 shrink-0 border-r bg-sidebar text-sidebar-foreground">
+          <aside className="w-65 shrink-0 border-r bg-sidebar text-sidebar-foreground">
             {sidebar}
           </aside>
         ) : null}
@@ -41,7 +41,7 @@ export function AppShell({
           tabIndex={-1}
           className="min-w-0 flex-1 outline-none"
         >
-          <div className="mx-auto w-[96%] px-5 py-9 md:px-10 md:py-16">
+          <div className="mx-auto w-[96%] px-5 py-10 md:px-10 md:py-16">
             {children}
           </div>
         </main>
