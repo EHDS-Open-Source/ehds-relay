@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { CodeBlock } from "./CodeBlock";
@@ -91,7 +92,7 @@ describe("ConfirmDialog", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("disables the buttons while pending", () => {
+  it("marks the confirm button busy and disables Cancel while pending", () => {
     render(
       <ConfirmDialog
         open
@@ -102,7 +103,10 @@ describe("ConfirmDialog", () => {
         onConfirm={() => {}}
       />,
     );
-    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Confirm" })).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
   });
 });
@@ -130,6 +134,71 @@ describe("ConfirmDialog focus and content", () => {
     expect(
       screen.getByRole("alertdialog").querySelector("[data-icon=remove]"),
     ).not.toBeNull();
+    // The confirm button repeats the icon after its label.
+    const confirm = screen.getByRole("button", { name: "Remove user" });
+    expect(confirm.lastElementChild).toHaveAttribute("data-icon", "remove");
+  });
+
+  it("keeps the description in body text, not the muted small default", () => {
+    render(
+      <ConfirmDialog
+        open
+        onOpenChange={() => {}}
+        title="t"
+        description="d"
+        onConfirm={() => {}}
+      />,
+    );
+    const description = screen.getByText("d");
+    expect(description.className).toContain("text-ink");
+    expect(description.className).not.toContain("text-muted-foreground");
+    expect(description.className).not.toContain("text-sm");
+  });
+});
+
+function Opener() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>
+        Delete it
+      </button>
+      <ConfirmDialog
+        open={open}
+        onOpenChange={setOpen}
+        title="Delete?"
+        description="Gone"
+        destructive
+        onConfirm={() => setOpen(false)}
+      />
+    </>
+  );
+}
+
+describe("ConfirmDialog closing", () => {
+  it.each([
+    ["Esc", () => userEvent.keyboard("{Escape}")],
+    [
+      "Cancel",
+      () => userEvent.click(screen.getByRole("button", { name: "Cancel" })),
+    ],
+    [
+      "a click outside",
+      () =>
+        userEvent.click(
+          document.querySelector("[data-slot=alert-dialog-overlay]")!,
+        ),
+    ],
+  ])("closes on %s and gives focus back to the opener", async (_, close) => {
+    render(<Opener />);
+    const opener = screen.getByRole("button", { name: "Delete it" });
+    await userEvent.click(opener);
+    expect(screen.getByRole("alertdialog")).toBeVisible();
+    await close();
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+    expect(opener).toHaveFocus();
   });
 });
 

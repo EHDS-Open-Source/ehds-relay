@@ -10,6 +10,7 @@ import {
   ConfirmDialog,
   buttonVariants,
   datasetStarColour,
+  useMinimumPending,
   useToast,
 } from "@ehds-relay/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -50,6 +51,7 @@ export function DatasetDetailPage() {
   const [confirming, setConfirming] = useState(false);
   const toast = useToast();
   const [reminderOpen, setReminderOpen] = useState(false);
+  const loading = useMinimumPending(query.isPending);
 
   const catalogueLink = (
     <Link
@@ -62,8 +64,8 @@ export function DatasetDetailPage() {
     </Link>
   );
 
-  if (query.isPending) {
-    return <LoadingStar size="page" message={shellMessages.loading} />;
+  if (loading || query.isPending) {
+    return <LoadingStar size="page" message={m.loadingRecord} />;
   }
 
   if (query.isError) {
@@ -228,8 +230,8 @@ export function DatasetDetailPage() {
               setConfirming(true);
             }}
           >
-            <Icon name="remove" size="md" />
             {m.delete}
+            <Icon name="bin" size="md" />
           </Button>
         ) : null}
       </div>
@@ -270,6 +272,7 @@ export function DatasetDetailPage() {
       <ReminderDialog
         orgId={orgId}
         datasetId={datasetId}
+        datasetTitle={title}
         current={dataset.reminder_date}
         open={reminderOpen}
         onOpenChange={setReminderOpen}
@@ -279,12 +282,15 @@ export function DatasetDetailPage() {
         <ConfirmDialog
           open={confirming}
           onOpenChange={setConfirming}
-          title={m.deleteDialog.title}
-          icon="remove"
+          title={m.deleteDialog.title(title)}
+          icon="bin"
           description={
             <>
-              <p className="mb-2 font-bold">{title}</p>
-              <p>{m.deleteDialog.description}</p>
+              <strong className="font-bold">{title}</strong>{" "}
+              {m.deleteDialog.description}{" "}
+              <strong className="font-bold">
+                {m.deleteDialog.irreversible}
+              </strong>
             </>
           }
           confirmLabel={m.deleteDialog.confirm}

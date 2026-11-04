@@ -10,6 +10,7 @@ import {
   TabsList,
   TabsTrigger,
   buttonVariants,
+  useMinimumPending,
 } from "@ehds-relay/ui";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 
@@ -46,8 +47,9 @@ function OutputTab({
   const query = useDatasetExport(dataset.org_id, dataset.id, format, active);
   const info = exportFormatInfo(format);
   const label = m.output.tabs[format];
+  const loading = useMinimumPending(query.isPending);
 
-  if (query.isPending) {
+  if (loading || query.isPending) {
     return <LoadingStar size="page" message={m.output.loading} />;
   }
   if (query.isError) {
@@ -104,6 +106,7 @@ export function DatasetExportPage() {
   const format: ExportFormat = isExportFormat(search.format)
     ? search.format
     : "ttl";
+  const loading = useMinimumPending(query.isPending);
 
   const backToRecord = (
     <Link
@@ -116,8 +119,8 @@ export function DatasetExportPage() {
     </Link>
   );
 
-  if (query.isPending) {
-    return <LoadingStar size="page" message={shellMessages.loading} />;
+  if (loading || query.isPending) {
+    return <LoadingStar size="page" message={m.loadingRecord} />;
   }
   if (query.isError) {
     const notFound = errorStatus(query.error) === 404;

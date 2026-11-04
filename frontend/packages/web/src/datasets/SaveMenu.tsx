@@ -103,10 +103,13 @@ export function SaveMenu({
           <>
             {datasetTitle ? (
               <>
-                <strong className="font-bold">{datasetTitle}</strong>:{" "}
+                {text.clearDescription}{" "}
+                <strong className="font-bold">{datasetTitle}</strong>{" "}
+                {text.clearDescriptionTrail}
               </>
-            ) : null}
-            {text.clearDescription}{" "}
+            ) : (
+              text.clearDescriptionUntitled
+            )}{" "}
             <strong className="font-bold">{text.clearIrreversible}</strong>
           </>
         }

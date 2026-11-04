@@ -19,13 +19,13 @@ export interface ConfirmDialogProps {
   title: string;
   /** Can hold emphasis, e.g. the name of what is being removed in bold. */
   description: ReactNode;
-  /** Sits left of the title and matches the action. */
+  /** Sits left of the title and matches the action; repeated after the confirm label. */
   icon?: IconName;
   confirmLabel?: string;
   cancelLabel?: string;
   /** Style the confirm button as a destructive action. */
   destructive?: boolean;
-  /** Disables the buttons while the action runs. */
+  /** The action is running: the confirm button shows it is busy and Cancel is disabled. */
   pending?: boolean;
   /** Shown inside the dialog, e.g. why the action failed. */
   error?: ReactNode;
@@ -33,7 +33,10 @@ export interface ConfirmDialogProps {
   onConfirm: () => void;
 }
 
-/** Asks "are you sure?" before an action that cannot be undone. */
+/**
+ * Asks "are you sure?" before an action that cannot be undone. Cancel has focus first; Esc,
+ * Cancel and a click outside the dialog all cancel, and focus returns to what opened it.
+ */
 export function ConfirmDialog({
   open,
   onOpenChange,
@@ -49,15 +52,19 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent
+        onOverlayClick={() => {
+          if (!pending) onOpenChange(false);
+        }}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {icon ? <Icon name={icon} size="xl" /> : null}
+            {icon ? <Icon name={icon} size="lg" /> : null}
             {title}
           </AlertDialogTitle>
           {/* A div, so the description may hold block content. */}
           <AlertDialogDescription asChild>
-            <div className="text-ink">{description}</div>
+            <div>{description}</div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         {error ? (
@@ -71,11 +78,12 @@ export function ConfirmDialog({
           </AlertDialogCancel>
           <Button
             type="button"
-            variant={destructive ? "destructive" : "default"}
-            disabled={pending}
+            variant={destructive ? "destructive" : "primary"}
+            busy={pending}
             onClick={onConfirm}
           >
             {confirmLabel}
+            {icon ? <Icon name={icon} size="md" /> : null}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -9,7 +9,7 @@ import { LoadingStar } from "../feedback/LoadingStar";
 // (destructive only inside confirmations). `default`, `outline`, `ghost` and `link` are older
 // names kept as aliases for the types above.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-3 rounded-full border-2 font-semibold whitespace-nowrap transition-[color,background-color,border-color] disabled:pointer-events-none disabled:opacity-50 aria-busy:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center justify-center gap-3 rounded-full border-2 font-semibold whitespace-nowrap transition-[color,background-color,border-color] disabled:pointer-events-none disabled:opacity-50 aria-busy:pointer-events-none aria-busy:[&>[data-slot=icon]]:hidden [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -80,7 +80,10 @@ type ButtonProps = React.ComponentProps<"button"> &
     asChild?: boolean;
     /** The button sits on a blue surface. */
     onBlue?: boolean;
-    /** Work is in progress: shows the spinning star, disables the button and marks it busy. */
+    /**
+     * Work is in progress: the spinning star takes the place of the button's icon, after the
+     * label. The button keeps its look and its focus but cannot be pressed, and is marked busy.
+     */
     busy?: boolean;
   };
 
@@ -93,17 +96,22 @@ function Button({
   asChild = false,
   children,
   disabled,
+  onClick,
+  onKeyDown,
+  onPointerDown,
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot.Root : "button";
+  const isBusy = busy && !asChild;
 
   return (
     <Comp
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      aria-busy={busy || undefined}
-      disabled={asChild ? undefined : disabled || busy}
+      aria-busy={isBusy || undefined}
+      aria-disabled={isBusy || undefined}
+      disabled={asChild ? undefined : disabled}
       className={cn(
         buttonVariants({
           variant,
@@ -113,15 +121,32 @@ function Button({
         }),
       )}
       {...props}
+      // Not `disabled` while busy, so focus stays put; presses (and form submits) are dropped.
+      onClick={
+        isBusy
+          ? (event: React.MouseEvent<HTMLButtonElement>) =>
+              event.preventDefault()
+          : onClick
+      }
+      onKeyDown={
+        isBusy
+          ? (event: React.KeyboardEvent<HTMLButtonElement>) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+              }
+            }
+          : onKeyDown
+      }
+      onPointerDown={isBusy ? undefined : onPointerDown}
     >
       {asChild ? (
         children
       ) : (
         <>
-          {busy ? (
+          {children}
+          {isBusy ? (
             <LoadingStar size={size === "lg" ? "large-button" : "button"} />
           ) : null}
-          {children}
         </>
       )}
     </Comp>

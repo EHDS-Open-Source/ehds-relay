@@ -27,7 +27,7 @@ export function LoadingStar({
         role="status"
         data-slot="loading-star"
         className={cn(
-          "flex flex-col items-center justify-center gap-4 py-12 text-center",
+          "flex flex-col items-center justify-center gap-4 py-16 text-center",
           className,
         )}
       >

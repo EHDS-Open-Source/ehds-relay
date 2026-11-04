@@ -1,9 +1,10 @@
 import {
-  Banner,
   Button,
   ConfirmDialog,
+  EmptyState,
   LoadingStar,
   NativeSelect,
+  useMinimumPending,
   useToast,
 } from "@ehds-relay/ui";
 import { useState } from "react";
@@ -34,15 +35,32 @@ export function MembersSection({
   const removeMember = useRemoveMember(orgId);
   const toast = useToast();
   const [removing, setRemoving] = useState<Member | null>(null);
+  const loading = useMinimumPending(members.isPending);
 
-  if (members.isPending) {
-    return <LoadingStar size="page" message={shellMessages.loading} />;
+  if (loading || members.isPending) {
+    return <LoadingStar size="page" message={m.loadingUsers} />;
   }
   if (members.isError) {
+    // About this list only, so said here rather than in a page banner.
+    const forbidden = errorStatus(members.error) === 403;
     return (
-      <Banner tone="error">
-        {errorStatus(members.error) === 403 ? m.ownersOnly : m.loadFailed}
-      </Banner>
+      <div className="mb-12">
+        <EmptyState
+          status
+          title={forbidden ? m.ownersOnly : m.loadFailed}
+          action={
+            forbidden ? undefined : (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void members.refetch()}
+              >
+                {m.retry}
+              </Button>
+            )
+          }
+        />
+      </div>
     );
   }
 
