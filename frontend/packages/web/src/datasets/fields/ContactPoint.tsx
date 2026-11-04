@@ -4,7 +4,7 @@ import { useFieldArray, useFormContext } from "react-hook-form";
 import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel } from "../fields";
 import { emptyContactPoint, type DatasetFormValues } from "../formValues";
-import { TextInput } from "./common";
+import { GroupPanel, TextInput } from "./common";
 import { type FormPath } from "./formState";
 
 const text = shellMessages.datasetForm;
@@ -12,7 +12,7 @@ const text = shellMessages.datasetForm;
 /** Name and email of a contact point. */
 export function ContactPointInputs({ path }: { path: string }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-4 sm:grid-cols-2">
       <TextInput
         path={`${path}.name` as FormPath}
         label={text.contactPoint.name}
@@ -36,7 +36,7 @@ export function ContactPointsField() {
   });
   const label = fieldLabel("contact_points");
   return (
-    <Field label={label} anchorId={fieldAnchorId("contact_points")}>
+    <Field label={label} anchorId={fieldAnchorId("contact_points")} required>
       <RepeatableList
         items={fields}
         addLabel={text.addContactPoint}
@@ -44,7 +44,9 @@ export function ContactPointsField() {
         onAdd={() => append(emptyContactPoint())}
         onRemove={remove}
         renderItem={(_, index) => (
-          <ContactPointInputs path={`contact_points.${index}`} />
+          <GroupPanel>
+            <ContactPointInputs path={`contact_points.${index}`} />
+          </GroupPanel>
         )}
       />
     </Field>

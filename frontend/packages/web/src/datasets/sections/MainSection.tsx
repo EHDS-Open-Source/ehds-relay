@@ -21,13 +21,13 @@ export function MainSection() {
       <DistributionsField />
       <YesNoField name="structured_data" />
       {structured === "yes" ? <VariablesField /> : null}
-      <TextField name="provenance" multiline />
-      <TagField name="keyword" />
-      <TermListField name="health_theme" />
-      <TermListField name="health_category" />
+      <TextField name="provenance" multiline required />
+      <TagField name="keyword" required />
+      <TermListField name="health_theme" required />
+      <TermListField name="health_category" required />
       <TermListField name="coding_system" />
       <YesNoField name="has_personal_data" />
-      <TermListField name="conforms_to" />
+      <TermListField name="conforms_to" required />
     </FormSection>
   );
 }

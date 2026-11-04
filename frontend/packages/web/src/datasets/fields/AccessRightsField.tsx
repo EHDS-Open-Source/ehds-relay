@@ -17,6 +17,7 @@ export function AccessRightsField() {
     <Field
       label={fieldLabel("access_rights")}
       anchorId={fieldAnchorId("access_rights")}
+      required
       error={error}
       errorId={fieldErrorId(inputId("access_rights"))}
     >

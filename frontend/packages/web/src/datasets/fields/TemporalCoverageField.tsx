@@ -2,7 +2,7 @@ import { Field } from "@ehds-relay/ui";
 
 import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel } from "../fields";
-import { GroupError, TextInput } from "./common";
+import { GroupError, GroupPanel, TextInput } from "./common";
 
 const text = shellMessages.datasetForm;
 
@@ -13,7 +13,7 @@ export function TemporalCoverageField() {
       label={fieldLabel("temporal_coverage")}
       anchorId={fieldAnchorId("temporal_coverage")}
     >
-      <div className="grid gap-3 sm:grid-cols-2">
+      <GroupPanel className="grid gap-4 sm:grid-cols-2">
         <TextInput
           path="temporal_coverage.start"
           label={text.temporal.start}
@@ -24,7 +24,7 @@ export function TemporalCoverageField() {
           label={text.temporal.end}
           type="date"
         />
-      </div>
+      </GroupPanel>
       <GroupError path="temporal_coverage" />
     </Field>
   );

@@ -29,3 +29,13 @@ export function errorProps(path: string, error: string | undefined) {
     "aria-describedby": error ? fieldErrorId(inputId(path)) : undefined,
   } as const;
 }
+
+/** Classes of the pale panel that holds a group of sub-fields. */
+export const panelClass = "rounded-[16px] bg-blue-tint-95 p-4 sm:p-5";
+
+/** The error of a group of inputs: its own message, else the one on its `root`. */
+export function useGroupError(path: string): string | undefined {
+  const own = useFieldError(path);
+  const root = useFieldError(`${path}.root`);
+  return own ?? root;
+}

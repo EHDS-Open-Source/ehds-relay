@@ -5,6 +5,7 @@ import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel } from "../fields";
 import { emptyDistribution, type DatasetFormValues } from "../formValues";
 import { TextInput } from "./common";
+import { panelClass } from "./formState";
 import { TermPair, TermRows } from "./TermList";
 
 const text = shellMessages.datasetForm;
@@ -18,7 +19,7 @@ export function DistributionsField() {
   });
   const label = fieldLabel("distributions");
   return (
-    <Field label={label} anchorId={fieldAnchorId("distributions")}>
+    <Field label={label} anchorId={fieldAnchorId("distributions")} required>
       <RepeatableList
         items={fields}
         addLabel={text.addDistribution}
@@ -30,7 +31,7 @@ export function DistributionsField() {
           return (
             <Field
               label={`${text.distribution.item} ${index + 1}`}
-              className="rounded-2xl border p-4"
+              className={panelClass}
             >
               <div className="flex flex-col gap-4">
                 <TextInput
@@ -53,6 +54,7 @@ export function DistributionsField() {
                 </Field>
                 <Field label={text.distribution.legislation}>
                   <TermRows
+                    nested
                     path={`${path}.applicable_legislation`}
                     label={text.distribution.legislation}
                   />

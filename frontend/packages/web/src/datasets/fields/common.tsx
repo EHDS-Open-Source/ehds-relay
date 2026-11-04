@@ -1,22 +1,42 @@
 import {
   Field,
+  FormMessage,
   Input,
   RadioChoices,
   TagInput,
   Textarea,
+  cn,
   fieldErrorId,
 } from "@ehds-relay/ui";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 
 import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel, type FieldKey } from "../fields";
 import type { DatasetFormValues } from "../formValues";
-import { errorProps, inputId, useFieldError, type FormPath } from "./formState";
+import {
+  errorProps,
+  inputId,
+  panelClass,
+  useFieldError,
+  useGroupError,
+  type FormPath,
+} from "./formState";
 
 // Inputs bound to the dataset form through React Hook Form's context.
 
 const text = shellMessages.datasetForm;
+
+/** A pale panel around grouped sub-fields. */
+export function GroupPanel({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return <div className={cn(panelClass, className)}>{children}</div>;
+}
 
 interface TextInputProps extends Omit<ComponentProps<"input">, "name"> {
   path: FormPath;
@@ -24,6 +44,8 @@ interface TextInputProps extends Omit<ComponentProps<"input">, "name"> {
   anchorId?: string;
   hint?: string;
   multiline?: boolean;
+  /** The dataset needs this answer to be published: adds the star beside the label. */
+  required?: boolean;
 }
 
 /** A labelled text box (or text area) for one form value. */
@@ -33,6 +55,7 @@ export function TextInput({
   anchorId,
   hint,
   multiline,
+  required,
   className,
   ...inputProps
 }: TextInputProps) {
@@ -45,6 +68,7 @@ export function TextInput({
       htmlFor={id}
       anchorId={anchorId}
       hint={hint}
+      required={required}
       error={error}
       errorId={fieldErrorId(id)}
       className={className}
@@ -84,8 +108,10 @@ export function TextField({
 /** A list of short texts entered as tags (keywords, code values, identifiers). */
 export function TagField({
   name,
+  required,
 }: {
   name: "keyword" | "code_values" | "identifier";
+  required?: boolean;
 }) {
   const { control } = useFormContext<DatasetFormValues>();
   const error = useFieldError(name);
@@ -96,6 +122,7 @@ export function TagField({
       htmlFor={id}
       anchorId={fieldAnchorId(name)}
       hint={text.tagHint}
+      required={required}
       error={error}
       errorId={fieldErrorId(id)}
     >
@@ -129,6 +156,7 @@ export function YesNoField({
     <Field
       label={fieldLabel(name)}
       anchorId={fieldAnchorId(name)}
+      required
       error={error}
       errorId={fieldErrorId(inputId(name))}
     >
@@ -146,15 +174,8 @@ export function YesNoField({
 
 /** Error text for a group of inputs (a list or a pair), shown where the group is. */
 export function GroupError({ path }: { path: string }) {
-  const own = useFieldError(path);
-  const root = useFieldError(`${path}.root`);
-  const message = own ?? root;
+  const message = useGroupError(path);
   return message ? (
-    <p
-      id={fieldErrorId(inputId(path))}
-      className="text-sm font-medium text-destructive"
-    >
-      {message}
-    </p>
+    <FormMessage id={fieldErrorId(inputId(path))}>{message}</FormMessage>
   ) : null;
 }
