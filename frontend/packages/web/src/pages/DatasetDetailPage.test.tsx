@@ -35,38 +35,62 @@ const form = shellMessages.datasetForm;
 const path = `/orgs/${ORG}/datasets/${ID}`;
 
 describe("dataset detail", () => {
-  it("shows the header facts and only filled-in fields in section order", async () => {
+  it("shows the header facts and every field, grouped for reading", async () => {
     stubApi({ [`GET ${base}`]: () => json(makeDataset()) });
     renderApp(path);
 
-    expect(
-      await screen.findByRole("heading", {
-        level: 1,
-        name: "Hospital Admissions",
-      }),
-    ).toBeVisible();
+    const title = await screen.findByRole("heading", {
+      level: 1,
+      name: "Hospital Admissions",
+    });
+    expect(title).toBeVisible();
+    // The star stays on the line of the title's last word.
+    const tail = title.querySelector("[data-slot=title-tail]");
+    expect(tail).toHaveTextContent("Admissions");
+    expect(tail?.querySelector("[data-icon=star]")).not.toBeNull();
     expect(screen.getByText("All admissions", { selector: "p" })).toBeVisible();
-    expect(screen.getByText("Published")).toBeVisible();
-    expect(screen.getAllByText("Restricted").length).toBeGreaterThan(0);
-    expect(screen.getByText("3 Feb 2026, 10:00")).toBeVisible();
+
+    // Pills: access level, then how much data, with the count in words.
+    const pills = within(
+      screen.getByRole("list", { name: m.record.factsLabel }),
+    )
+      .getAllByRole("listitem")
+      .map((li) => li.textContent);
+    expect(pills).toEqual([
+      `${m.record.pillLabels.access} Restricted`,
+      "1.2 thousand records",
+    ]);
+    // Status and dates sit on the quieter line, not in the pills.
+    expect(screen.getByText(m.record.status.published)).toBeVisible();
+    expect(
+      screen.getByText(m.record.lastChanged("3 February 2026 at 10:00")),
+    ).toBeVisible();
 
     const headings = screen
       .getAllByRole("heading", { level: 2 })
       .map((h) => h.textContent);
     expect(headings).toEqual([
-      form.sections.main,
-      form.sections.access,
-      form.sections.coverage,
-      form.sections.organisations,
-      form.sections.quantum,
+      m.record.sections.description,
+      m.record.sections.access,
+      m.record.sections.keyword,
+      m.record.sections.quantum,
     ]);
-    expect(screen.queryByText(form.fields.provenance)).not.toBeInTheDocument();
+    // Empty fields are listed with a dash.
+    const provenance = document.getElementById("record-provenance")!;
+    expect(provenance).toHaveTextContent(form.fields.provenance);
+    expect(within(provenance).getByText("—")).toBeInTheDocument();
     expect(screen.getByText("Acme Hospital")).toBeVisible();
     expect(screen.getByText("1,200")).toBeVisible();
     expect(screen.getByRole("link", { name: "Cardiology" })).toHaveAttribute(
       "href",
       "https://example.org/Cardiology",
     );
+    // Keywords are pills.
+    expect(
+      [...document.querySelectorAll("[data-slot=keyword]")].map(
+        (k) => k.textContent,
+      ),
+    ).toEqual(["health", "admissions"]);
     expect(screen.queryByText(m.draft.title)).not.toBeInTheDocument();
   });
 
@@ -220,7 +244,10 @@ describe("revalidation reminder", () => {
     expect(
       set.compareDocumentPosition(edit) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(screen.getByText(r.none)).toBeVisible();
+    expect(set.querySelector("[data-icon=calendar]")).not.toBeNull();
+    // The icon comes after the label on both buttons.
+    expect(set.lastElementChild?.querySelector("[data-icon]")).not.toBeNull();
+    expect(edit.lastElementChild).toHaveAttribute("data-icon", "edit");
     expect(screen.queryByText(m.ribbon.due)).not.toBeInTheDocument();
   });
 
@@ -245,9 +272,10 @@ describe("revalidation reminder", () => {
       await screen.findByText(r.savedToast(longDate(inAYear))),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: r.update })).toHaveFocus();
-    // The ribbon and the pill both show the date
-    expect(screen.getAllByText(formatIsoDate(inAYear))).toHaveLength(2);
-    expect(screen.getByText(m.ribbon.due)).toBeVisible();
+    // The ribbon shows the date
+    expect(screen.getByText(m.ribbon.due).parentElement).toHaveTextContent(
+      `${m.ribbon.due}${formatIsoDate(inAYear)}`,
+    );
     expect(screen.getByText(/set by Ada Member/)).toBeVisible();
   });
 
@@ -268,7 +296,9 @@ describe("revalidation reminder", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: r.save }));
     await waitFor(() => expect(bodies).toEqual([{ reminder_date: next }]));
     await waitFor(() =>
-      expect(screen.getAllByText(formatIsoDate(next))).toHaveLength(2),
+      expect(screen.getByText(m.ribbon.due).parentElement).toHaveTextContent(
+        formatIsoDate(next),
+      ),
     );
   });
 
@@ -291,7 +321,9 @@ describe("revalidation reminder", () => {
       within(confirm).getByRole("button", { name: r.clearDialog.confirm }),
     );
     await waitFor(() => expect(bodies).toEqual([{ reminder_date: null }]));
-    expect(await screen.findByText(r.none)).toBeVisible();
+    await waitFor(() =>
+      expect(screen.queryByText(m.ribbon.due)).not.toBeInTheDocument(),
+    );
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(await screen.findByText(r.clearedToast)).toBeVisible();
     // Focus goes back to the button that opened the reminder dialog
@@ -346,9 +378,9 @@ describe("revalidation reminder", () => {
   it("says when the reminder date has passed and offers a fresh date", async () => {
     stubReminder(makeDataset({ reminder_date: "2025-01-10" }));
     renderApp(path);
-    expect(await screen.findByText(new RegExp(r.passed))).toHaveTextContent(
-      formatIsoDate("2025-01-10"),
-    );
+    expect(
+      (await screen.findByText(m.ribbon.overdueSince)).parentElement,
+    ).toHaveTextContent(formatIsoDate("2025-01-10"));
     const dialog = await openDialog();
     expect(
       within(dialog).getByLabelText(r.dateLabel, { exact: false }),
@@ -392,7 +424,7 @@ describe("revalidation ribbon", () => {
 });
 
 describe("overdue", () => {
-  it("EDIT-14 shows the Overdue label on an overdue record", async () => {
+  it("EDIT-14 shows overdue once, in the ribbon, on an overdue record", async () => {
     stubApi({
       [`GET ${base}`]: () =>
         json(
@@ -404,16 +436,31 @@ describe("overdue", () => {
         ),
     });
     renderApp(path);
-    expect(await screen.findByText(m.overdue)).toBeVisible();
-    expect(screen.getByText(m.overdueHint, { selector: "p" })).toBeVisible();
-    expect(screen.getByText(m.lastValidated)).toBeVisible();
-    expect(screen.getByText("15 Jan 2024, 10:00")).toBeVisible();
+    const label = await screen.findByText(m.ribbon.overdue);
+    expect(label.closest("[data-slot=ribbon]")).toHaveAttribute(
+      "data-tone",
+      "overdue",
+    );
+    expect(screen.getAllByText(m.overdueHint)).toHaveLength(1);
+    expect(
+      screen.getByText(m.record.lastValidated("15 January 2024 at 10:00")),
+    ).toBeVisible();
   });
 
-  it("EDIT-14 shows no label when the record is not overdue", async () => {
+  it("EDIT-14 shows no ribbon when the record is not overdue", async () => {
     stubApi({ [`GET ${base}`]: () => json(makeDataset()) });
     renderApp(path);
     await screen.findByRole("heading", { level: 1 });
-    expect(screen.queryByText(m.overdue)).not.toBeInTheDocument();
+    expect(screen.queryByText(m.ribbon.overdue)).not.toBeInTheDocument();
+    expect(document.querySelector("[data-slot=ribbon]")).toBeNull();
+  });
+
+  it("is not overdue on the reminder day itself", async () => {
+    stubApi({
+      [`GET ${base}`]: () => json(makeDataset({ reminder_date: todayIso() })),
+    });
+    renderApp(path);
+    expect(await screen.findByText(m.ribbon.due)).toBeVisible();
+    expect(screen.queryByText(m.ribbon.overdueSince)).not.toBeInTheDocument();
   });
 });

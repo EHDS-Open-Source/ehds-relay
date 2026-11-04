@@ -1,4 +1,4 @@
-import { Button, Icon, cn } from "@ehds-relay/ui";
+import { Button, Icon } from "@ehds-relay/ui";
 import { Link } from "@tanstack/react-router";
 
 import { shellMessages } from "../shell/messages";
@@ -79,7 +79,6 @@ export function ValidationPanel({
   const query = useDatasetValidation(orgId, datasetId);
 
   let body;
-  let tone = "bg-blue-tint-95";
   if (query.isPending) {
     body = (
       <p role="status" className="text-ink">
@@ -109,11 +108,6 @@ export function ValidationPanel({
     const items = itemsOf(report);
     const problems = items.filter((i) => i.severity === "violation");
     const notes = items.filter((i) => i.severity !== "violation");
-    tone = report.conforms
-      ? notes.length > 0
-        ? "bg-info-bg"
-        : "bg-success-bg"
-      : "bg-error-bg";
     body = report.conforms ? (
       <div role="status">
         <p className="flex items-center gap-2 font-semibold text-ink">
@@ -150,7 +144,8 @@ export function ValidationPanel({
   return (
     <section
       aria-labelledby="validation-title"
-      className={cn("mb-6 rounded-card p-5", tone)}
+      data-slot="validation-panel"
+      className="mb-8 max-w-[1280px] rounded-card bg-white p-6 shadow-card"
     >
       <h2
         id="validation-title"

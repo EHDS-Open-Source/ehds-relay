@@ -43,6 +43,7 @@ export const shellMessages = {
       overdueDetail:
         "Review this dataset's metadata, then set the next revalidation date.",
       setNext: "Set next date",
+      overdue: "Revalidation overdue",
     },
     notFound: {
       title: "Dataset not found",
@@ -75,6 +76,30 @@ export const shellMessages = {
       contact: "Contact",
       unknownEnd: "no end date",
       unknownStart: "no start date",
+      to: "to",
+      factsLabel: "Key facts",
+      turtleMediaType: "text/turtle",
+      sections: {
+        description: "Description",
+        access: "Access, legal and content",
+        variables: "Variables",
+        keyword: "Keyword",
+        quantum: "QUANTUM DQ&U label",
+      },
+      status: {
+        published: "Published",
+        draft: "Draft",
+      },
+      lastChanged: (when: string) => `Last changed ${when}`,
+      lastValidated: (when: string) => `Last validated ${when}`,
+      reminderSetBy: (name: string) => `Reminder set by ${name}`,
+      records: (count: string) => `${count} records`,
+      people: (count: string) => `${count} people`,
+      pillLabels: {
+        access: "Access level:",
+        category: "Health data category:",
+        geography: "Geographical coverage:",
+      },
     },
     draft: {
       title: "This dataset is a draft",
@@ -141,7 +166,7 @@ export const shellMessages = {
       title: "Dataset output",
       description: "The metadata record in each of the supported formats.",
       tabs: {
-        ttl: "Turtle",
+        ttl: "Turtle (TTL)",
         jsonld: "JSON-LD",
         rdfxml: "RDF/XML",
       },

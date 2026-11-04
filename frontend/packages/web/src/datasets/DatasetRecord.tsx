@@ -1,79 +1,57 @@
-import { DetailField, DetailSection } from "@ehds-relay/ui";
-import type { ReactNode } from "react";
+import {
+  CodeBlock,
+  DetailField,
+  DetailSection,
+  Icon,
+  KeywordPill,
+} from "@ehds-relay/ui";
+import { Fragment, type ReactNode } from "react";
 
 import { shellMessages } from "../shell/messages";
-import { datasetSections, fieldLabel, type FieldKey } from "./fields";
+import { fieldLabel, type FieldKey } from "./fields";
 import type { DatasetMetadata } from "./formValues";
+import { formatIsoDate } from "./reminderDates";
 
 const m = shellMessages.datasets;
-
-/** How the record view renders a field's value. */
-type FieldKind =
-  | "langTexts"
-  | "text"
-  | "boolean"
-  | "number"
-  | "accessRights"
-  | "terms"
-  | "strings"
-  | "organisation"
-  | "contactPoints"
-  | "distributions"
-  | "variables"
-  | "temporal"
-  | "turtle";
-
-// Every field needs a kind, so a field added to the map cannot be left out of the record
-const fieldKinds: Record<FieldKey, FieldKind> = {
-  title: "langTexts",
-  description: "langTexts",
-  distributions: "distributions",
-  structured_data: "boolean",
-  variables: "variables",
-  provenance: "text",
-  keyword: "strings",
-  health_theme: "terms",
-  health_category: "terms",
-  coding_system: "terms",
-  has_personal_data: "boolean",
-  conforms_to: "terms",
-  access_rights: "accessRights",
-  applicable_legislation: "terms",
-  health_data_access_body: "organisation",
-  geographical_coverage: "terms",
-  type: "terms",
-  number_of_records: "number",
-  number_of_unique_individuals: "number",
-  language: "terms",
-  code_values: "strings",
-  temporal_coverage: "temporal",
-  health_data_holder: "organisation",
-  publisher: "organisation",
-  contact_points: "contactPoints",
-  identifier: "strings",
-  generated_by: "terms",
-  quantum_label: "turtle",
-};
-
-interface FieldDef {
-  key: FieldKey;
-  kind: FieldKind;
-}
+const r = m.record;
 
 type Term = { label: string; uri: string };
 type Organisation = NonNullable<DatasetMetadata["health_data_holder"]>;
 type ContactPoint = { name: string; email: string };
 
-function isFilled(value: unknown): boolean {
-  if (value === null || value === undefined) return false;
-  if (typeof value === "string") return value.trim() !== "";
-  if (Array.isArray(value)) return value.length > 0;
-  if (typeof value === "object") {
-    // Temporal coverage with neither date is empty
-    return Object.values(value).some((v) => v !== null && v !== undefined);
-  }
-  return true;
-}
+// The record groups fields for reading, not like the form: who and what first, then access
+// and content, then variables and keywords. Every field is listed, empty ones with a dash.
+const descriptionFields = [
+  "identifier",
+  "type",
+  "publisher",
+  "health_data_holder",
+  "contact_points",
+  "language",
+  "geographical_coverage",
+  "temporal_coverage",
+  "provenance",
+  "generated_by",
+] as const satisfies readonly FieldKey[];
+
+const accessFields = [
+  "access_rights",
+  "has_personal_data",
+  "health_data_access_body",
+  "applicable_legislation",
+  "health_category",
+  "health_theme",
+  "coding_system",
+  "code_values",
+  "conforms_to",
+  "structured_data",
+  "number_of_records",
+  "number_of_unique_individuals",
+  "distributions",
+] as const satisfies readonly FieldKey[];
+
+/** Fields set as running text rather than short values. */
+const longFields: ReadonlySet<FieldKey> = new Set(["provenance"]);
 
 function ExternalLink({
   href,
@@ -89,203 +67,299 @@ function ExternalLink({
   );
 }
 
-function TermLink({ term }: { term: Term }) {
-  return <ExternalLink href={term.uri}>{term.label}</ExternalLink>;
+/** Quieter text after a value, e.g. a variable's data type. */
+function Meta({ children }: { children: ReactNode }) {
+  return <span className="font-normal text-ink-3">{children}</span>;
 }
 
-function List({ children }: { children: ReactNode[] }) {
+/** Terms as links, one after another on a line. */
+function Terms({ terms }: { terms: readonly Term[] | null | undefined }) {
+  if (!terms || terms.length === 0) return null;
   return (
-    <ul className="space-y-1">
-      {children.map((child, i) => (
-        <li key={i}>{child}</li>
+    <>
+      {terms.map((t, i) => (
+        <Fragment key={t.uri}>
+          {i > 0 ? ", " : ""}
+          <ExternalLink href={t.uri}>{t.label}</ExternalLink>
+        </Fragment>
       ))}
-    </ul>
+    </>
   );
 }
 
 function Contact({ contact }: { contact: ContactPoint }) {
   return (
     <>
-      {contact.name} (<a href={`mailto:${contact.email}`}>{contact.email}</a>)
+      {contact.name} ·{" "}
+      <a href={`mailto:${contact.email}`} className="link">
+        {contact.email}
+      </a>
     </>
   );
 }
 
-function Organisation({
-  org,
-  description,
-}: {
-  org: Organisation;
-  description?: string | null;
-}) {
+function OrganisationValue({ org }: { org: Organisation }) {
+  const description =
+    "description" in org && typeof org.description === "string"
+      ? org.description
+      : null;
   return (
-    <div className="space-y-1">
-      <p className="font-semibold">{org.name}</p>
-      {description ? <p>{description}</p> : null}
+    <>
+      {org.name}
+      {description ? (
+        <span className="block">
+          <Meta>{description}</Meta>
+        </span>
+      ) : null}
       {org.type ? (
-        <p>
-          {m.record.organisationType}: <TermLink term={org.type} />
-        </p>
+        <span className="block">
+          <Meta>
+            {r.organisationType}: <Terms terms={[org.type]} />
+          </Meta>
+        </span>
       ) : null}
       {org.contact_point ? (
-        <p>
-          {m.record.contact}: <Contact contact={org.contact_point} />
-        </p>
+        <span className="block">
+          <Meta>
+            {r.contact}: <Contact contact={org.contact_point} />
+          </Meta>
+        </span>
       ) : null}
-    </div>
+    </>
   );
 }
 
-function formatDate(iso: string | null | undefined, missing: string): string {
-  return iso ?? missing;
+function Lines({ children }: { children: ReactNode[] }) {
+  if (children.length === 0) return null;
+  return (
+    <>
+      {children.map((child, i) => (
+        <span key={i} className="block">
+          {child}
+        </span>
+      ))}
+    </>
+  );
 }
 
-function renderValue(def: FieldDef, metadata: DatasetMetadata): ReactNode {
-  switch (def.kind) {
-    case "langTexts": {
-      const texts = metadata[def.key as "title" | "description"] ?? [];
-      return (
-        <List>
-          {texts.map((t) => (
-            <span key={`${t.lang}-${t.text}`}>
-              {t.text} <span className="text-muted-foreground">({t.lang})</span>
-            </span>
-          ))}
-        </List>
-      );
+function hasValue(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim() !== "";
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+function fieldValue(key: FieldKey, metadata: DatasetMetadata): ReactNode {
+  switch (key) {
+    case "provenance":
+      return metadata.provenance;
+    case "structured_data":
+    case "has_personal_data": {
+      const value = metadata[key];
+      return value === null || value === undefined
+        ? null
+        : value
+          ? m.yes
+          : m.no;
     }
-    case "text":
-      return metadata[def.key as "provenance"];
-    case "turtle":
-      return (
-        <pre className="max-h-80 overflow-auto rounded-[18px] bg-code-bg p-4 font-mono text-xs font-normal whitespace-pre text-code-text">
-          {metadata.quantum_label}
-        </pre>
-      );
-    case "boolean":
-      return metadata[def.key as "structured_data"] ? m.yes : m.no;
-    case "number":
-      return metadata[def.key as "number_of_records"]?.toLocaleString("en");
-    case "accessRights": {
+    case "number_of_records":
+    case "number_of_unique_individuals":
+      return metadata[key]?.toLocaleString("en-GB");
+    case "access_rights": {
       const value = metadata.access_rights;
       return value ? m.accessRights[value] : null;
     }
-    case "terms": {
-      const terms = (metadata[def.key as "keyword"] ?? []) as unknown as Term[];
-      return (
-        <List>
-          {terms.map((t) => (
-            <TermLink key={t.uri} term={t} />
-          ))}
-        </List>
-      );
+    case "identifier":
+    case "code_values":
+      return hasValue(metadata[key]) ? (metadata[key] ?? []).join(", ") : null;
+    case "type":
+    case "language":
+    case "geographical_coverage":
+    case "generated_by":
+    case "applicable_legislation":
+    case "health_category":
+    case "health_theme":
+    case "coding_system":
+    case "conforms_to":
+      return hasValue(metadata[key]) ? <Terms terms={metadata[key]} /> : null;
+    case "publisher":
+    case "health_data_holder":
+    case "health_data_access_body": {
+      const org = metadata[key];
+      return org ? <OrganisationValue org={org} /> : null;
     }
-    case "strings": {
-      const items = metadata[def.key as "keyword"] ?? [];
-      return items.join(", ");
-    }
-    case "organisation": {
-      const org = metadata[def.key as "publisher"];
-      if (!org) return null;
-      return (
-        <Organisation
-          org={org}
-          description={"description" in org ? org.description : null}
-        />
-      );
-    }
-    case "contactPoints":
-      return (
-        <List>
+    case "contact_points":
+      return hasValue(metadata.contact_points) ? (
+        <Lines>
           {(metadata.contact_points ?? []).map((c) => (
             <Contact key={`${c.name}-${c.email}`} contact={c} />
           ))}
-        </List>
+        </Lines>
+      ) : null;
+    case "temporal_coverage": {
+      const t = metadata.temporal_coverage;
+      if (!t || (!t.start && !t.end)) return null;
+      return (
+        <span className="inline-flex flex-wrap items-center gap-3">
+          <span>{t.start ? formatIsoDate(t.start) : r.unknownStart}</span>
+          <Icon name="next" size="sm" label={r.to} className="text-blue" />
+          <span>{t.end ? formatIsoDate(t.end) : r.unknownEnd}</span>
+        </span>
       );
+    }
     case "distributions":
-      return (
-        <List>
+      return hasValue(metadata.distributions) ? (
+        <Lines>
           {(metadata.distributions ?? []).map((d) => (
-            <div key={d.access_url} className="space-y-1">
-              {d.title ? <p className="font-medium">{d.title}</p> : null}
-              {d.description ? <p>{d.description}</p> : null}
-              <p>
-                {m.record.accessUrl}:{" "}
-                <ExternalLink href={d.access_url}>{d.access_url}</ExternalLink>
-              </p>
+            <span key={d.access_url} className="block">
+              {d.title ?? d.access_url}
               {d.format ? (
-                <p>
-                  {m.record.format}: <TermLink term={d.format} />
-                </p>
-              ) : null}
-              <p>
-                {m.record.legislation}:{" "}
-                {d.applicable_legislation.map((t, i) => (
-                  <span key={t.uri}>
-                    {i > 0 ? ", " : ""}
-                    <TermLink term={t} />
-                  </span>
-                ))}
-              </p>
-            </div>
-          ))}
-        </List>
-      );
-    case "variables":
-      return (
-        <List>
-          {(metadata.variables ?? []).map((v) => (
-            <span key={v.name}>
-              <span className="font-medium">{v.name}</span> ({v.data_type}):{" "}
-              {v.definition}
-              {v.coding_system ? (
                 <>
                   {" "}
-                  <ExternalLink href={v.coding_system}>
-                    {v.coding_system}
-                  </ExternalLink>
+                  <Meta>
+                    (<Terms terms={[d.format]} />)
+                  </Meta>
                 </>
+              ) : null}
+              {d.description ? (
+                <span className="block">
+                  <Meta>{d.description}</Meta>
+                </span>
+              ) : null}
+              <span className="block">
+                <Meta>
+                  {r.accessUrl}:{" "}
+                  <ExternalLink href={d.access_url}>
+                    {d.access_url}
+                  </ExternalLink>
+                </Meta>
+              </span>
+              {d.applicable_legislation.length > 0 ? (
+                <span className="block">
+                  <Meta>
+                    {r.legislation}: <Terms terms={d.applicable_legislation} />
+                  </Meta>
+                </span>
               ) : null}
             </span>
           ))}
-        </List>
-      );
-    case "temporal": {
-      const t = metadata.temporal_coverage;
-      return t
-        ? `${formatDate(t.start, m.record.unknownStart)} – ${formatDate(t.end, m.record.unknownEnd)}`
-        : null;
-    }
+        </Lines>
+      ) : null;
+    default:
+      return null;
   }
 }
 
-/** Every filled-in field of a dataset, grouped and ordered like the form. */
+function Field({ k, metadata }: { k: FieldKey; metadata: DatasetMetadata }) {
+  return (
+    <DetailField
+      id={`record-${k}`}
+      label={fieldLabel(k)}
+      long={longFields.has(k)}
+    >
+      {fieldValue(k, metadata)}
+    </DetailField>
+  );
+}
+
+/** Title or description in every language, shown only when there is more than one. */
+function Translations({
+  k,
+  metadata,
+}: {
+  k: "title" | "description";
+  metadata: DatasetMetadata;
+}) {
+  const texts = metadata[k] ?? [];
+  if (texts.length < 2) return null;
+  return (
+    <DetailField id={`record-${k}`} label={fieldLabel(k)} long>
+      <Lines>
+        {texts.map((t) => (
+          <span key={`${t.lang}-${t.text}`}>
+            {t.text} <Meta>({t.lang})</Meta>
+          </span>
+        ))}
+      </Lines>
+    </DetailField>
+  );
+}
+
+/** Every field of a dataset, grouped for reading. */
 export function DatasetRecord({ metadata }: { metadata: DatasetMetadata }) {
+  const variables = metadata.variables ?? [];
+  const keywords = metadata.keyword ?? [];
   return (
     <>
-      {datasetSections.map((section) => {
-        const filled = section.fields
-          .filter((key) => isFilled(metadata[key]))
-          .map((key): FieldDef => ({ key, kind: fieldKinds[key] }));
-        if (filled.length === 0) return null;
-        return (
-          <DetailSection
-            key={section.id}
-            id={`record-${section.id}`}
-            title={section.title}
+      <DetailSection
+        id="record-section-description"
+        title={r.sections.description}
+      >
+        <Translations k="title" metadata={metadata} />
+        <Translations k="description" metadata={metadata} />
+        {descriptionFields.map((k) => (
+          <Field key={k} k={k} metadata={metadata} />
+        ))}
+      </DetailSection>
+
+      <DetailSection id="record-section-access" title={r.sections.access}>
+        {accessFields.map((k) => (
+          <Field key={k} k={k} metadata={metadata} />
+        ))}
+      </DetailSection>
+
+      {variables.length > 0 ? (
+        <DetailSection id="record-variables" title={r.sections.variables}>
+          {variables.map((v) => (
+            <DetailField key={v.name} label={v.name}>
+              {v.definition}{" "}
+              <Meta>
+                ({v.data_type}
+                {v.coding_system ? (
+                  <>
+                    ;{" "}
+                    <ExternalLink href={v.coding_system}>
+                      {v.coding_system}
+                    </ExternalLink>
+                  </>
+                ) : null}
+                )
+              </Meta>
+            </DetailField>
+          ))}
+        </DetailSection>
+      ) : null}
+
+      <DetailSection id="record-keyword" title={r.sections.keyword}>
+        <DetailField label={fieldLabel("keyword")} labelHidden>
+          {keywords.length > 0 ? (
+            <span
+              data-slot="keywords"
+              className="flex flex-wrap gap-3 text-[1rem]"
+            >
+              {keywords.map((k) => (
+                <KeywordPill key={k}>{k}</KeywordPill>
+              ))}
+            </span>
+          ) : null}
+        </DetailField>
+      </DetailSection>
+
+      {metadata.quantum_label ? (
+        <DetailSection id="record-section-quantum" title={r.sections.quantum}>
+          <DetailField
+            id="record-quantum_label"
+            label={fieldLabel("quantum_label")}
           >
-            {filled.map((def) => (
-              <DetailField
-                key={def.key}
-                id={`record-${def.key}`}
-                label={fieldLabel(def.key)}
-              >
-                {renderValue(def, metadata)}
-              </DetailField>
-            ))}
-          </DetailSection>
-        );
-      })}
+            <CodeBlock
+              text={metadata.quantum_label}
+              label={fieldLabel("quantum_label")}
+              formatLabel={r.turtleMediaType}
+              codeClassName="max-h-80"
+            />
+          </DetailField>
+        </DetailSection>
+      ) : null}
     </>
   );
 }

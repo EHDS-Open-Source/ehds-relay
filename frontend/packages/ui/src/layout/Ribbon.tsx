@@ -4,29 +4,22 @@ import { Icon } from "../icons";
 import { cn } from "../lib/utils";
 
 export interface RibbonProps {
-  /** Normal is the pale blue strip; overdue is brand yellow. */
+  /** Normal is the pale blue strip; overdue is brand yellow and bold. */
   tone?: "due" | "overdue";
-  /** The first line. */
-  children: ReactNode;
+  /** Words before the date, e.g. "Revalidation due"; regular weight on the normal strip. */
+  label?: ReactNode;
+  /** The date or other value that follows the label. */
+  children?: ReactNode;
   /** A second line, e.g. what to do about it. */
   detail?: ReactNode;
-  /** A button on the right. */
+  /** A small button on the right. */
   action?: ReactNode;
-}
-
-function RibbonIcon({ overdue }: { overdue: boolean }) {
-  return (
-    <Icon
-      name={overdue ? "calendarAlert" : "calendarTick"}
-      size="lg"
-      data-icon={overdue ? "calendar-alert" : "calendar-tick"}
-    />
-  );
 }
 
 /** A full-width strip under the header about when a record is next due for review. */
 export function Ribbon({
   tone = "due",
+  label,
   children,
   detail,
   action,
@@ -38,19 +31,40 @@ export function Ribbon({
       data-slot="ribbon"
       data-tone={tone}
       className={cn(
-        "min-h-14 w-full text-blue",
-        overdue ? "bg-yellow" : "bg-blue-tint-95",
+        "w-full text-blue",
+        overdue ? "bg-yellow font-bold" : "bg-blue-tint-95 font-semibold",
       )}
     >
-      <div className="mx-auto flex w-[96%] flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3 md:px-10">
-        <RibbonIcon overdue={overdue} />
-        <div className="min-w-0 flex-1">
-          <p className={cn(overdue && "font-bold")}>{children}</p>
-          {detail ? (
-            <p className="text-[0.9em] font-medium text-ink">{detail}</p>
+      {/* Lined up with the header content: same 96% frame and side padding. */}
+      <div className="mx-auto flex min-h-14 w-[96%] flex-wrap items-center gap-3 px-5 py-3 leading-[1.3] md:flex-nowrap md:px-10">
+        <Icon
+          name={overdue ? "calendarAlert" : "calendarTick"}
+          size="lg"
+          data-icon={overdue ? "calendar-alert" : "calendar-tick"}
+        />
+        <p className="min-w-0 flex-1">
+          {label ? (
+            <span
+              data-slot="ribbon-label"
+              className={cn("mr-[0.3em]", !overdue && "font-normal")}
+            >
+              {label}
+            </span>
           ) : null}
-        </div>
-        {action}
+          {children}
+          {detail ? (
+            <span
+              data-slot="ribbon-help"
+              className="mt-0.5 block text-[0.9em] font-medium text-ink"
+            >
+              {detail}
+            </span>
+          ) : null}
+        </p>
+        {action ? (
+          // Phones: on its own line, lined up with the text after the icon.
+          <div className="shrink-0 max-md:w-full max-md:pl-9">{action}</div>
+        ) : null}
       </div>
     </div>
   );
