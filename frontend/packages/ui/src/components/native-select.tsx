@@ -1,14 +1,17 @@
 import * as React from "react";
 import { cn } from "@ehds-relay/ui/lib/utils";
 
+import { useFieldDescribedBy } from "../form/Field";
 import type { FieldTone } from "./input";
 
 /** A plain browser `<select>` with the same look as `Input`, and our chevron. Pass `<option>` children. */
 function NativeSelect({
   className,
   tone = "onWhite",
+  "aria-describedby": describedBy,
   ...props
 }: React.ComponentProps<"select"> & { tone?: FieldTone }) {
+  const ariaDescribedBy = useFieldDescribedBy(describedBy);
   return (
     <select
       data-slot="native-select"
@@ -21,6 +24,7 @@ function NativeSelect({
         className,
       )}
       {...props}
+      aria-describedby={ariaDescribedBy}
     />
   );
 }

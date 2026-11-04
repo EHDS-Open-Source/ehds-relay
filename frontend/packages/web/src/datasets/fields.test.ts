@@ -23,11 +23,11 @@ describe("dataset fields", () => {
     expect(fieldKeys).toHaveLength(28);
     expect(datasetSections.map((s) => s.title)).toEqual([
       "Main",
-      "Access and Governance",
+      "Access and governance",
       "Coverage and content",
       "Organisations",
       "Technical and contact information",
-      "QUANTUM DQ&U Label",
+      "QUANTUM DQ&U label",
     ]);
     expect(sectionOf("publisher")).toBe("organisations");
   });

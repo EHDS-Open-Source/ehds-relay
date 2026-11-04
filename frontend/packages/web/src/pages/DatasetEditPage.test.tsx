@@ -22,7 +22,10 @@ const edit = `${record}/edit`;
 
 async function choose(action: string) {
   await userEvent.click(
-    await screen.findByRole("button", { name: form.actions.saveMenu }),
+    // Just after a save the button reads "Saved" for a moment
+    await screen.findByRole("button", {
+      name: new RegExp(`^(${form.actions.saveMenu}|${form.actions.saved})$`),
+    }),
   );
   await userEvent.click(await screen.findByRole("menuitem", { name: action }));
 }

@@ -1,6 +1,8 @@
 import * as React from "react";
 import { cn } from "@ehds-relay/ui/lib/utils";
 
+import { useFieldDescribedBy } from "../form/Field";
+
 export type FieldTone = "onWhite" | "onBlue";
 
 /** Boxed field on white; `tone="onBlue"` gives the underline field used on blue surfaces. */
@@ -8,8 +10,10 @@ function Input({
   className,
   type,
   tone = "onWhite",
+  "aria-describedby": describedBy,
   ...props
 }: React.ComponentProps<"input"> & { tone?: FieldTone }) {
+  const ariaDescribedBy = useFieldDescribedBy(describedBy);
   return (
     <input
       type={type}
@@ -23,6 +27,7 @@ function Input({
         className,
       )}
       {...props}
+      aria-describedby={ariaDescribedBy}
     />
   );
 }

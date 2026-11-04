@@ -1,7 +1,14 @@
 import * as React from "react";
 import { cn } from "@ehds-relay/ui/lib/utils";
 
-function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+import { useFieldDescribedBy } from "../form/Field";
+
+function Textarea({
+  className,
+  "aria-describedby": describedBy,
+  ...props
+}: React.ComponentProps<"textarea">) {
+  const ariaDescribedBy = useFieldDescribedBy(describedBy);
   return (
     <textarea
       data-slot="textarea"
@@ -11,6 +18,7 @@ function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
         className,
       )}
       {...props}
+      aria-describedby={ariaDescribedBy}
     />
   );
 }

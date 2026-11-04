@@ -21,10 +21,14 @@ export { Label } from "./components/label";
 export { Textarea } from "./components/textarea";
 export {
   Field,
+  FieldHint,
   fieldErrorId,
   fieldHintId,
+  joinIds,
+  useFieldDescribedBy,
   type FieldProps,
 } from "./form/Field";
+export { SaveButton, type SaveButtonProps } from "./form/SaveButton";
 export { Checkbox, type CheckboxProps } from "./form/Checkbox";
 export { Toggle, type ToggleProps } from "./form/Toggle";
 export {
@@ -36,7 +40,7 @@ export {
   RepeatableList,
   type RepeatableListProps,
 } from "./form/RepeatableList";
-export { TagInput, type TagInputProps } from "./form/TagInput";
+export { TagInput, type TagInputProps, type TagNoun } from "./form/TagInput";
 export { AppHeader, type AppHeaderProps } from "./layout/AppHeader";
 export { BrandCard, type BrandCardProps } from "./layout/BrandCard";
 export { AppShell, type AppShellProps } from "./layout/AppShell";
@@ -47,6 +51,7 @@ export { PageHeader, type PageHeaderProps } from "./layout/PageHeader";
 export {
   SectionNav,
   jumpTo,
+  useActiveSection,
   type SectionNavItem,
   type SectionNavProps,
 } from "./layout/SectionNav";

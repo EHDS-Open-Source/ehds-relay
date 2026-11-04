@@ -58,8 +58,17 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
     event.preventDefault();
     const trimmed = email.trim();
     invite.reset();
-    if (trimmed === "") return setEmailError(text.emailRequired);
-    if (!looksLikeEmail(trimmed)) return setEmailError(text.emailInvalid);
+    const problem =
+      trimmed === ""
+        ? text.emailRequired
+        : !looksLikeEmail(trimmed)
+          ? text.emailInvalid
+          : undefined;
+    if (problem) {
+      setEmailError(problem);
+      document.getElementById("invite-email")?.focus();
+      return;
+    }
     setEmailError(undefined);
     invite.mutate(
       { email: trimmed, role },

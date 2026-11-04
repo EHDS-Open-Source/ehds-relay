@@ -5,7 +5,7 @@ import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel } from "../fields";
 import { emptyContactPoint, type DatasetFormValues } from "../formValues";
 import { GroupPanel, TextInput } from "./common";
-import { type FormPath } from "./formState";
+import { useGroupState, type FormPath } from "./formState";
 
 const text = shellMessages.datasetForm;
 
@@ -35,10 +35,19 @@ export function ContactPointsField() {
     name: "contact_points",
   });
   const label = fieldLabel("contact_points");
+  const { invalid, error, errorId } = useGroupState("contact_points");
   return (
-    <Field label={label} anchorId={fieldAnchorId("contact_points")} required>
+    <Field
+      label={label}
+      anchorId={fieldAnchorId("contact_points")}
+      required
+      invalid={invalid}
+      describedBy={error ? errorId : undefined}
+    >
       <RepeatableList
         items={fields}
+        error={error}
+        errorId={errorId}
         addLabel={text.addContactPoint}
         removeLabel={(i) => `${text.remove} ${label} ${i + 1}`}
         onAdd={() => append(emptyContactPoint())}

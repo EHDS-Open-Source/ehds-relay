@@ -3,6 +3,7 @@ import { Field } from "@ehds-relay/ui";
 import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel } from "../fields";
 import { GroupPanel, TextInput } from "./common";
+import { useHasErrorUnder } from "./formState";
 import { ContactPointInputs } from "./ContactPoint";
 import { TermPair } from "./TermList";
 
@@ -14,8 +15,15 @@ export function OrganisationField({
 }: {
   name: "health_data_access_body" | "health_data_holder" | "publisher";
 }) {
+  const invalid = useHasErrorUnder(name);
+  const contactInvalid = useHasErrorUnder(`${name}.contact_point`);
   return (
-    <Field label={fieldLabel(name)} anchorId={fieldAnchorId(name)} required>
+    <Field
+      label={fieldLabel(name)}
+      anchorId={fieldAnchorId(name)}
+      required
+      invalid={invalid}
+    >
       <GroupPanel className="flex flex-col gap-4">
         <TextInput path={`${name}.name`} label={text.organisation.name} />
         <Field label={text.organisation.type}>
@@ -32,6 +40,7 @@ export function OrganisationField({
           label={text.organisation.contactPoint}
           anchorId={fieldAnchorId(`${name}.contact_point`)}
           required
+          invalid={contactInvalid}
         >
           <ContactPointInputs path={`${name}.contact_point`} />
         </Field>

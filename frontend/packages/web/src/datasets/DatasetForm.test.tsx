@@ -54,8 +54,11 @@ async function openEdit(id: string, search = "") {
 }
 
 async function choose(action: string) {
+  // Just after a save the button reads "Saved" for a moment
   await userEvent.click(
-    screen.getByRole("button", { name: text.actions.saveMenu }),
+    screen.getByRole("button", {
+      name: new RegExp(`^(${text.actions.saveMenu}|${text.actions.saved})$`),
+    }),
   );
   await userEvent.click(await screen.findByRole("menuitem", { name: action }));
 }
@@ -120,12 +123,12 @@ describe("new dataset form", () => {
       "From records",
     );
     await choose(text.actions.saveDraft);
-    expect(
-      await screen.findByText(text.status.titleRequired, {
-        selector: "[role=status]",
-      }),
-    ).toBeVisible();
-    expect(titleBox()).toHaveFocus();
+    // The form's status line says it, and so does the title field
+    const status = await screen.findByText(text.status.titleRequired, {
+      selector: "[role=status] *",
+    });
+    expect(status).toBeVisible();
+    await waitFor(() => expect(titleBox()).toHaveFocus());
     expect(server.saves()).toHaveLength(0);
   });
 
@@ -213,7 +216,7 @@ describe("new dataset form", () => {
     const keywords = field("keyword").getByRole("textbox");
     await userEvent.type(keywords, "oncology{Enter}registry{Enter}");
     await userEvent.click(
-      field("keyword").getByRole("button", { name: "Remove registry" }),
+      field("keyword").getByRole("button", { name: "Remove keyword registry" }),
     );
     await userEvent.type(
       field("identifier").getByRole("textbox"),
@@ -428,6 +431,10 @@ describe("editing a dataset", () => {
     await openEdit(dataset.id);
     await choose(text.actions.saveDraft);
     expect(await screen.findByText(text.status.savedDraft)).toBeVisible();
+    // The save button confirms in the success colours for a moment
+    expect(
+      screen.getByRole("button", { name: text.actions.saved }),
+    ).toHaveAttribute("data-saved", "true");
     expect(server.saves()[0]?.body).toMatchObject({
       publish: false,
       version: 1,
@@ -489,6 +496,6 @@ describe("editing a dataset", () => {
     expect(await screen.findByText(text.status.fixErrors)).toBeVisible();
     expect(
       field("quantum_label").getByRole("textbox"),
-    ).toHaveAccessibleDescription(text.invalid);
+    ).toHaveAccessibleDescription(expect.stringContaining(text.invalid));
   });
 });
