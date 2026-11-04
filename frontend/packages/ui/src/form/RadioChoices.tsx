@@ -55,7 +55,7 @@ export function RadioChoices({
             <label
               htmlFor={id}
               className={cn(
-                "text-[0.95em]",
+                "text-[0.95em] peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
                 tone === "onBlue" ? "text-white" : "text-foreground",
               )}
             >

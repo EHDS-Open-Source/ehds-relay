@@ -48,7 +48,7 @@ export function Checkbox({
       <label
         htmlFor={id}
         className={cn(
-          "text-[0.95em] font-medium",
+          "text-[0.95em] font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
           onBlue ? "text-white" : "text-foreground",
         )}
       >

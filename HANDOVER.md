@@ -15,3 +15,9 @@ Notes for later work:
 - `SectionNav` no longer uses `menuItemClass`, so it is independent of the shell restyle.
 - Guessed: the on-blue look of `TagInput` and `NativeSelect` is not done (nothing needs it yet).
 - Guessed: the required star reuses the star icon at 12px.
+
+Follow-up fixes after testing:
+- The required star on white uses the olive `required` token (`text-required`); yellow only on blue.
+- Remove buttons in `RepeatableList` use the cross icon.
+- Field hints use the grey ink token for readable contrast; the "i" icon stays.
+- Disabled radios and checkboxes dim their label too; disabled controls on blue are faded with a not-allowed cursor.

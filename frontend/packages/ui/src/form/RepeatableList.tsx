@@ -42,7 +42,7 @@ export function RepeatableList<T extends { id: string }>({
                   aria-label={removeLabel(index)}
                   onClick={() => onRemove(index)}
                 >
-                  <Icon name="remove" size="sm" />
+                  <Icon name="close" size="sm" />
                 </Button>
               ) : null}
             </li>

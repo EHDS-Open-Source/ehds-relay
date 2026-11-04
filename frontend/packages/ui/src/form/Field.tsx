@@ -59,7 +59,7 @@ function RequiredMark({
               : "text-destructive"
             : onBlue
               ? "text-yellow"
-              : "text-[color:var(--required)]",
+              : "text-required",
         )}
       >
         <Icon
@@ -103,7 +103,7 @@ export function Field({
           id={hintId}
           className={cn(
             "flex items-start gap-2 text-[0.88em] leading-snug font-medium",
-            onBlue ? "text-white" : "text-blue-hint",
+            onBlue ? "text-white" : "text-ink-3",
           )}
         >
           <Icon
