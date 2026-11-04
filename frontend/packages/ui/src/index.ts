@@ -68,7 +68,7 @@ export { DetailField, type DetailFieldProps } from "./detail/DetailField";
 export { DetailPill, type DetailPillProps } from "./detail/DetailPill";
 export { DetailSection, type DetailSectionProps } from "./detail/DetailSection";
 export { StatusBadge, type StatusBadgeProps } from "./detail/StatusBadge";
-export { cn } from "./lib/utils";
+export { cn, scrollBehavior } from "./lib/utils";
 export { messages } from "./messages";
 export { CardGrid } from "./patterns/CardGrid";
 export { DatasetCard, type DatasetCardProps } from "./patterns/DatasetCard";
