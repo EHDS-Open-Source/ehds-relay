@@ -45,20 +45,41 @@ function AlertDialogOverlay({
 function AlertDialogContent({
   className,
   size = "default",
+  onOverlayClick,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
   size?: "default" | "sm";
+  /** Called when the scrim around the dialog is clicked, e.g. to cancel. */
+  onOverlayClick?: () => void;
 }) {
+  // The element that had focus when the dialog opened (usually the button that opened it).
+  // Focus goes back to it on close, as the dialog is often opened without a Trigger.
+  const opener = React.useRef<HTMLElement | null>(null);
   return (
     <AlertDialogPortal>
-      <AlertDialogOverlay />
+      <AlertDialogOverlay onClick={onOverlayClick} />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          "group/alert-dialog-content fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-modal bg-background p-8 shadow-overlay duration-(--motion-enter) ease-(--ease-out) data-[size=sm]:max-w-xs data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-reduce:animate-none data-[size=default]:max-w-[min(500px,calc(100%-2rem))]",
+          "group/alert-dialog-content fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100%-2rem)] w-full max-w-[calc(100%-40px)] translate-x-[-50%] translate-y-[-50%] gap-6 overflow-y-auto rounded-modal border-0 bg-background p-8 text-ink shadow-overlay duration-(--motion-enter) ease-(--ease-out) data-[size=sm]:max-w-xs data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-reduce:animate-none data-[size=default]:max-w-[min(500px,calc(100%-40px))]",
           className,
         )}
+        onOpenAutoFocus={(event) => {
+          const active = document.activeElement;
+          opener.current = active instanceof HTMLElement ? active : null;
+          onOpenAutoFocus?.(event);
+        }}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          if (event.defaultPrevented) return;
+          event.preventDefault();
+          const target = opener.current;
+          opener.current = null;
+          if (target?.isConnected) target.focus();
+        }}
         {...props}
       />
     </AlertDialogPortal>
@@ -72,10 +93,7 @@ function AlertDialogHeader({
   return (
     <div
       data-slot="alert-dialog-header"
-      className={cn(
-        "grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-6 sm:group-data-[size=default]/alert-dialog-content:place-items-start sm:group-data-[size=default]/alert-dialog-content:text-left sm:group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]",
-        className,
-      )}
+      className={cn("flex flex-col gap-3 text-left", className)}
       {...props}
     />
   );
@@ -89,7 +107,7 @@ function AlertDialogFooter({
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end max-sm:*:w-full",
+        "flex flex-wrap justify-end gap-3 max-[480px]:flex-col-reverse max-[480px]:*:w-full",
         className,
       )}
       {...props}
@@ -105,7 +123,7 @@ function AlertDialogTitle({
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
       className={cn(
-        "flex items-center gap-3 text-[1.35em] font-bold text-blue sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2",
+        "flex items-center gap-3 text-[1.3em] leading-[1.3] font-bold text-blue",
         className,
       )}
       {...props}
@@ -120,7 +138,7 @@ function AlertDialogDescription({
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-[1em] leading-[1.6] text-ink", className)}
       {...props}
     />
   );

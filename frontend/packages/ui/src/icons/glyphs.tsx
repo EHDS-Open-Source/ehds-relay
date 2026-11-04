@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 // currentColor and fitted to a 24 x 24 box by its longest side (the transform on each group
 // holds the original size), so wide icons (arrows) and tall ones (pin, calendar) line up.
 // Cut-outs are real holes (even-odd fill), so they show whatever sits behind the icon.
-// Keep this the only module that holds icon artwork. `more` is the one drawn stand-in: the
-// supplied set has no overflow-dots icon.
+// Keep this the only module that holds icon artwork. `more` and `bin` are drawn stand-ins in the
+// same solid style: the supplied set has no overflow-dots or delete icon.
 
 export const glyphs = {
   star: (
@@ -303,6 +303,15 @@ export const glyphs = {
   eraser: (
     <g fill="currentColor" transform="translate(0 0.857) scale(0.857)">
       <path d="M16.2 1.6a2.6 2.6 0 0 1 3.7 0l6.5 6.5a2.6 2.6 0 0 1 0 3.7L15 23.2h8.4a1.4 1.4 0 0 1 0 2.8H9.6a2.6 2.6 0 0 1-1.8-.8l-6.2-6.2a2.6 2.6 0 0 1 0-3.7L16.2 1.6zM6.3 13.6l-2.8 2.8 5.9 5.9h1.9l3.9-3.9-8.9-4.8z" />
+    </g>
+  ),
+  bin: (
+    <g fill="currentColor">
+      <path d="M9.5 1h5A1.5 1.5 0 0 1 16 2.5v1h4.75a1.25 1.25 0 0 1 0 2.5H3.25a1.25 1.25 0 0 1 0-2.5H8v-1A1.5 1.5 0 0 1 9.5 1z" />
+      <path
+        d="M4.5 7.5h15l-1.05 13.2A2.5 2.5 0 0 1 15.95 23h-7.9a2.5 2.5 0 0 1-2.5-2.3L4.5 7.5zM9.5 10.5a1 1 0 0 0-1 1V19a1 1 0 0 0 2 0v-7.5a1 1 0 0 0-1-1zM14.5 10.5a1 1 0 0 0-1 1V19a1 1 0 0 0 2 0v-7.5a1 1 0 0 0-1-1z"
+        fillRule="evenodd"
+      />
     </g>
   ),
   lock: (
