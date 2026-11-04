@@ -7,7 +7,7 @@
 /* Scan the shared ui package too, or its components render unstyled. */
 @source "../../ui/src";
 
-/* Placeholder ring of stars behind the sign-in screens: turns once every 140 seconds,
+/* The ring of stars behind the sign-in screens: turns once every 140 seconds,
    and stays still when the person prefers reduced motion. */
 @keyframes star-ring-turn {
   to {

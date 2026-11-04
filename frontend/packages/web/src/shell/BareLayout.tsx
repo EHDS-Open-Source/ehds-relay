@@ -1,42 +1,21 @@
-import { BrandCard, Icon, STAR_PALETTE } from "@ehds-relay/ui";
+import { BrandCard } from "@ehds-relay/ui";
 import type { ReactNode } from "react";
 
 import { Logo } from "./Logo";
 
-const RING_STARS = 16;
-
 /**
- * Stand-in for the ring of stars: fixed to the window centre, about 88% of the window
- * width (at least 1100px). Swap in the supplied artwork here.
+ * The ring of stars: fixed to the window centre, about 88% of the window width (at least
+ * 1100px). The artwork is neutral yellow at varying strength, not the dataset star palette.
  */
 function StarRing() {
   return (
-    <div
+    <img
+      src="/stars.svg"
+      alt=""
       aria-hidden="true"
       data-slot="star-ring"
-      className="star-ring pointer-events-none fixed top-1/2 left-1/2 aspect-square w-[max(88vw,1100px)] -translate-x-1/2 -translate-y-1/2"
-    >
-      {Array.from({ length: RING_STARS }, (_, index) => {
-        const angle = (2 * Math.PI * index) / RING_STARS;
-        return (
-          <span
-            key={index}
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: `${String(50 + 46 * Math.sin(angle))}%`,
-              top: `${String(50 - 46 * Math.cos(angle))}%`,
-              color: STAR_PALETTE[index % STAR_PALETTE.length],
-            }}
-          >
-            <Icon
-              name="star"
-              className="size-12"
-              style={{ width: 48, height: 48 }}
-            />
-          </span>
-        );
-      })}
-    </div>
+      className="star-ring pointer-events-none fixed top-1/2 left-1/2 aspect-[2266/2165] w-[max(88vw,1100px)] max-w-none -translate-x-1/2 -translate-y-1/2"
+    />
   );
 }
 
