@@ -31,6 +31,12 @@ describe("RepeatableList", () => {
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
   });
 
+  it("removes with a cross icon, not a person glyph", () => {
+    render(<Harness />);
+    const button = screen.getByRole("button", { name: "Remove 1" });
+    expect(button.querySelector('[data-icon="close"]')).not.toBeNull();
+  });
+
   it("keeps the minimum number of rows", () => {
     render(<Harness minItems={1} />);
     expect(
