@@ -4,7 +4,7 @@ import { useFieldArray, useFormContext } from "react-hook-form";
 import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel } from "../fields";
 import type { DatasetFormValues } from "../formValues";
-import { TextInput } from "./common";
+import { GroupPanel, TextInput } from "./common";
 
 const text = shellMessages.datasetForm;
 
@@ -14,7 +14,7 @@ export function LangTextField({ name }: { name: "title" | "description" }) {
   const { fields, append, remove } = useFieldArray({ control, name });
   const label = fieldLabel(name);
   return (
-    <Field label={label} anchorId={fieldAnchorId(name)}>
+    <Field label={label} anchorId={fieldAnchorId(name)} required>
       <RepeatableList
         items={fields}
         minItems={1}
@@ -23,7 +23,7 @@ export function LangTextField({ name }: { name: "title" | "description" }) {
         onAdd={() => append({ lang: "", text: "" })}
         onRemove={remove}
         renderItem={(_, index) => (
-          <div className="grid gap-3 sm:grid-cols-[8rem_1fr]">
+          <GroupPanel className="grid gap-4 sm:grid-cols-[8rem_1fr]">
             <TextInput
               path={`${name}.${index}.lang`}
               label={text.langText.lang}
@@ -34,7 +34,7 @@ export function LangTextField({ name }: { name: "title" | "description" }) {
               label={index === 0 ? label : `${label} ${index + 1}`}
               multiline={name === "description"}
             />
-          </div>
+          </GroupPanel>
         )}
       />
     </Field>

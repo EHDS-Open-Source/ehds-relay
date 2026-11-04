@@ -2,7 +2,7 @@ import { Field } from "@ehds-relay/ui";
 
 import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel } from "../fields";
-import { TextInput } from "./common";
+import { GroupPanel, TextInput } from "./common";
 import { ContactPointInputs } from "./ContactPoint";
 import { TermPair } from "./TermList";
 
@@ -15,8 +15,8 @@ export function OrganisationField({
   name: "health_data_access_body" | "health_data_holder" | "publisher";
 }) {
   return (
-    <Field label={fieldLabel(name)} anchorId={fieldAnchorId(name)}>
-      <div className="flex flex-col gap-4">
+    <Field label={fieldLabel(name)} anchorId={fieldAnchorId(name)} required>
+      <GroupPanel className="flex flex-col gap-4">
         <TextInput path={`${name}.name`} label={text.organisation.name} />
         <Field label={text.organisation.type}>
           <TermPair path={`${name}.type`} />
@@ -31,10 +31,11 @@ export function OrganisationField({
         <Field
           label={text.organisation.contactPoint}
           anchorId={fieldAnchorId(`${name}.contact_point`)}
+          required
         >
           <ContactPointInputs path={`${name}.contact_point`} />
         </Field>
-      </div>
+      </GroupPanel>
     </Field>
   );
 }

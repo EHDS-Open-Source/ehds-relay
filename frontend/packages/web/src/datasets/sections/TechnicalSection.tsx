@@ -11,8 +11,8 @@ export function TechnicalSection() {
       title={shellMessages.datasetForm.sections.technical}
     >
       <ContactPointsField />
-      <TagField name="identifier" />
-      <TermListField name="generated_by" />
+      <TagField name="identifier" required />
+      <TermListField name="generated_by" required />
     </FormSection>
   );
 }

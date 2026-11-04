@@ -5,6 +5,7 @@ import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel } from "../fields";
 import { emptyVariable, type DatasetFormValues } from "../formValues";
 import { TextInput } from "./common";
+import { panelClass } from "./formState";
 
 const text = shellMessages.datasetForm;
 
@@ -17,7 +18,7 @@ export function VariablesField() {
   });
   const label = fieldLabel("variables");
   return (
-    <Field label={label} anchorId={fieldAnchorId("variables")}>
+    <Field label={label} anchorId={fieldAnchorId("variables")} required>
       <RepeatableList
         items={fields}
         addLabel={text.addVariable}
@@ -29,9 +30,9 @@ export function VariablesField() {
           return (
             <Field
               label={`${text.variable.item} ${index + 1}`}
-              className="rounded-2xl border p-4"
+              className={panelClass}
             >
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <TextInput path={`${path}.name`} label={text.variable.name} />
                 <TextInput
                   path={`${path}.data_type`}
