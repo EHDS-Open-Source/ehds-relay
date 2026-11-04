@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Button } from "../components/button";
+import { Icon } from "../icons";
 import { messages } from "../messages";
 
 export interface RepeatableListProps<T extends { id: string }> {
@@ -36,12 +37,12 @@ export function RepeatableList<T extends { id: string }>({
               {items.length > minItems ? (
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="sm"
+                  variant="secondary"
+                  size="icon-sm"
                   aria-label={removeLabel(index)}
                   onClick={() => onRemove(index)}
                 >
-                  {messages.repeatableList.remove}
+                  <Icon name="remove" size="sm" />
                 </Button>
               ) : null}
             </li>
@@ -49,7 +50,8 @@ export function RepeatableList<T extends { id: string }>({
         </ol>
       ) : null}
       <div>
-        <Button type="button" variant="outline" size="sm" onClick={onAdd}>
+        <Button type="button" variant="secondary" size="sm" onClick={onAdd}>
+          <Icon name="plus" size="sm" />
           {addLabel}
         </Button>
       </div>

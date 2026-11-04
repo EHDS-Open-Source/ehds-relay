@@ -1,6 +1,6 @@
 import { useState, type KeyboardEvent } from "react";
 
-import { Input } from "../components/input";
+import { Icon } from "../icons";
 import { messages } from "../messages";
 
 export interface TagInputProps {
@@ -48,33 +48,39 @@ export function TagInput({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      {value.length ? (
-        <ul className="flex flex-wrap gap-2">
-          {value.map((tag, index) => (
-            <li
-              key={tag}
-              className="inline-flex items-center gap-1 rounded-full bg-accent py-1 pr-1 pl-3 text-sm text-accent-foreground"
-            >
-              {tag}
-              <button
-                type="button"
-                className="rounded-full px-1.5 leading-none hover:bg-background/60"
-                aria-label={`${removeLabel} ${tag}`}
-                onClick={() => onChange(value.filter((_, i) => i !== index))}
-              >
-                ×
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <Input
+    // One box holds the tags and the typing area; clicking anywhere in it focuses the input.
+    <div
+      data-slot="tag-input"
+      aria-invalid={invalid || undefined}
+      className="flex min-h-[52px] cursor-text flex-wrap items-center gap-2 rounded-xl border-2 border-input bg-white p-2 transition-colors duration-150 focus-within:border-blue aria-invalid:border-destructive"
+      onClick={(event) => {
+        if (event.target === event.currentTarget)
+          document.getElementById(id)?.focus();
+      }}
+    >
+      {value.map((tag, index) => (
+        <span
+          key={tag}
+          className="inline-flex h-8 items-center gap-1 rounded-full bg-blue-tint-90 pr-1 pl-3 text-[0.9em] font-semibold text-blue"
+        >
+          {tag}
+          <button
+            type="button"
+            className="inline-flex size-6 items-center justify-center rounded-full hover:bg-blue-tint-80"
+            aria-label={`${removeLabel} ${tag}`}
+            onClick={() => onChange(value.filter((_, i) => i !== index))}
+          >
+            <Icon name="close" size="xs" />
+          </button>
+        </span>
+      ))}
+      <input
         id={id}
         value={draft}
         placeholder={placeholder}
         aria-invalid={invalid || undefined}
         aria-describedby={describedBy}
+        className="min-w-[8rem] flex-1 bg-transparent px-2 py-1 text-base text-foreground outline-none placeholder:text-muted-foreground"
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={onKeyDown}
         onBlur={() => {

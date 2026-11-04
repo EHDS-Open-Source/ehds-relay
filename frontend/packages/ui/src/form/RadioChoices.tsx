@@ -1,6 +1,8 @@
 import type { ComponentProps } from "react";
 
+import type { FieldTone } from "../components/input";
 import { cn } from "../lib/utils";
+import { radioClass } from "./controlStyles";
 
 export interface RadioChoice {
   value: string;
@@ -17,6 +19,7 @@ export interface RadioChoicesProps extends Omit<
   idPrefix: string;
   name: string;
   choices: readonly RadioChoice[];
+  tone?: FieldTone;
   className?: string;
 }
 
@@ -28,6 +31,7 @@ export function RadioChoices({
   idPrefix,
   name,
   choices,
+  tone = "onWhite",
   className,
   ...inputProps
 }: RadioChoicesProps) {
@@ -36,7 +40,7 @@ export function RadioChoices({
       {choices.map((choice) => {
         const id = `${idPrefix}-${choice.value}`;
         return (
-          <div key={choice.value} className="flex items-start gap-2">
+          <div key={choice.value} className="flex items-start gap-3">
             <input
               {...inputProps}
               type="radio"
@@ -46,14 +50,25 @@ export function RadioChoices({
               aria-describedby={
                 choice.description ? `${id}-description` : undefined
               }
-              className="mt-0.5 size-4 accent-primary"
+              className={radioClass(tone === "onBlue")}
             />
-            <label htmlFor={id} className="text-sm">
+            <label
+              htmlFor={id}
+              className={cn(
+                "text-[0.95em]",
+                tone === "onBlue" ? "text-white" : "text-foreground",
+              )}
+            >
               <span className="font-medium">{choice.label}</span>
               {choice.description ? (
                 <span
                   id={`${id}-description`}
-                  className="block text-muted-foreground"
+                  className={cn(
+                    "block text-[0.88em]",
+                    tone === "onBlue"
+                      ? "text-white/80"
+                      : "text-muted-foreground",
+                  )}
                 >
                   {choice.description}
                 </span>

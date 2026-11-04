@@ -28,4 +28,24 @@ describe("SectionNav", () => {
     await userEvent.click(screen.getByRole("link", { name: "Access" }));
     expect(document.getElementById("access")).toHaveFocus();
   });
+
+  it("marks the active section with aria-current", () => {
+    render(
+      <SectionNav
+        label="Sections"
+        activeId="access"
+        sections={[
+          { id: "main", label: "Main" },
+          { id: "access", label: "Access" },
+        ]}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "Access" })).toHaveAttribute(
+      "aria-current",
+      "location",
+    );
+    expect(screen.getByRole("link", { name: "Main" })).not.toHaveAttribute(
+      "aria-current",
+    );
+  });
 });
