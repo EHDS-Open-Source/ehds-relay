@@ -1,6 +1,11 @@
-import { SectionNav } from "@ehds-relay/ui";
+import { SectionNav, cn } from "@ehds-relay/ui";
 import { useState } from "react";
-import { FormProvider, useForm, type Resolver } from "react-hook-form";
+import {
+  FormProvider,
+  useForm,
+  useWatch,
+  type Resolver,
+} from "react-hook-form";
 
 import { shellMessages } from "../shell/messages";
 import { datasetSections, fieldKeys, sectionAnchorId } from "./fields";
@@ -154,11 +159,19 @@ export function DatasetForm({
     setFeedback(undefined);
   }
 
+  function isEmpty(): boolean {
+    return JSON.stringify(form.getValues()) === JSON.stringify(fromMetadata());
+  }
+
+  const datasetTitle = useWatch({ control: form.control, name: "title" })
+    ?.find((t) => t.text.trim())
+    ?.text.trim();
   const busy = feedback?.type === "saving";
   return (
     <FormProvider {...form}>
-      <div className="grid gap-8 lg:grid-cols-[14rem_minmax(0,1fr)]">
-        <aside>
+      <div className="flex flex-col md:flex-row">
+        {/* Contents on phones, so the menu strip sticks to the top of the whole form */}
+        <aside className="contents md:block md:w-[260px] md:shrink-0">
           <SectionNav
             label={text.sectionNavLabel}
             sections={datasetSections.map((s) => ({
@@ -170,12 +183,24 @@ export function DatasetForm({
         <form
           noValidate
           aria-label={text.formLabel}
-          className="flex min-w-0 flex-col gap-8"
+          className="flex min-w-0 flex-1 flex-col gap-12 py-6 md:px-16 md:py-14"
           onSubmit={(event) => event.preventDefault()}
         >
           <div className="flex flex-col gap-4">
-            <SaveMenu busy={busy} onSave={onSave} onClear={onClear} />
-            <p role="status" className="min-h-5 text-sm">
+            <SaveMenu
+              busy={busy}
+              onSave={onSave}
+              onClear={onClear}
+              isEmpty={isEmpty}
+              datasetTitle={datasetTitle}
+            />
+            <p
+              role="status"
+              className={cn(
+                "min-h-5 text-[0.95em] font-semibold",
+                feedback?.type === "error" ? "text-destructive" : "text-ink",
+              )}
+            >
               {feedbackText(feedback)}
             </p>
             {feedback?.type === "incomplete" ? (

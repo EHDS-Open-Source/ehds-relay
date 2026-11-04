@@ -1,3 +1,5 @@
+import { Icon } from "@ehds-relay/ui";
+
 import { shellMessages } from "../shell/messages";
 import { fieldLabel } from "./fields";
 import { focusField } from "./focus";
@@ -9,18 +11,22 @@ export function MissingList({ missing }: { missing: readonly string[] }) {
   return (
     <section
       aria-labelledby="missing-for-publish-title"
-      className="rounded-3xl border-2 border-destructive/40 bg-destructive/5 p-5"
+      className="rounded-[14px] bg-warning-bg p-6 text-ink shadow-[var(--shadow-card)]"
     >
-      <h2 id="missing-for-publish-title" className="font-semibold">
+      <h2
+        id="missing-for-publish-title"
+        className="flex items-center gap-2 text-[length:var(--h4-size)] leading-[1.3] font-bold text-blue"
+      >
+        <Icon name="warning" size="md" />
         {text.title}
       </h2>
-      <p className="mt-1 text-sm text-muted-foreground">{text.description}</p>
-      <ul className="mt-3 flex flex-wrap gap-2">
+      <p className="mt-2 text-[0.95em]">{text.description}</p>
+      <ul className="mt-4 flex flex-wrap gap-2">
         {missing.map((key) => (
           <li key={key}>
             <button
               type="button"
-              className="rounded-full border bg-background px-3 py-1 text-sm underline-offset-2 hover:underline"
+              className="h-[34px] rounded-full border-2 border-blue-tint-80 bg-white px-4 text-[0.88em] font-semibold text-blue transition-colors duration-150 hover:border-blue hover:bg-blue-tint-90"
               onClick={() => focusField(key)}
             >
               {fieldLabel(key)}

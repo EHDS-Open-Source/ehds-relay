@@ -543,11 +543,12 @@ export const shellMessages = {
       saveDraft: "Save draft",
       saveAndPublish: "Save and Publish",
       clear: "Clear",
-      clearTitle: "Clear the form?",
+      clearTitle: "Clear all fields?",
       clearDescription:
         "Every answer on this page will be removed. Saved data is not changed until you save.",
-      clearConfirm: "Clear form",
-      cancel: "Cancel",
+      clearIrreversible: "This can't be undone.",
+      clearConfirm: "Clear all fields",
+      cancel: "Keep my entries",
     },
     status: {
       saving: "Saving…",

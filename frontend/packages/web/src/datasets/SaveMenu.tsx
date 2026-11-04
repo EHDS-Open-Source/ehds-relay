@@ -1,42 +1,46 @@
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
   Button,
+  ConfirmDialog,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Icon,
 } from "@ehds-relay/ui";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import { shellMessages } from "../shell/messages";
 
 const text = shellMessages.datasetForm.actions;
 
-/** "Save changes" (Save draft, Save and Publish) and Clear, which asks first. */
+/**
+ * "Save changes" (Save draft, Save and Publish) and Clear. Clear asks first, unless the
+ * form is already empty.
+ */
 export function SaveMenu({
   busy,
   onSave,
   onClear,
+  isEmpty,
+  datasetTitle,
 }: {
   busy: boolean;
   onSave: (publish: boolean) => void;
   onClear: () => void;
+  /** Whether the form has nothing in it, so clearing needs no confirmation. */
+  isEmpty?: () => boolean;
+  /** Named in bold in the confirmation, when the dataset has a title. */
+  datasetTitle?: string;
 }) {
   const menu = useRef<HTMLDivElement>(null);
+  const [confirming, setConfirming] = useState(false);
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-3">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button type="button" disabled={busy}>
+          <Button type="button" busy={busy}>
+            {busy ? null : <Icon name="save" size="sm" />}
             {text.saveMenu}
           </Button>
         </DropdownMenuTrigger>
@@ -63,27 +67,39 @@ export function SaveMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button type="button" variant="outline" disabled={busy}>
-            {text.clear}
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{text.clearTitle}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {text.clearDescription}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{text.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={onClear}>
-              {text.clearConfirm}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={busy}
+        onClick={() => (isEmpty?.() ? onClear() : setConfirming(true))}
+      >
+        <Icon name="eraser" size="sm" />
+        {text.clear}
+      </Button>
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        icon="eraser"
+        title={text.clearTitle}
+        description={
+          <>
+            {datasetTitle ? (
+              <>
+                <strong className="font-bold">{datasetTitle}</strong>:{" "}
+              </>
+            ) : null}
+            {text.clearDescription}{" "}
+            <strong className="font-bold">{text.clearIrreversible}</strong>
+          </>
+        }
+        cancelLabel={text.cancel}
+        confirmLabel={text.clearConfirm}
+        destructive
+        onConfirm={() => {
+          setConfirming(false);
+          onClear();
+        }}
+      />
     </div>
   );
 }
