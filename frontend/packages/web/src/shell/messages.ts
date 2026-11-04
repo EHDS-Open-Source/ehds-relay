@@ -337,7 +337,6 @@ export const shellMessages = {
     roles: { owner: "Owner", standard: "Standard" },
     list: {
       title: "Users",
-      joinedOn: (date: string) => `Joined ${date}`,
       roleFor: (name: string) => `Role of ${name}`,
       remove: "Remove",
       you: "you",
@@ -382,8 +381,9 @@ export const shellMessages = {
         cancelled: "Cancelled",
         expired: "Expired",
       },
-      sentOn: (date: string) => `Sent ${date}`,
+      subline: (role: string, date: string) => `${role} · Invited ${date}`,
       resend: "Resend",
+      resending: "Sending…",
       resent: (email: string) => `Invitation sent again to ${email}.`,
       cancel: "Cancel invitation",
       empty: "No invitations to show.",

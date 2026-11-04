@@ -1,5 +1,5 @@
 export const dateFormat = new Intl.DateTimeFormat("en-GB", {
-  dateStyle: "medium",
+  dateStyle: "long",
 });
 
 export const roleOptions: readonly ("standard" | "owner")[] = [

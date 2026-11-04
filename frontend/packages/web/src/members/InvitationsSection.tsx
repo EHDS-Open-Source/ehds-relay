@@ -1,10 +1,10 @@
 import {
-  Badge,
   Button,
   ConfirmDialog,
   EmptyState,
   Field,
   FilterChips,
+  Icon,
   Input,
   LoadingStar,
   NativeSelect,
@@ -26,10 +26,17 @@ import {
   type InvitationStatus,
   type MemberRole,
 } from "./queries";
+import {
+  rowActions,
+  rowCard,
+  rowInfo,
+  rowName,
+  sectionHeading,
+} from "./rowStyles";
+import { StatusPill } from "./tags";
 
 const m = shellMessages.members;
 const text = m.invitations;
-const cancelLabel = text.cancel;
 
 type Filter = "all" | InvitationStatus;
 const filterOptions = (
@@ -111,16 +118,18 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
 
   return (
     <section aria-labelledby="invitations-heading">
-      <h2 id="invitations-heading" className="mb-4 text-xl font-semibold">
+      <h2 id="invitations-heading" className={sectionHeading}>
         {text.title}
       </h2>
+      {/* On wider screens the fields share rows (label, control, message, hint), so the
+          button lines up with the controls whatever is shown under them. */}
       <form
         noValidate
         onSubmit={submit}
-        className="mb-6 flex flex-wrap items-start gap-4"
+        className="mb-6 flex flex-col gap-4 md:grid md:grid-cols-[minmax(0,1fr)_11rem_auto] md:grid-rows-[repeat(4,auto)] md:gap-x-4 md:gap-y-0"
       >
         <Field
-          className="min-w-64 flex-1"
+          className="md:row-span-4 md:grid md:grid-rows-subgrid"
           label={text.emailLabel}
           htmlFor="invite-email"
           required
@@ -141,10 +150,13 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
             }}
           />
         </Field>
-        <Field label={text.roleLabel} htmlFor="invite-role">
+        <Field
+          className="md:row-span-4 md:grid md:grid-rows-subgrid"
+          label={text.roleLabel}
+          htmlFor="invite-role"
+        >
           <NativeSelect
             id="invite-role"
-            className="w-44"
             value={role}
             onChange={(event) => {
               setRole(event.target.value as MemberRole);
@@ -157,8 +169,13 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
             ))}
           </NativeSelect>
         </Field>
-        <Button type="submit" className="mt-[30px]" busy={invite.isPending}>
+        <Button
+          type="submit"
+          className="self-start md:col-start-3 md:row-start-2 md:self-center"
+          busy={invite.isPending}
+        >
           {invite.isPending ? text.sending : text.send}
+          <Icon name="addUser" />
         </Button>
       </form>
 
@@ -192,47 +209,39 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
       ) : (
         <ul className="flex flex-col gap-3">
           {invitations.data.map((invitation) => (
-            <li
-              key={invitation.id}
-              className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-card bg-white px-5 py-4 shadow-card"
-            >
-              <div className="min-w-0">
-                <p className="text-[1.15em] font-semibold break-all text-blue">
+            <li key={invitation.id} className={rowCard}>
+              <div className={rowInfo}>
+                <p className={`${rowName} break-all text-ink`}>
                   {invitation.email}
                 </p>
-                <p className="text-[0.85em] text-ink-3">
-                  {text.sentOn(
+                <p className="text-[0.9em] leading-[1.6] font-medium text-ink-3">
+                  {text.subline(
+                    m.roles[invitation.role],
                     dateFormat.format(new Date(invitation.last_sent_at)),
                   )}
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge>{m.roles[invitation.role]}</Badge>
-                <Badge
-                  variant={invitation.status === "pending" ? "info" : "default"}
-                  data-status={invitation.status}
-                >
-                  {text.statuses[invitation.status]}
-                </Badge>
+              <div className={rowActions}>
+                <StatusPill status={invitation.status} />
                 {invitation.status === "pending" ||
                 invitation.status === "expired" ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    aria-label={`${text.resend} ${invitation.email}`}
-                    disabled={resend.isPending}
+                  <ResendButton
+                    email={invitation.email}
+                    busy={
+                      resend.isPending && resend.variables === invitation.id
+                    }
+                    disabled={
+                      resend.isPending && resend.variables !== invitation.id
+                    }
                     onClick={() => {
                       doResend(invitation);
                     }}
-                  >
-                    {text.resend}
-                  </Button>
+                  />
                 ) : null}
                 {invitation.status === "pending" ? (
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant="row"
                     size="sm"
                     aria-label={`${text.cancel} ${invitation.email}`}
                     onClick={() => {
@@ -240,7 +249,8 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
                       setCancelling(invitation);
                     }}
                   >
-                    {cancelLabel}
+                    {text.cancel}
+                    <Icon name="remove" size="sm" />
                   </Button>
                 ) : null}
               </div>
@@ -265,6 +275,7 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
             ""
           )
         }
+        icon="remove"
         confirmLabel={text.cancelDialog.confirm}
         cancelLabel={text.cancelDialog.keep}
         destructive
@@ -275,5 +286,31 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
         onConfirm={confirmCancel}
       />
     </section>
+  );
+}
+
+function ResendButton({
+  email,
+  busy,
+  disabled,
+  onClick,
+}: {
+  email: string;
+  busy: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      aria-label={busy ? undefined : `${text.resend} ${email}`}
+      busy={busy}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {busy ? text.resending : text.resend}
+    </Button>
   );
 }

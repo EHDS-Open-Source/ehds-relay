@@ -1,7 +1,10 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { ToastProvider } from "@ehds-relay/ui";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
+import { MembersSection } from "../members/MembersSection";
 import { makeInvitation, makeMember, renderAs } from "../members/testUtils";
 import { demoSession } from "../session/testing";
 import { shellMessages } from "../shell/messages";
@@ -30,7 +33,7 @@ const bob = makeMember({
 });
 
 describe("members", () => {
-  it("lists name, email, role and joined date", async () => {
+  it("lists name, email and role as shadow cards with a Remove row action", async () => {
     stubApi({
       [`GET ${membersUrl}`]: () => json([ada, bob]),
       [`GET ${invitesUrl}`]: () => json([]),
@@ -38,14 +41,23 @@ describe("members", () => {
     renderAs(path, demoSession);
     expect(await screen.findByText("Bob Standard")).toBeVisible();
     expect(screen.getByText("bob@example.org")).toBeVisible();
-    expect(screen.getByText(m.list.joinedOn("10 Feb 2026"))).toBeVisible();
+    const row = screen.getByText("Bob Standard").closest("li")!;
+    expect(row).toHaveClass("shadow-card", "rounded-card");
+    expect(row).not.toHaveClass("border");
+    expect(screen.getByText("Bob Standard")).toHaveClass("text-blue");
+    expect(screen.getByText("bob@example.org")).toHaveClass("text-ink");
+    const remove = within(row).getByRole("button", {
+      name: `${m.list.remove} Bob Standard`,
+    });
+    expect(remove).toHaveAttribute("data-variant", "row");
+    expect(remove.lastElementChild).toHaveAttribute("data-icon", "remove");
     expect(
       screen.getByRole("combobox", { name: m.list.roleFor("Bob Standard") }),
     ).toHaveValue("standard");
     expect(screen.getByText(`(${m.list.you})`)).toBeVisible();
   });
 
-  it("gives the role select room for the longest role name", async () => {
+  it("keeps the role select compact, at the height of the row buttons", async () => {
     stubApi({
       [`GET ${membersUrl}`]: () => json([ada, bob]),
       [`GET ${invitesUrl}`]: () => json([]),
@@ -54,8 +66,7 @@ describe("members", () => {
     const select = await screen.findByRole("combobox", {
       name: m.list.roleFor("Bob Standard"),
     });
-    expect(select).toHaveClass("w-44");
-    expect(select).toHaveClass("shrink-0");
+    expect(select).toHaveClass("h-[34px]", "w-36", "shrink-0");
   });
 
   it("changes a role and refreshes the list", async () => {
@@ -160,6 +171,26 @@ describe("members", () => {
     ).toBeVisible();
   });
 
+  it("shows the role as a tag to someone who cannot change it", async () => {
+    stubApi({ [`GET ${membersUrl}`]: () => json([ada, bob]) });
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ToastProvider>
+          <MembersSection
+            orgId={ORG}
+            currentUserId={ada.user_id}
+            canChangeRoles={false}
+          />
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+    const row = (await screen.findByText("Bob Standard")).closest("li")!;
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    const tag = within(row).getByText(m.roles.standard);
+    expect(tag).toHaveAttribute("data-slot", "badge");
+    expect(tag).toHaveClass("bg-blue-tint-90", "text-blue");
+  });
+
   it("shows no controls and loads nothing for a standard member", async () => {
     const calls = stubApi({});
     renderAs(path, standardSession);
@@ -199,7 +230,11 @@ describe("invitations", () => {
   it("lists email, role, date sent and status, and filters by status", async () => {
     const calls = open();
     expect(await screen.findByText("new@example.org")).toBeVisible();
-    expect(screen.getByText(m.invitations.sentOn("3 Feb 2026"))).toBeVisible();
+    expect(
+      screen.getByText(m.invitations.subline("Standard", "3 February 2026")),
+    ).toBeVisible();
+    // Invited people are not members yet: their address is in ink, not blue.
+    expect(screen.getByText("new@example.org")).toHaveClass("text-ink");
     expect(screen.getByText("old@example.org")).toBeVisible();
     await userEvent.click(
       screen.getByRole("button", { name: m.invitations.filters.expired }),
@@ -336,6 +371,75 @@ describe("invitations", () => {
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     });
     expect(calls.filter((c) => c.method === "DELETE")).toHaveLength(1);
+  });
+
+  it("shows each status as a pill in its role tint", async () => {
+    stubApi({
+      [`GET ${membersUrl}`]: () => json([ada]),
+      [`GET ${invitesUrl}`]: () =>
+        json([
+          pending,
+          expired,
+          makeInvitation({ id: "a", email: "a@x.org", status: "accepted" }),
+          makeInvitation({ id: "c", email: "c@x.org", status: "cancelled" }),
+        ]),
+    });
+    renderAs(path, demoSession);
+    await screen.findByText("c@x.org");
+    const pill = (status: string) =>
+      document.querySelector(`[data-status=${status}]`)!;
+    expect(pill("pending")).toHaveAttribute("data-variant", "info");
+    expect(pill("pending")).toHaveTextContent(m.invitations.statuses.pending);
+    expect(pill("accepted")).toHaveAttribute("data-variant", "success");
+    expect(pill("expired")).toHaveAttribute("data-variant", "warning");
+    expect(pill("cancelled")).toHaveClass("text-ink-3");
+    // Neutral, so it carries an icon as well as the word.
+    expect(pill("cancelled").querySelector("[data-icon=close]")).not.toBeNull();
+  });
+
+  it("offers Cancel invitation as a row action with the remove icon", async () => {
+    open();
+    const cancel = await screen.findByRole("button", {
+      name: "Cancel invitation new@example.org",
+    });
+    expect(cancel).toHaveAttribute("data-variant", "row");
+    expect(cancel.lastElementChild).toHaveAttribute("data-icon", "remove");
+  });
+
+  it("shows Sending… on the Resend being sent and keeps the others still", async () => {
+    let answer: (response: Response) => void = () => undefined;
+    open({
+      [`POST ${invitesUrl}/inv-1/resend`]: () =>
+        new Promise<Response>((resolve) => {
+          answer = resolve;
+        }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: `${m.invitations.resend} new@example.org`,
+      }),
+    );
+    const busy = await screen.findByRole("button", {
+      name: new RegExp(`^${m.invitations.resending}`),
+    });
+    expect(busy).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.getByRole("button", {
+        name: `${m.invitations.resend} old@example.org`,
+      }),
+    ).toBeDisabled();
+    answer(json(pending));
+    expect(
+      await screen.findByText(m.invitations.resent("new@example.org")),
+    ).toBeVisible();
+  });
+
+  it("puts the add-user icon after Send invitation", async () => {
+    open();
+    const send = await screen.findByRole("button", {
+      name: m.invitations.send,
+    });
+    expect(send.lastElementChild).toHaveAttribute("data-icon", "addUser");
   });
 
   it("shows a 409 on cancel inside the dialog", async () => {
