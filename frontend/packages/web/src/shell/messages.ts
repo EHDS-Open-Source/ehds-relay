@@ -31,6 +31,14 @@ export const shellMessages = {
   },
   datasets: {
     untitled: "Untitled dataset",
+    context: "Dataset Record",
+    ribbon: {
+      due: "Revalidation due",
+      overdueSince: "Revalidation overdue since",
+      overdueDetail:
+        "Review this dataset's metadata, then set the next revalidation date.",
+      setNext: "Set next date",
+    },
     notFound: {
       title: "Dataset not found",
       description: "It may have been deleted, or the address is wrong.",
@@ -76,6 +84,7 @@ export const shellMessages = {
     lastValidated: "Last validated",
     reminder: {
       button: "Set reminder",
+      update: "Update reminder",
       fact: "Revalidation reminder",
       none: "None set",
       passed: "date passed",
@@ -106,6 +115,7 @@ export const shellMessages = {
       description:
         "This removes the dataset and its metadata for good. It cannot be undone.",
       confirm: "Delete dataset",
+      deleted: "Dataset deleted.",
       forbidden: "Only an owner of this organisation can delete a dataset.",
       notFound: "This dataset no longer exists.",
       failed: "The dataset could not be deleted. Try again in a moment.",

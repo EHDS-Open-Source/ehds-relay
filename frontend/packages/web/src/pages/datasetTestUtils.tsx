@@ -1,7 +1,8 @@
 import type { Schemas } from "@ehds-relay/api-client";
+import { ToastProvider } from "@ehds-relay/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router";
-import { render } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 
 import { noRevalidationData } from "../datasets/fakeServer";
@@ -94,7 +95,9 @@ export function renderApp(path: string, session: Session = demoSession) {
   });
   render(
     <QueryClientProvider client={router.options.context.queryClient}>
-      <RouterProvider router={router} />
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
     </QueryClientProvider>,
   );
   return router;
@@ -104,3 +107,14 @@ export const standardSession: Session = {
   ...demoSession,
   orgs: [makeOrg({ id: ORG, role: "standard" })],
 };
+
+/** The alert with something in it; the toast area keeps an empty alert region mounted. */
+export async function findAlert(): Promise<HTMLElement> {
+  return await waitFor(() => {
+    const alert = screen
+      .getAllByRole("alert")
+      .find((el) => (el.textContent ?? "").trim() !== "");
+    if (!alert) throw new Error("no alert with text");
+    return alert;
+  });
+}

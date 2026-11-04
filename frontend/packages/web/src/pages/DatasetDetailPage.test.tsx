@@ -15,6 +15,7 @@ import {
   base,
   json,
   makeDataset,
+  findAlert,
   renderApp,
   standardSession,
   stubApi,
@@ -124,6 +125,7 @@ describe("delete", () => {
       expect(router.state.location.pathname).toBe(`/orgs/${ORG}/catalogue`);
     });
     expect(calls.filter((c) => c.method === "DELETE")).toHaveLength(1);
+    expect(await screen.findByText(m.deleteDialog.deleted)).toBeVisible();
   });
 
   it("can be cancelled", async () => {
@@ -158,9 +160,7 @@ describe("delete", () => {
     await userEvent.click(
       screen.getByRole("button", { name: m.deleteDialog.confirm }),
     );
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      m.deleteDialog.forbidden,
-    );
+    expect(await findAlert()).toHaveTextContent(m.deleteDialog.forbidden);
     expect(router.state.location.pathname).toBe(path);
   });
 });
@@ -191,25 +191,24 @@ describe("revalidation reminder", () => {
 
   async function openDialog() {
     await userEvent.click(
-      await screen.findByRole("button", { name: r.button }),
+      await screen.findByRole("button", {
+        name: new RegExp(`^(${r.button}|${r.update})$`),
+      }),
     );
     return screen.getByRole("alertdialog");
   }
 
-  it("ADD-12 puts Set reminder between Catalogue and Edit", async () => {
+  it("ADD-12 puts Set reminder before Edit beside the title", async () => {
     stubReminder();
     renderApp(path);
     await screen.findByRole("heading", { level: 1 });
-    const actions = [
-      screen.getByRole("link", { name: m.backToCatalogue }),
-      screen.getByRole("button", { name: r.button }),
-      screen.getByRole("link", { name: m.edit }),
-    ];
-    const order = (a: Element, b: Element) =>
-      a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING;
-    expect(order(actions[0]!, actions[1]!)).toBeTruthy();
-    expect(order(actions[1]!, actions[2]!)).toBeTruthy();
+    const set = screen.getByRole("button", { name: r.button });
+    const edit = screen.getByRole("link", { name: m.edit });
+    expect(
+      set.compareDocumentPosition(edit) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.getByText(r.none)).toBeVisible();
+    expect(screen.queryByText(m.ribbon.due)).not.toBeInTheDocument();
   });
 
   it("ADD-12 pre-fills a year ahead, saves it and shows it on the record", async () => {
@@ -229,7 +228,9 @@ describe("revalidation reminder", () => {
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
     );
     expect(bodies).toEqual([{ reminder_date: inAYear }]);
-    expect(screen.getByText(formatIsoDate(inAYear))).toBeVisible();
+    // The ribbon and the pill both show the date
+    expect(screen.getAllByText(formatIsoDate(inAYear))).toHaveLength(2);
+    expect(screen.getByText(m.ribbon.due)).toBeVisible();
     expect(screen.getByText(/set by Ada Member/)).toBeVisible();
   });
 
@@ -239,7 +240,9 @@ describe("revalidation reminder", () => {
       makeDataset({ reminder_date: current, reminder_set_by_name: "Bo" }),
     );
     renderApp(path);
-    expect(await screen.findByText(formatIsoDate(current))).toBeVisible();
+    expect(
+      (await screen.findAllByText(formatIsoDate(current))).length,
+    ).toBeGreaterThan(0);
     const dialog = await openDialog();
     const input = within(dialog).getByLabelText(r.dateLabel);
     expect(input).toHaveValue(current);
@@ -247,7 +250,9 @@ describe("revalidation reminder", () => {
     fireEvent.change(input, { target: { value: next } });
     await userEvent.click(within(dialog).getByRole("button", { name: r.save }));
     await waitFor(() => expect(bodies).toEqual([{ reminder_date: next }]));
-    expect(await screen.findByText(formatIsoDate(next))).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getAllByText(formatIsoDate(next))).toHaveLength(2),
+    );
   });
 
   it("ADD-12 removes the reminder", async () => {
@@ -300,6 +305,41 @@ describe("revalidation reminder", () => {
     );
     const dialog = await openDialog();
     expect(within(dialog).getByLabelText(r.dateLabel)).toHaveValue(inAYear);
+  });
+});
+
+describe("revalidation ribbon", () => {
+  it("is yellow with a Set next date button once the reminder date has passed", async () => {
+    stubApi({
+      [`GET ${base}`]: () => json(makeDataset({ reminder_date: "2020-01-01" })),
+    });
+    renderApp(path);
+    expect(
+      await screen.findByText(new RegExp(m.ribbon.overdueSince)),
+    ).toBeVisible();
+    expect(screen.getByText(m.ribbon.overdueDetail)).toBeVisible();
+    await userEvent.click(
+      screen.getByRole("button", { name: m.ribbon.setNext }),
+    );
+    expect(screen.getByRole("alertdialog")).toBeVisible();
+  });
+
+  it("is the plain strip while the date is ahead", async () => {
+    stubApi({
+      [`GET ${base}`]: () =>
+        json(makeDataset({ reminder_date: addYears(todayIso(), 1) })),
+    });
+    renderApp(path);
+    expect(await screen.findByText(m.ribbon.due)).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: m.ribbon.setNext }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the Dataset Record context line", async () => {
+    stubApi({ [`GET ${base}`]: () => json(makeDataset()) });
+    renderApp(path);
+    expect(await screen.findByText(m.context)).toBeVisible();
   });
 });
 

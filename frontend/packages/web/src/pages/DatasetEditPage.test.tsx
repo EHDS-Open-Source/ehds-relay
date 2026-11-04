@@ -10,6 +10,7 @@ import {
   base,
   json,
   makeDataset,
+  findAlert,
   renderApp,
   stubApi,
 } from "./datasetTestUtils";
@@ -122,7 +123,7 @@ describe("dataset edit page", () => {
     await screen.findByRole("form", { name: form.formLabel });
     await choose(form.actions.saveDraft);
 
-    const alert = await screen.findByRole("alert");
+    const alert = await findAlert();
     expect(alert).toHaveTextContent(m.save.conflictTitle);
     expect(router.state.location.pathname).toBe(edit);
 

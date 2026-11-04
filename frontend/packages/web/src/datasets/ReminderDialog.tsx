@@ -9,6 +9,7 @@ import {
   Button,
   Field,
   FormMessage,
+  Icon,
   Input,
   fieldErrorId,
 } from "@ehds-relay/ui";
@@ -93,7 +94,10 @@ export function ReminderDialog({
       <AlertDialogContent>
         <form onSubmit={submit} noValidate className="flex flex-col gap-4">
           <AlertDialogHeader>
-            <AlertDialogTitle>{m.dialogTitle}</AlertDialogTitle>
+            <AlertDialogTitle>
+              <Icon name="calendar" size="xl" />
+              {m.dialogTitle}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {m.dialogDescription}
             </AlertDialogDescription>
@@ -128,7 +132,7 @@ export function ReminderDialog({
             {current ? (
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 disabled={save.isPending}
                 onClick={clear}
               >

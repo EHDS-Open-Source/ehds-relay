@@ -16,8 +16,8 @@ export function MissingFields({
 }) {
   return (
     <div>
-      <p className="mb-2 font-medium">{heading}</p>
-      <ul className="list-disc space-y-1 pl-5">
+      <p className="mb-2 font-semibold text-blue">{heading}</p>
+      <ul className="list-disc space-y-1.5 pl-5 marker:text-blue">
         {missing.map((key) => (
           <li key={key}>
             <Link
