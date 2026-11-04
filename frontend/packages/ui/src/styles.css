@@ -1,15 +1,24 @@
-/* Shared theme: Tailwind plus the shadcn/ui design tokens. Apps import this file and
-   add an @source pointing at this package so Tailwind picks up the classes used here. */
+/* Shared theme: Tailwind plus the shadcn/ui design tokens, pointed at the brand layer
+   at the end of this file. Apps import this file and add an @source pointing at this
+   package so Tailwind picks up the classes used here. There is a single light theme. */
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--sans);
+  --radius-sm: 8px;
+  --radius-md: var(--radius-field);
+  --radius-lg: var(--radius-card);
+  --radius-xl: 20px;
+  --radius-2xl: var(--radius-modal);
+  --radius-3xl: var(--radius-signin);
+  --shadow-2xs: none;
+  --shadow-xs: var(--shadow-card);
+  --shadow-sm: none;
+  --shadow-md: var(--shadow-card-hover);
+  --shadow-lg: var(--shadow-section);
+  --shadow-xl: none;
+  --shadow-2xl: var(--shadow-overlay);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -41,82 +50,219 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Brand colours as utilities: bg-blue, text-ink-3, border-line, bg-blue-tint-90 ... */
+  --color-blue: var(--blue);
+  --color-blue-shade: var(--blue-shade);
+  --color-blue-tint-95: var(--blue-tint-95);
+  --color-blue-tint-90: var(--blue-tint-90);
+  --color-blue-tint-80: var(--blue-tint-80);
+  --color-blue-hint: var(--blue-hint);
+  --color-yellow: var(--yellow);
+  --color-yellow-shade: var(--yellow-shade);
+  --color-required: var(--required);
+  --color-ink: var(--ink);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-error: var(--error);
+  --color-error-on-white: var(--error-on-white);
+  --color-error-bg: var(--error-bg);
+  --color-success: var(--success);
+  --color-success-on-white: var(--success-on-white);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-on-white: var(--warning-on-white);
+  --color-warning-bg: var(--warning-bg);
+  --color-info: var(--info);
+  --color-info-on-white: var(--info-on-white);
+  --color-info-bg: var(--info-bg);
+  --color-code-bg: var(--code-bg);
+  --color-code-text: var(--code-text);
+  --color-code-label: var(--code-label);
+  --color-code-border: var(--code-border);
+  --color-code-control: var(--code-control);
 }
 
+/* Brand layer: change a token here rather than hard-coding a colour in a component. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  color-scheme: light;
+
+  --blue: #1c2fd4;
+  --blue-shade: #1626b0;
+  --blue-tint-95: #f3f4fd;
+  --blue-tint-90: #e8eafb;
+  --blue-tint-80: #d2d5f6;
+  /* Blue at 75% on white: field hints and the due date on cards. */
+  --blue-hint: #5563df;
+  --yellow: #f8f121;
+  --yellow-shade: #ebe30c;
+  --ink: #444444;
+  --ink-3: #6e7084;
+  --line: #dcdfee;
+  --required: #9e9200;
+
+  --error: #ff9edb;
+  --error-on-white: #c2007d;
+  --error-bg: #fbe5f2;
+  --success: #7cf5b0;
+  --success-on-white: #007a4d;
+  --success-bg: #e3f5ec;
+  --warning: #fad0ae;
+  --warning-on-white: #a34a00;
+  --warning-bg: #fcefe2;
+  --info: #8fe3ff;
+  --info-on-white: #00668f;
+  --info-bg: #e1f2fa;
+
+  --code-bg: #030938;
+  --code-text: #e8eafb;
+  --code-label: var(--yellow);
+  --code-border: rgb(255 255 255 / 14%);
+  --code-control: rgb(255 255 255 / 35%);
+
+  --sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+
+  --h1-size: 2.2em;
+  --h2-size: 1.75em;
+  --h3-size: 1.3em;
+  --h4-size: 1.2em;
+
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-40: 40px;
+  --space-48: 48px;
+  --space-56: 56px;
+  --space-64: 64px;
+  --space-80: 80px;
+
+  --radius-card: 14px;
+  --radius-field: 12px;
+  --radius-modal: 24px;
+  --radius-signin: 28px;
+
+  --shadow-card: 0 0 6px rgb(20 24 60 / 11%);
+  --shadow-card-hover: 0 0 0 3px var(--blue), 0 0 6px rgb(20 24 60 / 11%);
+  --shadow-section: 0 0 5px rgb(120 120 120 / 10%);
+  --shadow-overlay: 0 14px 44px rgb(10 14 60 / 24%);
+
+  --motion-fast: 150ms;
+  --motion-enter: 180ms;
+  --motion-spin: 1.1s;
+  --motion-pulse: 1.6s;
+  --motion-ambient: 140s;
+  --ease-standard: ease;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --icon-xs: 14px;
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --icon-xl: 32px;
+  --icon-display-sm: 56px;
+  --icon-display: 72px;
+
+  /* shadcn variables, pointed at the brand tokens. */
+  --background: #ffffff;
+  --foreground: var(--ink);
+  --card: #ffffff;
+  --card-foreground: var(--ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--ink);
+  --primary: var(--yellow);
+  --primary-foreground: var(--blue);
+  --secondary: var(--blue-tint-90);
+  --secondary-foreground: var(--blue);
+  --muted: var(--blue-tint-95);
+  --muted-foreground: var(--ink-3);
+  --accent: var(--blue-tint-90);
+  --accent-foreground: var(--blue);
+  --destructive: var(--error-on-white);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--blue);
+  --chart-1: var(--blue);
+  --chart-2: var(--blue-hint);
+  --chart-3: var(--blue-tint-80);
+  --chart-4: var(--ink-3);
+  --chart-5: var(--ink);
+  --radius: var(--radius-card);
+  --sidebar: var(--blue);
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: var(--yellow);
+  --sidebar-primary-foreground: var(--blue);
+  --sidebar-accent: var(--blue-shade);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 20%);
+  --sidebar-ring: var(--yellow);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+html {
+  font-size: 15px;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans text-foreground;
+  }
+  /* Blue outline on white, yellow on blue surfaces (mark a blue surface with data-surface="blue"). */
+  :focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 3px;
+  }
+  [data-surface="blue"] :focus-visible,
+  [data-surface="blue"]:focus-visible {
+    outline-color: var(--yellow);
+  }
+}
+
+/* The loading star spins; with reduced motion it pulses instead. */
+@keyframes star-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes star-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.loading-star {
+  animation: star-spin var(--motion-spin) linear infinite;
+}
+
+/* The browser's arrow is hidden and replaced by a chevron. The colour is written here,
+   as an image cannot read a CSS variable. */
+.native-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 8'%3E%3Cpath d='M1.5 1.5 7 6.5l5.5-5' fill='none' stroke='%231c2fd4' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 14px 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  .loading-star {
+    animation: star-pulse var(--motion-pulse) ease-in-out infinite !important;
   }
 }
