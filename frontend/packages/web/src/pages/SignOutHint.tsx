@@ -1,23 +1,29 @@
 import { useSession, useSignOut } from "../session/useSession";
+import { BelowCard, belowCardLinkClass } from "../shell/BareLayout";
 import { shellMessages } from "../shell/messages";
 
-/** "Not you? Sign out" for screens that have no menu. Sits on the blue card. */
+/**
+ * "<email>. Not you? Sign out" for screens that have no menu. Goes under the blue card, on
+ * white (pass it as the layout's `below`).
+ */
 export function SignOutHint({ lead }: { lead: string }) {
   const user = useSession()?.user;
   const signOut = useSignOut();
   return (
-    <p className="mt-8 text-sm text-white">
-      {user ? `${user.email}. ` : null}
+    <BelowCard>
+      {user ? (
+        <span className="font-normal break-words">{`${user.email}. `}</span>
+      ) : null}
       {lead}{" "}
       <button
         type="button"
-        className="font-semibold text-yellow underline-offset-4 hover:underline"
+        className={belowCardLinkClass}
         onClick={() => {
           void signOut();
         }}
       >
         {shellMessages.signOut}
       </button>
-    </p>
+    </BelowCard>
   );
 }

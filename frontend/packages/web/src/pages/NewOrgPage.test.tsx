@@ -68,6 +68,20 @@ describe("NewOrgPage", () => {
     expect(posts(fetch)).toHaveLength(0);
   });
 
+  it("marks both fields required and puts the icon after the button label", async () => {
+    stubApi(() => Response.json(created, { status: 201 }));
+    renderPage();
+    const name = await screen.findByLabelText(new RegExp(text.nameLabel));
+    expect(name).toHaveAttribute("placeholder", text.namePlaceholder);
+    expect(name).toHaveAttribute("data-tone", "onBlue");
+    expect(document.querySelectorAll("[data-slot=required-star]")).toHaveLength(
+      2,
+    );
+    const submit = screen.getByRole("button", { name: text.submit });
+    expect(submit.lastElementChild).toHaveAttribute("data-icon", "plus");
+    expect(submit).toHaveAttribute("data-size", "lg");
+  });
+
   it("marks fields invalid, focuses the first and clears an error on typing", async () => {
     stubApi(() => Response.json(created, { status: 201 }));
     renderPage();
@@ -85,11 +99,11 @@ describe("NewOrgPage", () => {
     const fetch = stubApi(() => Response.json(created, { status: 201 }));
     const router = renderPage();
     await userEvent.type(
-      await screen.findByLabelText(text.nameLabel),
+      await screen.findByLabelText(new RegExp(text.nameLabel)),
       "Acme Health",
     );
     await userEvent.selectOptions(
-      screen.getByLabelText(text.countryLabel),
+      screen.getByLabelText(new RegExp(text.countryLabel)),
       "Greece",
     );
     await userEvent.click(screen.getByRole("button", { name: text.submit }));
@@ -117,9 +131,12 @@ describe("NewOrgPage", () => {
   it("offers Other, saved as XX", async () => {
     const fetch = stubApi(() => Response.json(created, { status: 201 }));
     renderPage();
-    await userEvent.type(await screen.findByLabelText(text.nameLabel), "Acme");
+    await userEvent.type(
+      await screen.findByLabelText(new RegExp(text.nameLabel)),
+      "Acme",
+    );
     await userEvent.selectOptions(
-      screen.getByLabelText(text.countryLabel),
+      screen.getByLabelText(new RegExp(text.countryLabel)),
       "Other",
     );
     await userEvent.click(screen.getByRole("button", { name: text.submit }));
@@ -133,9 +150,12 @@ describe("NewOrgPage", () => {
   it("shows a message when the details are refused", async () => {
     stubApi(() => Response.json({ detail: [] }, { status: 422 }));
     renderPage();
-    await userEvent.type(await screen.findByLabelText(text.nameLabel), "Acme");
+    await userEvent.type(
+      await screen.findByLabelText(new RegExp(text.nameLabel)),
+      "Acme",
+    );
     await userEvent.selectOptions(
-      screen.getByLabelText(text.countryLabel),
+      screen.getByLabelText(new RegExp(text.countryLabel)),
       "France",
     );
     await userEvent.click(screen.getByRole("button", { name: text.submit }));
@@ -145,9 +165,12 @@ describe("NewOrgPage", () => {
   it("shows a message when the service fails", async () => {
     stubApi(() => new Response(null, { status: 500 }));
     renderPage();
-    await userEvent.type(await screen.findByLabelText(text.nameLabel), "Acme");
+    await userEvent.type(
+      await screen.findByLabelText(new RegExp(text.nameLabel)),
+      "Acme",
+    );
     await userEvent.selectOptions(
-      screen.getByLabelText(text.countryLabel),
+      screen.getByLabelText(new RegExp(text.countryLabel)),
       "France",
     );
     await userEvent.click(screen.getByRole("button", { name: text.submit }));

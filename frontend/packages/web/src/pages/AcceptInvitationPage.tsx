@@ -1,6 +1,7 @@
 import {
   Button,
   FormMessage,
+  Icon,
   LoadingStar,
   useMinimumPending,
 } from "@ehds-relay/ui";
@@ -16,6 +17,7 @@ import {
 import { loginUrl } from "../session/login";
 import { useSession, useSignOut } from "../session/useSession";
 import { BareLayout } from "../shell/BareLayout";
+import { cardButtonClass } from "../shell/cardButton";
 import { shellMessages } from "../shell/messages";
 
 const m = shellMessages.acceptInvite;
@@ -76,12 +78,18 @@ export function AcceptInvitationPage() {
       {...m.gone[status]}
       action={
         session ? (
-          <Button asChild onBlue>
-            <Link to="/orgs">{m.goToOrganisations}</Link>
+          <Button asChild size="lg" onBlue className={cardButtonClass}>
+            <Link to="/orgs">
+              {m.goToOrganisations}
+              <Icon name="next" size="lg" aria-hidden />
+            </Link>
           </Button>
         ) : (
-          <Button asChild onBlue>
-            <a href={loginUrl({ redirect: "/" })}>{m.signIn}</a>
+          <Button asChild size="lg" onBlue className={cardButtonClass}>
+            <a href={loginUrl({ redirect: "/" })}>
+              {m.signIn}
+              <Icon name="signIn" size="lg" aria-hidden />
+            </a>
           </Button>
         )
       }
@@ -103,12 +111,15 @@ export function AcceptInvitationPage() {
         )}
         action={
           <Button
+            size="lg"
             onBlue
+            className={cardButtonClass}
             onClick={() => {
               void signOut();
             }}
           >
             {m.wrongAccount.signOut}
+            <Icon name="logOut" size="lg" aria-hidden />
           </Button>
         }
       />
@@ -125,11 +136,8 @@ export function AcceptInvitationPage() {
   return (
     <BareLayout
       title={m.title(invitation.organisation_name)}
-      description={joinAs}
+      description={`${joinAs}. ${m.forAddress(invitation.email)}`}
     >
-      <p className="-mt-4 mb-8 text-sm text-white">
-        {m.forAddress(invitation.email)}
-      </p>
       {session ? (
         <div className="flex flex-col items-start gap-4">
           {accept.isError ? (
@@ -138,6 +146,7 @@ export function AcceptInvitationPage() {
           <Button
             size="lg"
             onBlue
+            className={cardButtonClass}
             busy={accept.isPending}
             onClick={() => {
               accept.mutate(undefined, {
@@ -151,18 +160,29 @@ export function AcceptInvitationPage() {
             }}
           >
             {accept.isPending ? m.accepting : m.accept}
+            <Icon name="tick" size="lg" aria-hidden />
           </Button>
         </div>
       ) : (
         <div className="flex flex-col items-start gap-4">
-          <p className="text-sm text-white">{m.signInHint}</p>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild size="lg" onBlue>
-              <a href={loginUrl({ redirect })}>{m.signIn}</a>
+          <p className="text-white">{m.signInHint}</p>
+          <div className="flex w-full flex-wrap gap-3">
+            <Button asChild size="lg" onBlue className={cardButtonClass}>
+              <a href={loginUrl({ redirect })}>
+                {m.signIn}
+                <Icon name="signIn" size="lg" aria-hidden />
+              </a>
             </Button>
-            <Button asChild size="lg" variant="secondary" onBlue>
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              onBlue
+              className={cardButtonClass}
+            >
               <a href={loginUrl({ redirect, signup: true })}>
                 {m.createAccount}
+                <Icon name="plus" size="lg" aria-hidden />
               </a>
             </Button>
           </div>

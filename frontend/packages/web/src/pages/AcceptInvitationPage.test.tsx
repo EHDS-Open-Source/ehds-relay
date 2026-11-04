@@ -25,7 +25,9 @@ describe("accept invitation page", () => {
       await screen.findByRole("heading", { name: m.title("Acme Hospital") }),
     ).toBeVisible();
     expect(screen.getByText(/Ada Owner invited you as Standard/)).toBeVisible();
-    expect(screen.getByText(m.forAddress("invitee@example.org"))).toBeVisible();
+    expect(
+      screen.getByText(new RegExp(m.forAddress("invitee@example.org"))),
+    ).toBeVisible();
     const redirect = encodeURIComponent("/invitations/tok%2F1");
     expect(screen.getByRole("link", { name: m.signIn })).toHaveAttribute(
       "href",

@@ -14,6 +14,7 @@ import { api } from "../api";
 import { euCountryCodes, countryName, OTHER_COUNTRY } from "../orgs/countries";
 import { useSessionStore } from "../session/useSession";
 import { BareLayout } from "../shell/BareLayout";
+import { cardButtonClass } from "../shell/cardButton";
 import { shellMessages } from "../shell/messages";
 import { SignOutHint } from "./SignOutHint";
 
@@ -68,8 +69,12 @@ export function NewOrgPage() {
   };
 
   return (
-    <BareLayout title={text.title} description={text.description}>
-      <p className="-mt-4 mb-8 text-sm text-white">{text.invitedHint}</p>
+    <BareLayout
+      title={text.title}
+      description={text.description}
+      width="wide"
+      below={<SignOutHint lead={text.signOutHint} />}
+    >
       <form
         noValidate
         onSubmit={(event) => {
@@ -81,6 +86,7 @@ export function NewOrgPage() {
           tone="onBlue"
           label={text.nameLabel}
           htmlFor="org-name"
+          required
           error={errors.name}
         >
           <Input
@@ -88,6 +94,7 @@ export function NewOrgPage() {
             id="org-name"
             value={name}
             maxLength={200}
+            placeholder={text.namePlaceholder}
             autoComplete="organization"
             aria-invalid={errors.name ? true : undefined}
             aria-describedby={
@@ -103,6 +110,7 @@ export function NewOrgPage() {
           tone="onBlue"
           label={text.countryLabel}
           htmlFor="org-country"
+          required
           error={errors.country}
         >
           <NativeSelect
@@ -129,14 +137,19 @@ export function NewOrgPage() {
         {errors.form ? (
           <FormMessage className="text-error">{errors.form}</FormMessage>
         ) : null}
-        <div>
-          <Button type="submit" size="lg" onBlue busy={busy}>
-            {busy ? null : <Icon name="plus" aria-hidden />}
+        <div className="mt-3">
+          <Button
+            type="submit"
+            size="lg"
+            onBlue
+            busy={busy}
+            className={cardButtonClass}
+          >
             {busy ? text.submitting : text.submit}
+            <Icon name="plus" size="lg" aria-hidden />
           </Button>
         </div>
       </form>
-      <SignOutHint lead={text.signOutHint} />
     </BareLayout>
   );
 }
