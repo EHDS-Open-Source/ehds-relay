@@ -30,4 +30,13 @@ describe("AppShell", () => {
     expect(skip).toHaveAttribute("href", "#content");
     expect(screen.getByRole("main")).toHaveAttribute("id", "content");
   });
+
+  it("renders the ribbon between the header and the content", () => {
+    render(
+      <AppShell header={<header>Top bar</header>} ribbon={<div>Ribbon</div>}>
+        Body
+      </AppShell>,
+    );
+    expect(screen.getByText("Ribbon")).toBeVisible();
+  });
 });

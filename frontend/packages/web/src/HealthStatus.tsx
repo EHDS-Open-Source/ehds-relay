@@ -10,7 +10,13 @@ type Health =
   | { state: "unavailable" };
 
 /** Shows the API's liveness status, fetched through the generated client. */
-export function HealthStatus({ client = api }: { client?: ApiClient }) {
+export function HealthStatus({
+  client = api,
+  className = "text-sm text-muted-foreground",
+}: {
+  client?: ApiClient;
+  className?: string;
+}) {
   const [health, setHealth] = useState<Health>({ state: "loading" });
 
   useEffect(() => {
@@ -32,7 +38,7 @@ export function HealthStatus({ client = api }: { client?: ApiClient }) {
   }, [client]);
 
   return (
-    <p role="status" className="text-sm text-muted-foreground">
+    <p role="status" className={className}>
       {health.state === "loading" && messages.healthChecking}
       {health.state === "ok" && messages.healthStatus(health.status)}
       {health.state === "unavailable" && messages.healthUnavailable}

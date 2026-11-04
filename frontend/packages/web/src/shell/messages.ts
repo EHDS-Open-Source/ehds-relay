@@ -4,6 +4,7 @@ export const shellMessages = {
   appName: "EHDS Relay",
   menuTitle: "Menu",
   signOut: "Sign out",
+  logOut: "Log out",
   notBuilt: {
     title: "Not built yet",
     description: "This screen is a placeholder and will be filled in soon.",

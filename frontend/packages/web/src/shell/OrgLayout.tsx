@@ -1,10 +1,11 @@
 import {
   AppHeader,
+  Button,
+  Icon,
   AppShell,
   NavList,
   SideMenu,
   SideMenuDivider,
-  SideMenuItem,
 } from "@ehds-relay/ui";
 import { Link, Outlet, useLocation, useParams } from "@tanstack/react-router";
 import { useState } from "react";
@@ -14,9 +15,10 @@ import { HealthStatus } from "../HealthStatus";
 import { useSession, useSignOut } from "../session/useSession";
 import { shellMessages } from "./messages";
 import { accountNavItems, activeNavId, coreNavItems, navLabels } from "./nav";
+import { Logo } from "./Logo";
 import { renderOrgLink, renderRootLink } from "./RouterLink";
 
-/** Header, `⋯` menu drawer and content area for everything inside one organisation. */
+/** Header, menu panel and content area for everything inside one organisation. */
 export function OrgLayout() {
   const { orgId } = useParams({ from: "/orgs/$orgId" });
   const pathname = useLocation({ select: (location) => location.pathname });
@@ -52,13 +54,12 @@ export function OrgLayout() {
             <Link
               to="/orgs/$orgId/catalogue"
               params={{ orgId }}
-              className="text-lg font-bold tracking-tight"
+              className="no-underline"
             >
-              {shellMessages.appName}
+              <Logo />
             </Link>
           }
           orgName={org.name}
-          actions={<HealthStatus />}
           menuOpen={menuOpen}
           onMenuClick={() => {
             setMenuOpen(true);
@@ -71,6 +72,7 @@ export function OrgLayout() {
         onOpenChange={setMenuOpen}
         title={shellMessages.menuTitle}
         description={org.name}
+        footer={<HealthStatus className="text-white" />}
       >
         <NavList
           label={navLabels.main}
@@ -88,9 +90,16 @@ export function OrgLayout() {
             onNavigate={closeMenu}
           />
         ) : null}
-        <SideMenuItem danger onClick={signOut}>
-          {shellMessages.signOut}
-        </SideMenuItem>
+        <Button
+          type="button"
+          size="lg"
+          onBlue
+          className="self-start"
+          onClick={signOut}
+        >
+          {shellMessages.logOut}
+          <Icon name="logOut" size="xl" />
+        </Button>
       </SideMenu>
       <Outlet />
     </AppShell>

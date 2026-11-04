@@ -6,7 +6,7 @@ import { NavList } from "./NavList";
 import type { NavItem, RenderNavLink } from "./types";
 
 const items: NavItem[] = [
-  { id: "catalogue", label: "Catalogue", to: "#catalogue" },
+  { id: "catalogue", label: "Catalogue", to: "#catalogue", icon: "file" },
   { id: "members", label: "Members", to: "#members" },
 ];
 
@@ -56,5 +56,15 @@ describe("NavList", () => {
     );
     await userEvent.click(screen.getByRole("link", { name: "Catalogue" }));
     expect(onNavigate).toHaveBeenCalledOnce();
+  });
+
+  it("draws the item's icon beside the label, hidden from screen readers", () => {
+    render(<NavList label="Main" items={items} renderLink={renderLink} />);
+    const link = screen.getByRole("link", { name: "Catalogue" });
+    const icon = link.querySelector("[data-icon='file']");
+    expect(icon).toHaveAttribute("aria-hidden", "true");
+    expect(
+      screen.getByRole("link", { name: "Members" }).querySelector("svg"),
+    ).toBeNull();
   });
 });
