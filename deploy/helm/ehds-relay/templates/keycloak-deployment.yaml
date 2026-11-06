@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: keycloak
 spec:
   replicas: 1
-  # One pod at a time: dev mode keeps its data in the pod and is memory hungry
+  # One pod at a time: dev mode is memory hungry
   strategy:
     type: Recreate
   selector:
@@ -18,13 +18,59 @@ spec:
     metadata:
       labels:
         {{- include "ehds-relay.selectorLabels" (dict "ctx" . "component" "keycloak") | nindent 8 }}
-      annotations:
-        # Roll the pod when the realm changes (it is only imported at start-up)
-        checksum/realm: {{ include (print $.Template.BasePath "/keycloak-realm-configmap.yaml") . | sha256sum }}
     spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
+      {{- if include "ehds-relay.keycloakDbEnabled" . }}
+      initContainers:
+        # Creates the Keycloak role and database on the bundled Postgres if they are missing.
+        # Postgres only runs its init scripts on a new volume, so this also reaches existing
+        # clusters. Safe to repeat.
+        - name: keycloak-db-init
+          image: "postgres:{{ .Values.postgres.image.tag }}"
+          env:
+            - name: PGHOST
+              value: {{ include "ehds-relay.dbHost" . | quote }}
+            - name: PGPORT
+              value: {{ .Values.database.port | quote }}
+            - name: PGUSER
+              value: postgres
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ehds-relay.dbSecretName" . }}
+                  key: POSTGRES_PASSWORD
+            - name: KC_DB_NAME
+              value: {{ .Values.keycloak.database.name | quote }}
+            - name: KC_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ehds-relay.fullname" . }}-keycloak
+                  key: KC_DB_USERNAME
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ehds-relay.fullname" . }}-keycloak
+                  key: KC_DB_PASSWORD
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until pg_isready -q; do echo "waiting for postgres"; sleep 2; done
+              psql -v ON_ERROR_STOP=1 -v db="$KC_DB_NAME" -v user="$KC_DB_USERNAME" \
+                -v pw="$KC_DB_PASSWORD" -d postgres <<'SQL'
+              SELECT format('CREATE ROLE %I LOGIN', :'user')
+                WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'user') \gexec
+              SELECT format('ALTER ROLE %I PASSWORD %L', :'user', :'pw') \gexec
+              SELECT format('CREATE DATABASE %I OWNER %I', :'db', :'user')
+                WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db') \gexec
+              SQL
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+      {{- end }}
       containers:
         - name: keycloak
           image: "{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}"
@@ -49,22 +95,14 @@ spec:
               value: {{ .Values.keycloak.hostname | quote }}
             - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
               value: "true"
-            # Filled into the ${RELAY_*} placeholders of the realm JSON
-            - name: RELAY_WEB_URL
-              value: {{ trimSuffix "/" (.Values.keycloak.webUrl | default (include "ehds-relay.webUrl" .)) | quote }}
-            - name: RELAY_API_URL
-              value: {{ trimSuffix "/" .Values.keycloak.apiUrl | quote }}
-            - name: RELAY_OIDC_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ehds-relay.oidcSecretName" . }}
-                  key: OIDC_CLIENT_SECRET
-            - name: RELAY_SMTP_HOST
-              value: {{ include "ehds-relay.smtpHost" . | default "localhost" | quote }}
-            - name: RELAY_SMTP_PORT
-              value: {{ .Values.smtp.port | quote }}
-            - name: RELAY_SMTP_FROM
-              value: {{ .Values.smtp.from | quote }}
+            # Filled into the ${RELAY_*} placeholders of the realm JSON (first import only)
+            {{- include "ehds-relay.keycloakRealmEnv" . | nindent 12 }}
+            {{- if include "ehds-relay.keycloakDbEnabled" . }}
+            - name: KC_DB
+              value: postgres
+            - name: KC_DB_URL
+              value: {{ printf "jdbc:postgresql://%s:%v/%s" (include "ehds-relay.dbHost" .) .Values.database.port .Values.keycloak.database.name | quote }}
+            {{- end }}
           volumeMounts:
             - name: realm
               mountPath: /opt/keycloak/data/import

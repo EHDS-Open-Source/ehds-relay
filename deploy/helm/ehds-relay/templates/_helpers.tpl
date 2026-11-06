@@ -140,3 +140,28 @@ app.kubernetes.io/component: {{ .component }}
 - name: RELAY_SMTP_FROM
   value: {{ .Values.smtp.from | quote }}
 {{- end -}}
+
+{{/* Keycloak keeps its data in its own database on the bundled Postgres (else in-pod H2) */}}
+{{- define "ehds-relay.keycloakDbEnabled" -}}
+{{- if and .Values.postgres.enabled .Values.keycloak.database.enabled -}}true{{- end -}}
+{{- end -}}
+
+{{/* Values filled into the ${RELAY_*} placeholders of the realm JSON. Keycloak substitutes them
+     itself when it imports the realm; realm-init does it for the admin API, which does not. */}}
+{{- define "ehds-relay.keycloakRealmEnv" -}}
+- name: RELAY_WEB_URL
+  value: {{ trimSuffix "/" (.Values.keycloak.webUrl | default (include "ehds-relay.webUrl" .)) | quote }}
+- name: RELAY_API_URL
+  value: {{ trimSuffix "/" .Values.keycloak.apiUrl | quote }}
+- name: RELAY_OIDC_CLIENT_SECRET
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "ehds-relay.oidcSecretName" . }}
+      key: OIDC_CLIENT_SECRET
+- name: RELAY_SMTP_HOST
+  value: {{ include "ehds-relay.smtpHost" . | default "localhost" | quote }}
+- name: RELAY_SMTP_PORT
+  value: {{ .Values.smtp.port | quote }}
+- name: RELAY_SMTP_FROM
+  value: {{ .Values.smtp.from | quote }}
+{{- end -}}

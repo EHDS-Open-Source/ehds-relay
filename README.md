@@ -39,9 +39,40 @@ tilt up                  # deploy everything below, with live reload
 Keycloak test users in the `ehds-relay` realm (password = username): `owner`, `standard`
 and `invitee` (`<username>@example.org`). They are plain accounts: roles and organisation
 membership live in the app database. All credentials here, including the BFF client secret,
-are throwaway values for local development only. Keycloak runs in dev mode and keeps nothing
-between restarts; the realm is re-imported from
-`deploy/helm/ehds-relay/files/ehds-relay-realm.json` every time it starts.
+are throwaway values for local development only.
+
+Keycloak runs in dev mode with its data in a separate `keycloak` database on the bundled
+Postgres, so it shares the Postgres volume with the app data. The realm in
+`deploy/helm/ehds-relay/files/ehds-relay-realm.json` is imported once, when the realm does not
+exist. The test users have fixed ids in that file, so their sign-in subject stays the same even
+if Keycloak's database is recreated. Restarting Keycloak, or `tilt down` and `tilt up`, keeps
+users, including ones you register. To start over, delete the Postgres volume (this also
+deletes the app data): `kubectl --context kind-ehds-relay -n ehds-relay delete pvc --all`
+after `tilt down`. With `postgres.enabled=false` Keycloak falls back to in-pod storage and
+forgets everything on restart.
+
+The `keycloak-realm-init` job runs after Keycloak starts and whenever the realm file or its
+script changes. It refreshes the BFF client's redirect URIs and secret and the realm's SMTP
+settings from the current ports, adds clients, roles, groups and users that are in the realm
+file but missing from the realm (existing ones are never overwritten, and realm-level settings
+are never replayed), then runs the migrations. The migration version is kept in the realm
+attribute `relay_realm_version`, and the job's log shows `at version X, target Y`.
+
+Changing a realm-level setting or an existing client or user:
+1. Make the change in the realm JSON, so fresh realms get it.
+2. Add a migration so existing realms get it too: a file
+   `deploy/helm/ehds-relay/files/realm-init/migrations/mNNN_short_name.py` with `VERSION` (one
+   more than the highest), `DESCRIPTION` and `migrate(admin)`. It is found automatically and runs
+   once. Never edit a migration that has shipped; keep each one idempotent. See the docstring in
+   `migrations/__init__.py`.
+
+`scripts/check-keycloak-restart.sh` deletes the Keycloak pod and checks that user ids and the
+migration version are unchanged and that no email has two `app_user` rows.
+
+Warnings: the API identifies a user by issuer and subject, and the issuer includes the Keycloak
+port. Changing `KEYCLOAK_LOCAL_PORT` therefore makes every user a new one. The first start after
+upgrading from the in-memory Keycloak gives the owner one new `app_user` (the old subject no
+longer exists); sign in once and re-invite, or reset the database, to avoid the duplicate.
 
 Tilt and the scripts only ever target the `kind-ehds-relay` context. Settings (cluster
 name, namespace, release name, local ports) are in `.dev.env`, created from

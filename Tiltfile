@@ -126,9 +126,10 @@ k8s_resource(
   labels=['backend'],
 )
 
-# Keycloak in dev mode: the ehds-relay realm (deploy/helm/ehds-relay/files) is re-imported on
-# every start, so edits to the realm JSON redeploy it. Test users: owner, standard, invitee
-# (password = username).
+# Keycloak in dev mode with its data in its own database on the bundled Postgres. The ehds-relay
+# realm (deploy/helm/ehds-relay/files) is imported once; users keep their ids across restarts.
+# Later realm edits are applied by the keycloak-realm-init resource below. Test users: owner,
+# standard, invitee (password = username).
 k8s_resource(
   RELEASE_NAME + '-keycloak',
   new_name='keycloak',
@@ -144,6 +145,16 @@ k8s_resource(
     link('http://localhost:{}/admin'.format(KEYCLOAK_LOCAL_PORT), 'Keycloak admin (admin/admin)'),
     link('http://localhost:{}/realms/ehds-relay/account'.format(KEYCLOAK_LOCAL_PORT), 'Account console'),
   ],
+  labels=['auth'],
+)
+
+# Applies realm JSON additions to the existing realm and runs the run-once migrations
+# (deploy/helm/ehds-relay/files/realm-init). Restarts when the realm or the script changes.
+k8s_resource(
+  RELEASE_NAME + '-keycloak-realm-init',
+  new_name='keycloak-realm-init',
+  objects=[RELEASE_NAME + '-keycloak-realm-init:configmap'],
+  resource_deps=['keycloak'],
   labels=['auth'],
 )
 

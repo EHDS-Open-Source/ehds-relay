@@ -1,0 +1,74 @@
+{{- if and .Values.keycloak.enabled .Values.realmInit.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ehds-relay.fullname" . }}-keycloak-realm-init
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: realm-init
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "ehds-relay.selectorLabels" (dict "ctx" . "component" "realm-init") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ehds-relay.selectorLabels" (dict "ctx" . "component" "realm-init") | nindent 8 }}
+      annotations:
+        # Run again when the realm definition, the script, or the values it substitutes change
+        checksum/realm: {{ include (print $.Template.BasePath "/keycloak-realm-configmap.yaml") . | sha256sum }}
+        checksum/realm-init: {{ include (print $.Template.BasePath "/keycloak-realm-init-configmap.yaml") . | sha256sum }}
+        checksum/realm-env: {{ include "ehds-relay.keycloakRealmEnv" . | sha256sum }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: realm-init
+          image: "{{ .Values.realmInit.image.repository }}:{{ .Values.realmInit.image.tag }}"
+          imagePullPolicy: {{ .Values.realmInit.image.pullPolicy }}
+          # Runs once per start, then idles; any failure exits so the pod restarts and retries
+          command: ["python", "-u", "/app/realm_init.py"]
+          workingDir: /app
+          envFrom:
+            - secretRef:
+                name: {{ include "ehds-relay.fullname" . }}-keycloak
+          env:
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+            - name: KEYCLOAK_URL
+              value: {{ include "ehds-relay.keycloakInternalUrl" . | quote }}
+            - name: KEYCLOAK_REALM
+              value: {{ .Values.keycloak.realm | quote }}
+            - name: REALM_FILE
+              value: {{ printf "/realm-config/%s-realm.json" .Values.keycloak.realm | quote }}
+            {{- include "ehds-relay.keycloakRealmEnv" . | nindent 12 }}
+          volumeMounts:
+            - name: code
+              mountPath: /app
+              readOnly: true
+            - name: realm
+              mountPath: /realm-config
+              readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.realmInit.resources | nindent 12 }}
+      volumes:
+        - name: code
+          configMap:
+            name: {{ include "ehds-relay.fullname" . }}-keycloak-realm-init
+            items:
+              {{- range $path, $_ := .Files.Glob "files/realm-init/**.py" }}
+              - key: {{ trimPrefix "files/realm-init/" $path | replace "/" "--" }}
+                path: {{ trimPrefix "files/realm-init/" $path }}
+              {{- end }}
+        - name: realm
+          configMap:
+            name: {{ include "ehds-relay.fullname" . }}-keycloak-realm
+{{- end }}
