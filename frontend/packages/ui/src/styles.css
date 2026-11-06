@@ -160,16 +160,6 @@ a:where(:not([class])):hover,
   animation: star-spin var(--motion-spin) linear infinite;
 }
 
-/* The browser's arrow is hidden and replaced by a chevron. The colour is written here,
-   as an image cannot read a CSS variable. */
-.native-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 8'%3E%3Cpath d='M1.5 1.5 7 6.5l5.5-5' fill='none' stroke='%231c2fd4' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 16px center;
-  background-size: 14px 8px;
-}
-
 /* Reduced motion: no transitions, animations or smooth scrolling. Only the loading star
    keeps moving, as a gentle pulse, so people can still tell work is in progress. */
 @media (prefers-reduced-motion: reduce) {
@@ -185,12 +175,6 @@ a:where(:not([class])):hover,
   .loading-star {
     animation: star-pulse var(--motion-pulse) ease-in-out infinite !important;
   }
-}
-
-/* Select on a blue surface: underline field with a white chevron. */
-.native-select-on-blue {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 8'%3E%3Cpath d='M1.5 1.5 7 6.5l5.5-5' fill='none' stroke='%23f8f121' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-position: right 4px center;
 }
 
 /* Browser autofill on blue fields: keep the yellow text on the blue card. The inset shadow

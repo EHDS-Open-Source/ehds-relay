@@ -345,8 +345,9 @@
             "type": "array"
           },
           "description": {
+            "description": "One entry per language, each at most 2000 characters",
             "items": {
-              "$ref": "#/components/schemas/LangText"
+              "$ref": "#/components/schemas/DescriptionText"
             },
             "title": "Description",
             "type": "array"
@@ -426,10 +427,13 @@
             "type": "array"
           },
           "keyword": {
+            "description": "At most 20 keywords of at most 50 characters",
             "items": {
+              "maxLength": 50,
               "minLength": 1,
               "type": "string"
             },
+            "maxItems": 20,
             "title": "Keyword",
             "type": "array"
           },
@@ -467,12 +471,14 @@
           "provenance": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "description": "At most 2000 characters",
             "title": "Provenance"
           },
           "publisher": {
@@ -518,8 +524,9 @@
             ]
           },
           "title": {
+            "description": "One entry per language, each at most 200 characters",
             "items": {
-              "$ref": "#/components/schemas/LangText"
+              "$ref": "#/components/schemas/TitleText"
             },
             "title": "Title",
             "type": "array"
@@ -596,6 +603,28 @@
           "version"
         ],
         "title": "DatasetUpdateDTO",
+        "type": "object"
+      },
+      "DescriptionText": {
+        "additionalProperties": false,
+        "properties": {
+          "lang": {
+            "default": "en",
+            "pattern": "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$",
+            "title": "Lang",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "DescriptionText",
         "type": "object"
       },
       "Distribution": {
@@ -842,28 +871,6 @@
         ],
         "title": "InvitationStatus",
         "type": "string"
-      },
-      "LangText": {
-        "additionalProperties": false,
-        "description": "A text in one language.",
-        "properties": {
-          "lang": {
-            "default": "en",
-            "pattern": "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$",
-            "title": "Lang",
-            "type": "string"
-          },
-          "text": {
-            "minLength": 1,
-            "title": "Text",
-            "type": "string"
-          }
-        },
-        "required": [
-          "text"
-        ],
-        "title": "LangText",
-        "type": "object"
       },
       "LogoutDTO": {
         "description": "Where the browser goes next to finish signing out.\n\nUsually the provider's end-session page, which ends its single sign-on session too and then\nreturns to the app's sign-in page.",
@@ -1318,6 +1325,28 @@
         "title": "Term",
         "type": "object"
       },
+      "TitleText": {
+        "additionalProperties": false,
+        "properties": {
+          "lang": {
+            "default": "en",
+            "pattern": "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$",
+            "title": "Lang",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "TitleText",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -1466,6 +1495,8 @@
             "type": "string"
           },
           "definition": {
+            "description": "At most 500 characters",
+            "maxLength": 500,
             "minLength": 1,
             "title": "Definition",
             "type": "string"

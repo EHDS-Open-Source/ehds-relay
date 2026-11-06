@@ -2,10 +2,10 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
+import { Dropdown } from "../form/Dropdown";
 import { FormMessage } from "./form-message";
 import { Input } from "./input";
 import { Label } from "./label";
-import { NativeSelect } from "./native-select";
 
 describe("form fields", () => {
   it("labels an input and takes typing", async () => {
@@ -17,20 +17,6 @@ describe("form fields", () => {
     );
     await userEvent.type(screen.getByLabelText("Name"), "Acme");
     expect(screen.getByLabelText("Name")).toHaveValue("Acme");
-  });
-
-  it("selects an option", async () => {
-    render(
-      <>
-        <Label htmlFor="c">Country</Label>
-        <NativeSelect id="c" defaultValue="">
-          <option value="">Choose</option>
-          <option value="FR">France</option>
-        </NativeSelect>
-      </>,
-    );
-    await userEvent.selectOptions(screen.getByLabelText("Country"), "FR");
-    expect(screen.getByLabelText("Country")).toHaveValue("FR");
   });
 
   it("announces errors but not info", () => {
@@ -64,16 +50,21 @@ describe("fields on blue", () => {
     }
   });
 
-  it("shows an unchosen select like a placeholder, with the yellow chevron", () => {
+  it("shows an unchosen dropdown like a placeholder, with the yellow chevron", () => {
     render(
-      <NativeSelect tone="onBlue" aria-label="Country" defaultValue="">
-        <option value="">Select a country</option>
-        <option value="FR">France</option>
-      </NativeSelect>,
+      <Dropdown
+        tone="onBlue"
+        aria-label="Country"
+        value=""
+        placeholder="Select a country"
+        onValueChange={() => {}}
+        options={[{ value: "FR", label: "France" }]}
+      />,
     );
-    const select = screen.getByRole("combobox", { name: "Country" });
-    expect(select).toHaveClass("native-select-on-blue");
-    expect(select).toHaveClass("has-[option[value='']:checked]:text-white/75");
+    const trigger = screen.getByRole("combobox", { name: "Country" });
+    expect(trigger).toHaveAttribute("data-tone", "onBlue");
+    expect(trigger).toHaveClass("data-[placeholder]:text-white/75");
+    expect(trigger).toHaveTextContent("Select a country");
   });
 
   it("keeps the boxed look on white", () => {

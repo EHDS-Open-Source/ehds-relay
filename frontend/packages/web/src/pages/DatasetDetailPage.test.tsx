@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -226,6 +226,10 @@ describe("revalidation reminder", () => {
     return { calls, bodies };
   }
 
+  /** The button that opens the calendar inside the reminder dialog. */
+  const dateButton = (dialog: HTMLElement) =>
+    within(dialog).getByRole("button", { name: new RegExp(r.dateLabel) });
+
   async function openDialog() {
     await userEvent.click(
       await screen.findByRole("button", {
@@ -255,9 +259,7 @@ describe("revalidation reminder", () => {
     const { bodies } = stubReminder();
     renderApp(path);
     const dialog = await openDialog();
-    const input = within(dialog).getByLabelText(r.dateLabel, { exact: false });
-    expect(input).toHaveValue(inAYear);
-    expect(input).toHaveAttribute("min", nextDay(todayIso()));
+    expect(dateButton(dialog)).toHaveTextContent(longDate(inAYear));
     // Nothing to remove yet
     expect(
       within(dialog).queryByRole("button", { name: r.clear }),
@@ -289,10 +291,12 @@ describe("revalidation reminder", () => {
       (await screen.findAllByText(formatIsoDate(current))).length,
     ).toBeGreaterThan(0);
     const dialog = await openDialog();
-    const input = within(dialog).getByLabelText(r.dateLabel, { exact: false });
-    expect(input).toHaveValue(current);
-    const next = nextDay(todayIso());
-    fireEvent.change(input, { target: { value: next } });
+    expect(dateButton(dialog)).toHaveTextContent(longDate(current));
+    // The calendar opens on the saved day; the next one is one key away
+    await userEvent.click(dateButton(dialog));
+    await userEvent.keyboard("{ArrowRight}{Enter}");
+    const next = nextDay(current);
+    expect(dateButton(dialog)).toHaveTextContent(longDate(next));
     await userEvent.click(within(dialog).getByRole("button", { name: r.save }));
     await waitFor(() => expect(bodies).toEqual([{ reminder_date: next }]));
     await waitFor(() =>
@@ -346,21 +350,28 @@ describe("revalidation reminder", () => {
     expect(bodies).toEqual([]);
   });
 
-  it("EDIT-11 refuses today and past dates without calling the API", async () => {
+  it("EDIT-11 does not let today or past dates be chosen", async () => {
     const { bodies } = stubReminder();
     renderApp(path);
     const dialog = await openDialog();
-    const input = within(dialog).getByLabelText(r.dateLabel, { exact: false });
-    fireEvent.change(input, { target: { value: todayIso() } });
-    expect(within(dialog).getByText(r.problems.notFuture)).toBeVisible();
-    expect(input).toHaveAttribute("aria-invalid", "true");
-    await userEvent.click(within(dialog).getByRole("button", { name: r.save }));
+    await userEvent.click(dateButton(dialog));
+    const calendar = screen.getByRole("dialog", { name: "Choose a date" });
+    // The calendar opens a year ahead; go back to this month
+    await userEvent.keyboard("{PageUp>12/}");
+    // Tomorrow is the first day that can be chosen
+    const dayButton = (iso: string) =>
+      within(calendar).getByRole("button", { name: longDate(iso) });
+    expect(dayButton(todayIso())).toHaveAttribute("aria-disabled", "true");
+    expect(dayButton(nextDay(todayIso()))).not.toHaveAttribute("aria-disabled");
+    expect(
+      within(calendar).getByRole("button", { name: "Today" }),
+    ).toBeDisabled();
+    await userEvent.click(dayButton(todayIso()));
+    expect(calendar).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+    // Only the calendar closed; the dialog is still there with the same date
     expect(screen.getByRole("alertdialog")).toBeVisible();
-
-    fireEvent.change(input, { target: { value: "" } });
-    expect(within(dialog).getByText(r.problems.required)).toBeVisible();
-    fireEvent.change(input, { target: { value: addYears(todayIso(), 6) } });
-    expect(within(dialog).getByText(r.problems.tooFar)).toBeVisible();
+    expect(dateButton(dialog)).toHaveTextContent(longDate(inAYear));
     expect(bodies).toEqual([]);
   });
 
@@ -382,9 +393,7 @@ describe("revalidation reminder", () => {
       (await screen.findByText(m.ribbon.overdueSince)).parentElement,
     ).toHaveTextContent(formatIsoDate("2025-01-10"));
     const dialog = await openDialog();
-    expect(
-      within(dialog).getByLabelText(r.dateLabel, { exact: false }),
-    ).toHaveValue(inAYear);
+    expect(dateButton(dialog)).toHaveTextContent(longDate(inAYear));
   });
 });
 

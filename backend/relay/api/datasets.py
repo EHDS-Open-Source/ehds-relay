@@ -169,7 +169,7 @@ def publish_dataset(
     _check_version(ds, body.version)
     if ds.status == DatasetStatus.PUBLISHED:
         raise HTTPException(status.HTTP_409_CONFLICT, detail="dataset is already published")
-    missing = DatasetMetadata.model_validate(ds.metadata_doc).missing_for_publish()
+    missing = DatasetMetadata.from_stored(ds.metadata_doc).missing_for_publish()
     if missing:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_CONTENT,

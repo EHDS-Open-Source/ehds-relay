@@ -7,20 +7,29 @@ stable keys the form uses to link a missing field to its input.
 Vocabulary-backed values are `Term`s (a label plus the term's URI), so a hosted
 vocabulary lookup can fill the same shape that manual name + URL entry does.
 The mapping to RDF lives in `relay.rdf`.
+
+Text and tag length limits apply when a request is validated, not when a stored document is
+read back: datasets saved before a limit existed still load, export and publish, and can be
+edited down. Stored documents are parsed with `DatasetMetadata.from_stored`.
 """
 
+from collections.abc import Sequence
 from datetime import date
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
 from pydantic import (
+    AfterValidator,
     AnyUrl,
     BaseModel,
     ConfigDict,
     Field,
     StringConstraints,
+    ValidationInfo,
     field_validator,
     model_validator,
 )
+from pydantic.fields import FieldInfo
+from pydantic_core import PydanticKnownError
 from rdflib import Graph
 
 from relay.domain.datasets import AccessRights
@@ -42,6 +51,61 @@ LanguageTag = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z]{2,3}(-[a-zA-Z
 NonEmpty = Annotated[str, StringConstraints(min_length=1)]
 
 
+# Length limits for the free text the dataset form edits. Lengths count Unicode code points
+# of the raw text (no trimming).
+TITLE_MAX_LENGTH = 200
+DESCRIPTION_MAX_LENGTH = 2000
+PROVENANCE_MAX_LENGTH = 2000
+DEFINITION_MAX_LENGTH = 500
+KEYWORD_MAX_LENGTH = 50
+KEYWORDS_MAX_ITEMS = 20
+
+# Validation context for parsing a stored document: the limits above are skipped
+STORED_CONTEXT = {"stored": True}
+
+
+def _is_stored(info: ValidationInfo) -> bool:
+    return bool(info.context and info.context.get("stored"))
+
+
+def _max_length(limit: int) -> AfterValidator:
+    """Reject text over `limit` characters, unless parsing a stored document."""
+
+    def check(value: str | None, info: ValidationInfo) -> str | None:
+        if value is not None and len(value) > limit and not _is_stored(info):
+            raise PydanticKnownError("string_too_long", {"max_length": limit})
+        return value
+
+    return AfterValidator(check)
+
+
+# The limit is also published in OpenAPI so the generated client carries it
+def _schema_max(limit: int) -> FieldInfo:
+    return Field(json_schema_extra={"maxLength": limit})
+
+
+TitleStr = Annotated[NonEmpty, _max_length(TITLE_MAX_LENGTH), _schema_max(TITLE_MAX_LENGTH)]
+DescriptionStr = Annotated[
+    NonEmpty, _max_length(DESCRIPTION_MAX_LENGTH), _schema_max(DESCRIPTION_MAX_LENGTH)
+]
+ProvenanceStr = Annotated[
+    str, _max_length(PROVENANCE_MAX_LENGTH), _schema_max(PROVENANCE_MAX_LENGTH)
+]
+DefinitionStr = Annotated[
+    NonEmpty, _max_length(DEFINITION_MAX_LENGTH), _schema_max(DEFINITION_MAX_LENGTH)
+]
+KeywordStr = Annotated[NonEmpty, _max_length(KEYWORD_MAX_LENGTH), _schema_max(KEYWORD_MAX_LENGTH)]
+
+
+def _check_count(value: list[str], info: ValidationInfo) -> list[str]:
+    if len(value) > KEYWORDS_MAX_ITEMS and not _is_stored(info):
+        raise PydanticKnownError(
+            "too_long",
+            {"field_type": "List", "max_length": KEYWORDS_MAX_ITEMS, "actual_length": len(value)},
+        )
+    return value
+
+
 class _Meta(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -51,6 +115,14 @@ class LangText(_Meta):
 
     lang: LanguageTag = "en"
     text: NonEmpty
+
+
+class TitleText(LangText):
+    text: TitleStr
+
+
+class DescriptionText(LangText):
+    text: DescriptionStr
 
 
 class Term(_Meta):
@@ -90,7 +162,7 @@ class Variable(_Meta):
 
     name: NonEmpty
     data_type: NonEmpty = Field(description="e.g. string, integer, boolean, date")
-    definition: NonEmpty
+    definition: DefinitionStr = Field(description=f"At most {DEFINITION_MAX_LENGTH} characters")
     coding_system: AnyUrl | None = Field(
         default=None, description="Coding system or value domain the values come from"
     )
@@ -107,7 +179,7 @@ class TemporalCoverage(_Meta):
         return self
 
 
-def _first_text(texts: list[LangText], lang: str = "en") -> str | None:
+def _first_text(texts: Sequence[LangText], lang: str = "en") -> str | None:
     for t in texts:
         if t.lang == lang:
             return t.text
@@ -116,13 +188,30 @@ def _first_text(texts: list[LangText], lang: str = "en") -> str | None:
 
 class DatasetMetadata(_Meta):
     # Main
-    title: list[LangText] = Field(default_factory=list[LangText])
-    description: list[LangText] = Field(default_factory=list[LangText])
+    title: list[TitleText] = Field(
+        default_factory=list[TitleText],
+        description=f"One entry per language, each at most {TITLE_MAX_LENGTH} characters",
+    )
+    description: list[DescriptionText] = Field(
+        default_factory=list[DescriptionText],
+        description=f"One entry per language, each at most {DESCRIPTION_MAX_LENGTH} characters",
+    )
     distributions: list[Distribution] = Field(default_factory=list[Distribution])
     structured_data: bool | None = None
     variables: list[Variable] = Field(default_factory=list[Variable])
-    provenance: str | None = None
-    keyword: list[NonEmpty] = Field(default_factory=list[str])
+    provenance: ProvenanceStr | None = Field(
+        default=None, description=f"At most {PROVENANCE_MAX_LENGTH} characters"
+    )
+    keyword: Annotated[
+        list[KeywordStr],
+        AfterValidator(_check_count),
+        Field(json_schema_extra={"maxItems": KEYWORDS_MAX_ITEMS}),
+    ] = Field(
+        default_factory=list[str],
+        description=(
+            f"At most {KEYWORDS_MAX_ITEMS} keywords of at most {KEYWORD_MAX_LENGTH} characters"
+        ),
+    )
     health_theme: list[Term] = Field(default_factory=list[Term])
     health_category: list[Term] = Field(default_factory=list[Term])
     coding_system: list[Term] = Field(default_factory=list[Term])
@@ -165,6 +254,11 @@ class DatasetMetadata(_Meta):
             except Exception as exc:
                 raise ValueError(f"quantum_label is not valid Turtle: {exc}") from exc
         return value
+
+    @classmethod
+    def from_stored(cls, doc: Any) -> Self:
+        """Parse a stored document without the length limits, so older datasets still load."""
+        return cls.model_validate(doc, context=STORED_CONTEXT)
 
     def display_title(self) -> str | None:
         """Title for lists and search: the English one, else the first."""

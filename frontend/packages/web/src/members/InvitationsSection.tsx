@@ -1,13 +1,13 @@
 import {
   Button,
   ConfirmDialog,
+  Dropdown,
   EmptyState,
   Field,
   FilterChips,
   Icon,
   Input,
   LoadingStar,
-  NativeSelect,
   fieldErrorId,
   useMinimumPending,
   useToast,
@@ -155,19 +155,17 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
           label={text.roleLabel}
           htmlFor="invite-role"
         >
-          <NativeSelect
+          <Dropdown
             id="invite-role"
             value={role}
-            onChange={(event) => {
-              setRole(event.target.value as MemberRole);
+            options={roleOptions.map((option) => ({
+              value: option,
+              label: m.roles[option],
+            }))}
+            onValueChange={(value) => {
+              setRole(value as MemberRole);
             }}
-          >
-            {roleOptions.map((option) => (
-              <option key={option} value={option}>
-                {m.roles[option]}
-              </option>
-            ))}
-          </NativeSelect>
+          />
         </Field>
         <Button
           type="submit"

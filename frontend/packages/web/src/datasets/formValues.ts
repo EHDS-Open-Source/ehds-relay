@@ -163,7 +163,9 @@ export function fromMetadata(
 ): DatasetFormValues {
   // Stored metadata was validated by the server on the way in, so it has this shape
   const m = metadata as DatasetMetadata;
-  const langRows = (texts: Schemas["LangText"][] | undefined) =>
+  const langRows = (
+    texts: (Schemas["TitleText"] | Schemas["DescriptionText"])[] | undefined,
+  ) =>
     rows(
       (texts ?? []).map((t) => ({ lang: str(t.lang), text: str(t.text) })),
       emptyLangText,

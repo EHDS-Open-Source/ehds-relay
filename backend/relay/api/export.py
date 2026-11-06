@@ -71,7 +71,7 @@ def _file_response(graph: Graph, export_format: ExportFormat, name: str) -> Resp
 
 
 def _metadata(ds: Dataset) -> DatasetMetadata:
-    return DatasetMetadata.model_validate(ds.metadata_doc)
+    return DatasetMetadata.from_stored(ds.metadata_doc)
 
 
 @router.get(

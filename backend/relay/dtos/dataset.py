@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import Self
 
-from pydantic import Field, computed_field, model_validator
+from pydantic import Field, computed_field, field_validator, model_validator
 
 from relay.domain.datasets import AccessRights, DatasetStatus
 from relay.dtos.base import DTO, RequestDTO
@@ -107,6 +107,12 @@ class DatasetDTO(DTO):
     overdue: bool = Field(
         description="Published and not validated for a year since last_validated_at"
     )
+
+    @field_validator("metadata", mode="before")
+    @classmethod
+    def _parse_stored(cls, value: object) -> object:
+        # Stored documents may predate the length limits, so they are parsed without them
+        return value if isinstance(value, DatasetMetadata) else DatasetMetadata.from_stored(value)
 
     @computed_field(description="Mandatory fields still missing before this can be published")
     @property
