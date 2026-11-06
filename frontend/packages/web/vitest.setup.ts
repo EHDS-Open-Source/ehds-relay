@@ -30,3 +30,18 @@ vi.stubGlobal(
     );
   }),
 );
+
+// Radix Select (the Dropdown) needs these; jsdom does not implement them.
+const elementPrototype = window.HTMLElement.prototype as unknown as Record<
+  string,
+  unknown
+>;
+const stubs: Record<string, () => unknown> = {
+  hasPointerCapture: () => false,
+  setPointerCapture: () => undefined,
+  releasePointerCapture: () => undefined,
+  scrollIntoView: () => undefined,
+};
+for (const [name, stub] of Object.entries(stubs)) {
+  if (!(name in elementPrototype)) elementPrototype[name] = stub;
+}
