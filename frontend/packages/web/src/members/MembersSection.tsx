@@ -1,10 +1,10 @@
 import {
   Button,
   ConfirmDialog,
+  Dropdown,
   EmptyState,
   Icon,
   LoadingStar,
-  NativeSelect,
   useMinimumPending,
   useToast,
 } from "@ehds-relay/ui";
@@ -110,13 +110,18 @@ export function MembersSection({
             <div className={rowActions}>
               {canChangeRoles ? (
                 // Compact, so the row keeps the height of a row with a role tag.
-                <NativeSelect
+                <Dropdown
+                  size="compact"
                   aria-label={m.list.roleFor(member.name)}
-                  className="h-[34px] w-36 shrink-0 py-0 pr-10 pl-4 text-[0.9em] font-semibold"
+                  className="w-36 shrink-0"
                   value={member.role}
                   disabled={changeRole.isPending}
-                  onChange={(event) => {
-                    const role = event.target.value as MemberRole;
+                  options={roleOptions.map((role) => ({
+                    value: role,
+                    label: m.roles[role],
+                  }))}
+                  onValueChange={(value) => {
+                    const role = value as MemberRole;
                     changeRole.mutate(
                       { userId: member.user_id, role },
                       {
@@ -135,13 +140,7 @@ export function MembersSection({
                       },
                     );
                   }}
-                >
-                  {roleOptions.map((role) => (
-                    <option key={role} value={role}>
-                      {m.roles[role]}
-                    </option>
-                  ))}
-                </NativeSelect>
+                />
               ) : (
                 <RoleTag role={member.role} />
               )}

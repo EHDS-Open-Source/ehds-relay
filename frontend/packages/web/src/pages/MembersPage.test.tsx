@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { MembersSection } from "../members/MembersSection";
 import { makeInvitation, makeMember, renderAs } from "../members/testUtils";
 import { demoSession } from "../session/testing";
+import { chooseOption } from "../testing/dropdown";
 import { shellMessages } from "../shell/messages";
 import {
   ORG,
@@ -53,7 +54,7 @@ describe("members", () => {
     expect(remove.lastElementChild).toHaveAttribute("data-icon", "remove");
     expect(
       screen.getByRole("combobox", { name: m.list.roleFor("Bob Standard") }),
-    ).toHaveValue("standard");
+    ).toHaveTextContent(m.roles.standard);
     expect(screen.getByText(`(${m.list.you})`)).toBeVisible();
   });
 
@@ -84,14 +85,15 @@ describe("members", () => {
     const select = await screen.findByRole("combobox", {
       name: m.list.roleFor("Bob Standard"),
     });
-    await userEvent.selectOptions(select, "owner");
+    await chooseOption(select, m.roles.owner);
     await waitFor(() => {
       expect(
         screen.getByRole("combobox", { name: m.list.roleFor("Bob Standard") }),
-      ).toHaveValue("owner");
+      ).toHaveTextContent(m.roles.owner);
     });
     const patch = calls.find((c) => c.method === "PATCH");
     expect(patch).toBeDefined();
+    expect(calls.filter((c) => c.method === "PATCH")).toHaveLength(1);
     expect(
       await screen.findByText(m.roleChanged("Bob Standard", "owner")),
     ).toBeVisible();
@@ -109,11 +111,11 @@ describe("members", () => {
         json({ detail: "cannot remove or demote the last owner" }, 409),
     });
     renderAs(path, demoSession);
-    await userEvent.selectOptions(
+    await chooseOption(
       await screen.findByRole("combobox", {
         name: m.list.roleFor("Ada Owner"),
       }),
-      "standard",
+      m.roles.standard,
     );
     expect(await screen.findByText(m.errors.lastOwner)).toBeVisible();
   });
@@ -260,9 +262,9 @@ describe("invitations", () => {
       screen.getByLabelText(emailLabel),
       "carol@example.org",
     );
-    await userEvent.selectOptions(
+    await chooseOption(
       screen.getByLabelText(m.invitations.roleLabel),
-      "owner",
+      m.roles.owner,
     );
     await userEvent.click(
       screen.getByRole("button", { name: m.invitations.send }),

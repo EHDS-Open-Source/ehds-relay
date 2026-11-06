@@ -50,6 +50,11 @@ export function fieldHintId(id: string): string {
   return `${id}-hint`;
 }
 
+/** Id of the label of a field, for controls that name themselves from it. */
+export function fieldLabelId(id: string): string {
+  return `${id}-label`;
+}
+
 /** Joins ids for `aria-describedby`, leaving out empty and repeated ones. */
 export function joinIds(
   ...ids: readonly (string | undefined | false)[]
@@ -202,7 +207,11 @@ export function Field({
         data-invalid={error || invalid ? true : undefined}
         className={classes}
       >
-        <Label htmlFor={htmlFor} className={labelClass}>
+        <Label
+          id={fieldLabelId(htmlFor)}
+          htmlFor={htmlFor}
+          className={labelClass}
+        >
           {labelContent}
         </Label>
         <DescribedByContext.Provider value={ownIds}>

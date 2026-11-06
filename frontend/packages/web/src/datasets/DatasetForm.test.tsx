@@ -198,6 +198,59 @@ describe("new dataset form", () => {
     expect(body.metadata).not.toHaveProperty("variables");
   });
 
+  it("picks a coverage period, limits each date by the other and clears one", async () => {
+    await openNew();
+    await userEvent.type(titleBox(), "Period");
+    const coverage = field("temporal_coverage");
+    const dateButton = (label: string) =>
+      coverage.getByRole("button", { name: new RegExp(label) });
+
+    await userEvent.click(dateButton(text.temporal.start));
+    await userEvent.click(screen.getByRole("button", { name: "Next month" }));
+    await userEvent.click(screen.getByRole("button", { name: /^15 / }));
+    const start = dateButton(text.temporal.start).textContent;
+    expect(start).toMatch(/^15 /);
+
+    await userEvent.click(dateButton(text.temporal.end));
+    // The end calendar opens on the day nearest to the start and nothing before it can be chosen
+    const dialog = screen.getByRole("dialog");
+    expect(
+      within(dialog).getByRole("button", { name: /^14 / }),
+    ).toHaveAttribute("aria-disabled", "true");
+    expect(
+      within(dialog).getByRole("button", { name: /^15 / }),
+    ).not.toHaveAttribute("aria-disabled");
+    await userEvent.keyboard("{ArrowRight}{Enter}");
+    expect(dateButton(text.temporal.end).textContent).toMatch(/^16 /);
+
+    await userEvent.click(dateButton(text.temporal.end));
+    await userEvent.click(screen.getByRole("button", { name: "Clear date" }));
+    expect(dateButton(text.temporal.end)).toHaveTextContent("Choose a date");
+
+    await userEvent.click(dateButton(text.temporal.end));
+    await userEvent.keyboard("{Enter}");
+    await choose(text.actions.saveDraft);
+    await waitFor(() => expect(server.saves()).toHaveLength(1));
+    const { metadata } = server.saves()[0]!.body as {
+      metadata: { temporal_coverage: { start: string; end: string } };
+    };
+    expect(metadata.temporal_coverage.start).toMatch(/^\d{4}-\d{2}-15$/);
+    expect(metadata.temporal_coverage.end).toBe(
+      metadata.temporal_coverage.start,
+    );
+  });
+
+  it("leaves temporal coverage out when no date is chosen", async () => {
+    await openNew();
+    await userEvent.type(titleBox(), "No period");
+    await choose(text.actions.saveDraft);
+    await waitFor(() => expect(server.saves()).toHaveLength(1));
+    expect(
+      (server.saves()[0]!.body as { metadata: Record<string, unknown> })
+        .metadata,
+    ).not.toHaveProperty("temporal_coverage");
+  });
+
   it("adds tags with Enter, name and web address pairs, languages and contact points", async () => {
     await openNew();
     await userEvent.type(titleBox(), "Lists");
@@ -402,8 +455,10 @@ describe("editing a dataset", () => {
       1850000,
     );
     expect(
-      field("temporal_coverage").getByLabelText(text.temporal.end),
-    ).toHaveValue("2024-12-31");
+      field("temporal_coverage").getByRole("button", {
+        name: new RegExp(text.temporal.end),
+      }),
+    ).toHaveTextContent("31 December 2024");
 
     await choose(text.actions.saveAndPublish);
     await waitFor(() =>

@@ -1,9 +1,9 @@
 import {
+  Dropdown,
   EmptyState,
   Field,
   FormMessage,
   Input,
-  NativeSelect,
   PageHeader,
   SaveButton,
   fieldErrorId,
@@ -115,26 +115,20 @@ function SettingsForm({ org }: { org: SessionOrg }) {
           hint={text.countryHint}
           error={errors.country}
         >
-          <NativeSelect
+          <Dropdown
             id="settings-country"
             value={country}
+            placeholder={text.countryPlaceholder}
             aria-invalid={errors.country ? true : undefined}
             aria-describedby={
               errors.country ? fieldErrorId("settings-country") : undefined
             }
-            onChange={(event) => {
-              setCountry(event.target.value);
-            }}
-          >
-            {org.country === null ? (
-              <option value="">{text.countryPlaceholder}</option>
-            ) : null}
-            {options.map((code) => (
-              <option key={code} value={code}>
-                {countryName(code)}
-              </option>
-            ))}
-          </NativeSelect>
+            options={options.map((code) => ({
+              value: code,
+              label: countryName(code),
+            }))}
+            onValueChange={setCountry}
+          />
         </Field>
       </div>
       {update.isError ? (
