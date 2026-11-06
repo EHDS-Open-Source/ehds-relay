@@ -3,7 +3,7 @@ import { useLocation } from "@tanstack/react-router";
 
 import type { SessionOrg } from "../session/types";
 import { useSession, useSignOut } from "../session/useSession";
-import { useConfirmLeave } from "./leaveGuard";
+import { useConfirmLeave } from "./leaveGuardContext";
 import { shellMessages } from "./messages";
 import { activeNavId, menuNavItems, navLabels } from "./nav";
 import { renderMenuLink } from "./RouterLink";
