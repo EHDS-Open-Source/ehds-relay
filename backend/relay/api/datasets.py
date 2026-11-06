@@ -51,16 +51,41 @@ def _apply_metadata(ds: Dataset, meta: DatasetMetadata) -> None:
     ds.updated_at = func.now()  # pyright: ignore[reportAttributeAccessIssue]
 
 
-def _apply_status(ds: Dataset, publish: bool, meta: DatasetMetadata) -> None:
-    """Save and publish publishes only a complete record; anything else is saved as a draft.
+def _apply_status(
+    ds: Dataset, publish: bool, meta: DatasetMetadata, *, unpublish: bool = False
+) -> None:
+    """Set the status a save leads to.
 
-    So a published dataset never has missing fields, and saving a draft of a published one
-    takes it back to draft.
+    A draft is published only by a save that asks to publish and is complete; otherwise it
+    stays a draft. A published dataset stays published on any save unless the save asks to
+    unpublish, and must still be complete: if it is not, the save is rejected (422) and
+    nothing is stored. Only an explicit publish that passes the checks moves `published_at`.
     """
-    complete = not meta.missing_for_publish()
-    ds.status = (DatasetStatus.PUBLISHED if publish and complete else DatasetStatus.DRAFT).value
-    if ds.status == DatasetStatus.PUBLISHED:
+    missing = meta.missing_for_publish()
+    if ds.status == DatasetStatus.PUBLISHED.value:
+        if unpublish:
+            ds.status = DatasetStatus.DRAFT.value
+            return
+        if missing:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=[
+                    {
+                        "loc": ["body", "metadata", field],
+                        "msg": "required to keep the dataset published",
+                        "type": "missing",
+                    }
+                    for field in missing
+                ],
+            )
+        if publish:
+            _mark_published(ds)
+        return
+    if publish and not missing:
+        ds.status = DatasetStatus.PUBLISHED.value
         _mark_published(ds)
+    else:
+        ds.status = DatasetStatus.DRAFT.value
 
 
 def _mark_published(ds: Dataset) -> None:
@@ -130,8 +155,8 @@ def update_dataset(
 ) -> Dataset:
     ds = get_org_dataset(session, org_id, dataset_id)
     _check_version(ds, body.version)
+    _apply_status(ds, body.publish, body.metadata, unpublish=body.unpublish)
     _apply_metadata(ds, body.metadata)
-    _apply_status(ds, body.publish, body.metadata)
     _commit(session, ds)
     return ds
 

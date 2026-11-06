@@ -581,7 +581,7 @@ export interface components {
             metadata: components["schemas"]["DatasetMetadata"];
             /**
              * Publish
-             * @description Save and publish: publish if nothing is missing, otherwise save as a draft and report what is missing. False saves a draft, which also takes a published dataset back to draft.
+             * @description Save and publish: publish if nothing is missing, otherwise save as a draft and report what is missing. On a published dataset, true saves and publishes again (resetting the validation date) and 422 lists the missing fields; false saves and keeps it published if it is still complete, else 422. False never unpublishes: use `unpublish`.
              * @default false
              */
             publish: boolean;
@@ -735,10 +735,16 @@ export interface components {
             metadata: components["schemas"]["DatasetMetadata"];
             /**
              * Publish
-             * @description Save and publish: publish if nothing is missing, otherwise save as a draft and report what is missing. False saves a draft, which also takes a published dataset back to draft.
+             * @description Save and publish: publish if nothing is missing, otherwise save as a draft and report what is missing. On a published dataset, true saves and publishes again (resetting the validation date) and 422 lists the missing fields; false saves and keeps it published if it is still complete, else 422. False never unpublishes: use `unpublish`.
              * @default false
              */
             publish: boolean;
+            /**
+             * Unpublish
+             * @description Save as a draft and take a published dataset out of the catalogue, whether or not the metadata is complete. The validation date is kept. On a draft this is a plain draft save. Cannot be combined with `publish`.
+             * @default false
+             */
+            unpublish: boolean;
             /**
              * Version
              * @description Version last read by the client; 409 if stale
