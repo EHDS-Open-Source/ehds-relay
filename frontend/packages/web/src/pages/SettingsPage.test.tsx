@@ -10,6 +10,7 @@ import { createRelayRouter } from "../router/router";
 import { createApiSessionStore } from "../session/apiStore";
 import { demoSession, makeOrg } from "../session/testing";
 import { shellMessages } from "../shell/messages";
+import { chooseOption } from "../testing/dropdown";
 
 const text = shellMessages.settings;
 const path = "/orgs/demo/settings";
@@ -77,13 +78,10 @@ describe("MGT-6 organisation settings", () => {
     const router = renderPage();
     const name = await screen.findByLabelText(nameLabel);
     expect(name).toHaveValue("Demo org");
-    expect(screen.getByLabelText(countryLabel)).toHaveValue("FR");
+    expect(screen.getByLabelText(countryLabel)).toHaveTextContent("France");
     await userEvent.clear(name);
     await userEvent.type(name, "Acme Health");
-    await userEvent.selectOptions(
-      screen.getByLabelText(countryLabel),
-      "Greece",
-    );
+    await chooseOption(screen.getByLabelText(countryLabel), "Greece");
     await save();
 
     expect(

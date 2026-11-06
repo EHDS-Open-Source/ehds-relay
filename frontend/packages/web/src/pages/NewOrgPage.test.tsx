@@ -9,6 +9,7 @@ import { createRelayRouter } from "../router/router";
 import { createApiSessionStore } from "../session/apiStore";
 import { demoSession, makeOrg } from "../session/testing";
 import { shellMessages } from "../shell/messages";
+import { chooseOption } from "../testing/dropdown";
 
 const text = shellMessages.newOrg;
 const created = makeOrg({ id: "new-org", name: "Acme Health", country: "EL" });
@@ -66,6 +67,9 @@ describe("NewOrgPage", () => {
     expect(screen.getByText(text.nameRequired)).toBeVisible();
     expect(screen.getByText(text.countryRequired)).toBeVisible();
     expect(posts(fetch)).toHaveLength(0);
+    expect(
+      screen.getByRole("combobox", { name: new RegExp(text.countryLabel) }),
+    ).toHaveTextContent(text.countryPlaceholder);
   });
 
   it("marks both fields required and puts the icon after the button label", async () => {
@@ -102,7 +106,7 @@ describe("NewOrgPage", () => {
       await screen.findByLabelText(new RegExp(text.nameLabel)),
       "Acme Health",
     );
-    await userEvent.selectOptions(
+    await chooseOption(
       screen.getByLabelText(new RegExp(text.countryLabel)),
       "Greece",
     );
@@ -135,7 +139,7 @@ describe("NewOrgPage", () => {
       await screen.findByLabelText(new RegExp(text.nameLabel)),
       "Acme",
     );
-    await userEvent.selectOptions(
+    await chooseOption(
       screen.getByLabelText(new RegExp(text.countryLabel)),
       "Other",
     );
@@ -154,7 +158,7 @@ describe("NewOrgPage", () => {
       await screen.findByLabelText(new RegExp(text.nameLabel)),
       "Acme",
     );
-    await userEvent.selectOptions(
+    await chooseOption(
       screen.getByLabelText(new RegExp(text.countryLabel)),
       "France",
     );
@@ -169,7 +173,7 @@ describe("NewOrgPage", () => {
       await screen.findByLabelText(new RegExp(text.nameLabel)),
       "Acme",
     );
-    await userEvent.selectOptions(
+    await chooseOption(
       screen.getByLabelText(new RegExp(text.countryLabel)),
       "France",
     );
