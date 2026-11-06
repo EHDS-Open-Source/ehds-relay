@@ -681,5 +681,15 @@ export const shellMessages = {
       lang: "Enter a language code, for example en or pt-BR.",
       wholeNumber: "Enter a whole number, 0 or more.",
     },
+    leave: {
+      title: "Leave without saving?",
+      description: "You have unsaved changes to",
+      descriptionTrail: "Save them first, or they will be lost.",
+      descriptionUntitled:
+        "You have unsaved changes to this dataset. Save them first, or they will be lost.",
+      keepEditing: "Keep editing",
+      leave: "Leave without saving",
+      saveAndLeave: "Save and leave",
+    },
   },
 } as const;

@@ -3,6 +3,7 @@ import { useLocation } from "@tanstack/react-router";
 
 import type { SessionOrg } from "../session/types";
 import { useSession, useSignOut } from "../session/useSession";
+import { useConfirmLeave } from "./leaveGuard";
 import { shellMessages } from "./messages";
 import { activeNavId, menuNavItems, navLabels } from "./nav";
 import { renderMenuLink } from "./RouterLink";
@@ -23,6 +24,7 @@ export function ShellMenu({
 }) {
   const session = useSession();
   const signOutAndLeave = useSignOut();
+  const confirmLeave = useConfirmLeave();
   const pathname = useLocation({ select: (location) => location.pathname });
   const items = menuNavItems({
     role: org?.role,
@@ -49,7 +51,10 @@ export function ShellMenu({
       <SideMenuLogOut
         onClick={() => {
           close();
-          void signOutAndLeave();
+          // A page with unsaved work asks first; signing out ends the session at once
+          void confirmLeave().then((ok) =>
+            ok ? signOutAndLeave() : undefined,
+          );
         }}
       >
         {shellMessages.logOut}
