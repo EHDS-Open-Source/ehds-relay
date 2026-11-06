@@ -416,35 +416,129 @@ describe("editing a dataset", () => {
     expect(request?.body).toEqual({
       metadata: full,
       publish: true,
+      unpublish: false,
       version: 1,
     });
     expect(server.datasets.get(dataset.id)?.status).toBe("published");
   });
 
-  it("returns a published dataset to draft with Save draft", async () => {
+  it("offers the draft items on a draft and the published items on a published dataset", async () => {
+    const draft = server.seed(org, goldenExamples.non_public_full, "draft");
+    await openEdit(draft.id);
+    await userEvent.click(
+      screen.getByRole("button", { name: text.actions.saveMenu }),
+    );
+    expect(
+      (await screen.findAllByRole("menuitem")).map((i) => i.textContent),
+    ).toEqual([text.actions.saveDraft, text.actions.saveAndPublish]);
+  });
+
+  it("keeps a published dataset published with Save and keep published", async () => {
     const dataset = server.seed(
       org,
       goldenExamples.non_public_full,
       "published",
     );
-    expect(dataset.status).toBe("published");
     await openEdit(dataset.id);
-    await choose(text.actions.saveDraft);
-    expect(await screen.findByText(text.status.savedDraft)).toBeVisible();
-    // The save button confirms in the success colours for a moment
+    await userEvent.click(
+      screen.getByRole("button", { name: text.actions.saveMenu }),
+    );
     expect(
-      screen.getByRole("button", { name: text.actions.saved }),
-    ).toHaveAttribute("data-saved", "true");
+      (await screen.findAllByRole("menuitem")).map((i) => i.textContent),
+    ).toEqual([text.actions.saveKeepPublished, text.actions.unpublish]);
+    await userEvent.click(
+      screen.getByRole("menuitem", { name: text.actions.saveKeepPublished }),
+    );
+    await waitFor(() => expect(server.saves()).toHaveLength(1));
+    const body = server.saves()[0]?.body as Record<string, unknown>;
+    expect(body).toMatchObject({
+      publish: false,
+      unpublish: false,
+      version: 1,
+    });
+    expect(server.datasets.get(dataset.id)?.status).toBe("published");
+  });
+
+  it("sends nothing when the unpublish confirmation is cancelled", async () => {
+    const dataset = server.seed(
+      org,
+      goldenExamples.non_public_full,
+      "published",
+    );
+    await openEdit(dataset.id);
+    await choose(text.actions.unpublish);
+    expect(
+      await screen.findByRole("alertdialog", {
+        name: text.actions.unpublishTitle,
+      }),
+    ).toBeVisible();
+    await userEvent.click(
+      screen.getByRole("button", { name: text.actions.unpublishCancel }),
+    );
+    expect(server.saves()).toHaveLength(0);
+    expect(server.datasets.get(dataset.id)?.status).toBe("published");
+  });
+
+  it("unpublishes after confirmation, stays on the form and switches the menu", async () => {
+    const dataset = server.seed(
+      org,
+      goldenExamples.non_public_full,
+      "published",
+    );
+    const router = await openEdit(dataset.id);
+    await choose(text.actions.unpublish);
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: text.actions.unpublishConfirm,
+      }),
+    );
+    expect(await screen.findByText(text.status.unpublished)).toBeVisible();
     expect(server.saves()[0]?.body).toMatchObject({
       publish: false,
+      unpublish: true,
       version: 1,
     });
     expect(server.datasets.get(dataset.id)?.status).toBe("draft");
+    expect(router.state.location.pathname).toBe(
+      `/orgs/${org}/datasets/${dataset.id}/edit`,
+    );
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: new RegExp(`^(${text.actions.saveMenu}|${text.actions.saved})$`),
+      }),
+    );
+    expect(
+      await screen.findByRole("menuitem", { name: text.actions.saveDraft }),
+    ).toBeVisible();
+    await userEvent.keyboard("{Escape}");
 
     // The next save uses the new version
     await choose(text.actions.saveDraft);
     await waitFor(() => expect(server.saves()).toHaveLength(2));
     expect(server.saves()[1]?.body).toMatchObject({ version: 2 });
+  });
+
+  it("explains a save that would leave a published dataset incomplete", async () => {
+    const dataset = server.seed(
+      org,
+      goldenExamples.non_public_full,
+      "published",
+    );
+    await openEdit(dataset.id);
+    await userEvent.clear(field("keyword").getByRole("textbox"));
+    for (const chip of field("keyword").queryAllByRole("button", {
+      name: /remove/i,
+    })) {
+      await userEvent.click(chip);
+    }
+    await choose(text.actions.saveKeepPublished);
+    expect(
+      await screen.findByRole("heading", {
+        name: text.stillPublished.title,
+      }),
+    ).toBeVisible();
+    expect(server.datasets.get(dataset.id)?.status).toBe("published");
+    expect(server.datasets.get(dataset.id)?.version).toBe(1);
   });
 
   it("shows the missing list on arrival after an incomplete first save", async () => {

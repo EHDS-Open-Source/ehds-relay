@@ -12,8 +12,13 @@ export type DatasetDTO = Schemas["DatasetDTO"];
 /** What the form hands over when the user saves. */
 export interface DatasetSaveInput {
   metadata: DatasetMetadata;
-  /** True for "Save and Publish": the server publishes only if nothing is missing. */
+  /**
+   * True for "Save and Publish": the server publishes only if nothing is missing. False
+   * saves a draft, or keeps a published dataset published when it is still complete.
+   */
   publish: boolean;
+  /** Save as a draft and take a published dataset out of the catalogue (updates only). */
+  unpublish?: boolean;
 }
 
 /** How a save went, for the form to report. */
@@ -27,12 +32,17 @@ export type SaveResult =
 async function request(
   orgId: string,
   dataset: Pick<DatasetDTO, "id" | "version"> | undefined,
-  { metadata, publish }: DatasetSaveInput,
+  { metadata, publish, unpublish }: DatasetSaveInput,
 ) {
   if (dataset) {
     return api.PUT("/api/v1/organisations/{org_id}/datasets/{dataset_id}", {
       params: { path: { org_id: orgId, dataset_id: dataset.id } },
-      body: { metadata, publish, version: dataset.version },
+      body: {
+        metadata,
+        publish,
+        version: dataset.version,
+        unpublish: unpublish ?? false,
+      },
     });
   }
   return api.POST("/api/v1/organisations/{org_id}/datasets", {

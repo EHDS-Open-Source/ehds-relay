@@ -23,7 +23,7 @@ import {
 } from "./formValues";
 import { focusField } from "./focus";
 import { MissingList } from "./MissingList";
-import { SaveMenu } from "./SaveMenu";
+import { SaveMenu, type SaveIntent } from "./SaveMenu";
 import { AccessSection } from "./sections/AccessSection";
 import { CoverageSection } from "./sections/CoverageSection";
 import { MainSection } from "./sections/MainSection";
@@ -46,6 +46,10 @@ export type SaveFeedback =
   | { type: "saving" }
   | { type: "draft" }
   | { type: "published" }
+  | { type: "keptPublished" }
+  | { type: "unpublished" }
+  /** A published dataset was not saved because it would be left incomplete. */
+  | { type: "stillPublishedIncomplete"; missing: readonly string[] }
   | { type: "incomplete"; missing: readonly string[] }
   | { type: "error"; message: string };
 
@@ -60,6 +64,8 @@ export interface DatasetFormProps {
   onSubmit: (input: DatasetSaveInput) => Promise<SaveResult>;
   /** Feedback to show on arrival, e.g. after the first save moved to the edit page. */
   initialFeedback?: SaveFeedback;
+  /** Whether the dataset being edited is published; changes what the Save menu offers. */
+  published?: boolean;
 }
 
 const resolver: Resolver<DatasetFormValues> = (values) => {
@@ -99,6 +105,7 @@ export function DatasetForm({
   initialValues,
   onSubmit,
   initialFeedback,
+  published = false,
 }: DatasetFormProps) {
   const form = useForm<DatasetFormValues>({
     defaultValues: initialValues ?? fromMetadata(),
@@ -111,16 +118,25 @@ export function DatasetForm({
   const [saved, flashSaved, clearSaved] = useSavedFlash();
   const activeId = useActiveSection(sectionIds);
 
-  async function save(values: DatasetFormValues, publish: boolean) {
+  async function save(values: DatasetFormValues, intent: SaveIntent) {
     const { metadata, indexMap } = mapToMetadata(values);
+    const publish = intent === "publish";
     clearSaved();
     setFeedback({ type: "saving" });
-    const result = await onSubmit({ metadata, publish });
+    const result = await onSubmit(
+      intent === "unpublish"
+        ? { metadata, publish: false, unpublish: true }
+        : { metadata, publish },
+    );
     switch (result.kind) {
       case "saved": {
         const { status, missing_for_publish: missing } = result.dataset;
-        if (status === "published") setFeedback({ type: "published" });
-        else if (publish) setFeedback({ type: "incomplete", missing });
+        if (intent === "unpublish") setFeedback({ type: "unpublished" });
+        else if (status === "published") {
+          setFeedback({
+            type: intent === "keepPublished" ? "keptPublished" : "published",
+          });
+        } else if (publish) setFeedback({ type: "incomplete", missing });
         else setFeedback({ type: "draft" });
         flashSaved();
         break;
@@ -135,7 +151,22 @@ export function DatasetForm({
             });
           }
         }
-        setFeedback({ type: "error", message: text.status.fixErrors });
+        const keptMissing = published
+          ? result.issues.filter(
+              (i) => i.type === "missing" && i.loc.length === 3,
+            )
+          : [];
+        if (
+          keptMissing.length > 0 &&
+          keptMissing.length === result.issues.length
+        ) {
+          setFeedback({
+            type: "stillPublishedIncomplete",
+            missing: keptMissing.map((i) => String(i.loc[2])),
+          });
+        } else {
+          setFeedback({ type: "error", message: text.status.fixErrors });
+        }
         focusIssue(issues);
         break;
       }
@@ -162,8 +193,8 @@ export function DatasetForm({
     focusIssue(result.issues);
   }
 
-  function onSave(publish: boolean) {
-    void form.handleSubmit((values) => save(values, publish), onInvalid)();
+  function onSave(intent: SaveIntent) {
+    void form.handleSubmit((values) => save(values, intent), onInvalid)();
   }
 
   function onClear() {
@@ -203,6 +234,7 @@ export function DatasetForm({
             <SaveMenu
               busy={busy}
               saved={saved}
+              published={published}
               onSave={onSave}
               onClear={onClear}
               isEmpty={isEmpty}
@@ -222,6 +254,12 @@ export function DatasetForm({
             </div>
             {feedback?.type === "incomplete" ? (
               <MissingList missing={feedback.missing} />
+            ) : feedback?.type === "stillPublishedIncomplete" ? (
+              <MissingList
+                missing={feedback.missing}
+                title={text.stillPublished.title}
+                description={text.stillPublished.description}
+              />
             ) : null}
           </div>
           <MainSection />
@@ -245,6 +283,10 @@ function feedbackText(feedback: SaveFeedback | undefined): string {
       return text.status.savedDraft;
     case "published":
       return text.status.published;
+    case "keptPublished":
+      return text.status.savedPublished;
+    case "unpublished":
+      return text.status.unpublished;
     case "error":
       return feedback.message;
     default:

@@ -7,7 +7,15 @@ import { focusField } from "./focus";
 const text = shellMessages.datasetForm.missing;
 
 /** "Not ready to publish": the fields still missing, each a button that goes to its field. */
-export function MissingList({ missing }: { missing: readonly string[] }) {
+export function MissingList({
+  missing,
+  title = text.title,
+  description = text.description,
+}: {
+  missing: readonly string[];
+  title?: string;
+  description?: string;
+}) {
   return (
     <section
       aria-labelledby="missing-for-publish-title"
@@ -18,9 +26,9 @@ export function MissingList({ missing }: { missing: readonly string[] }) {
         className="flex items-center gap-2 text-[length:var(--h4-size)] leading-[1.3] font-bold text-blue"
       >
         <Icon name="warning" size="md" />
-        {text.title}
+        {title}
       </h2>
-      <p className="mt-2 text-[0.95em]">{text.description}</p>
+      <p className="mt-2 text-[0.95em]">{description}</p>
       <ul className="mt-4 flex flex-wrap gap-2">
         {missing.map((key) => (
           <li key={key}>
