@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useSession } from "../session/useSession";
 import { BackToCatalogue } from "./HeaderBack";
+import { LeaveGuardProvider } from "./leaveGuard";
 import { Logo } from "./Logo";
 import { RibbonSlot, RibbonSlotProvider } from "./RibbonSlot";
 import { ShellMenu } from "./ShellMenu";
@@ -24,33 +25,35 @@ export function OrgLayout() {
   const onCatalogue = pathname === catalogue || pathname === `${catalogue}/`;
 
   return (
-    <RibbonSlotProvider>
-      <AppShell
-        ribbon={<RibbonSlot />}
-        header={
-          <AppHeader
-            logo={
-              <Link
-                to="/orgs/$orgId/catalogue"
-                params={{ orgId }}
-                className="no-underline"
-              >
-                <Logo />
-              </Link>
-            }
-            actions={
-              onCatalogue ? undefined : <BackToCatalogue orgId={orgId} />
-            }
-            menuOpen={menuOpen}
-            onMenuClick={() => {
-              setMenuOpen(true);
-            }}
-          />
-        }
-      >
-        <ShellMenu open={menuOpen} onOpenChange={setMenuOpen} org={org} />
-        <Outlet />
-      </AppShell>
-    </RibbonSlotProvider>
+    <LeaveGuardProvider>
+      <RibbonSlotProvider>
+        <AppShell
+          ribbon={<RibbonSlot />}
+          header={
+            <AppHeader
+              logo={
+                <Link
+                  to="/orgs/$orgId/catalogue"
+                  params={{ orgId }}
+                  className="no-underline"
+                >
+                  <Logo />
+                </Link>
+              }
+              actions={
+                onCatalogue ? undefined : <BackToCatalogue orgId={orgId} />
+              }
+              menuOpen={menuOpen}
+              onMenuClick={() => {
+                setMenuOpen(true);
+              }}
+            />
+          }
+        >
+          <ShellMenu open={menuOpen} onOpenChange={setMenuOpen} org={org} />
+          <Outlet />
+        </AppShell>
+      </RibbonSlotProvider>
+    </LeaveGuardProvider>
   );
 }
