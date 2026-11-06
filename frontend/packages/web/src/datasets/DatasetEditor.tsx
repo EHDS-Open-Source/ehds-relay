@@ -24,7 +24,10 @@ export interface DatasetFormRenderProps {
   initialFeedback?: SaveFeedback;
   /** Whether the dataset is published, so the form offers the matching save actions. */
   published: boolean;
-  onSubmit: (input: DatasetSaveInput) => Promise<SaveResult>;
+  onSubmit: (
+    input: DatasetSaveInput,
+    options?: { leaving?: boolean },
+  ) => Promise<SaveResult>;
 }
 
 function arrivalFeedback(
@@ -117,15 +120,25 @@ function LoadedEditor({
     if (hash.startsWith("field-")) focusAnchor(hash);
   }, [hash, formKey]);
 
-  async function onSubmit(input: DatasetSaveInput): Promise<SaveResult> {
+  async function onSubmit(
+    input: DatasetSaveInput,
+    { leaving = false }: { leaving?: boolean } = {},
+  ): Promise<SaveResult> {
     setProblem(null);
     const result = await save(input);
     if (result.kind === "conflict") setProblem("conflict");
     if (result.kind === "failed" && result.status === 403) setProblem(403);
-    if (result.kind === "saved" && result.dataset.status === "published") {
+    // Saving on the way out goes where the user chose instead; the form just saved, so this
+    // move must not be held back by the form's leave guard
+    if (
+      !leaving &&
+      result.kind === "saved" &&
+      result.dataset.status === "published"
+    ) {
       await navigate({
         to: "/orgs/$orgId/datasets/$datasetId",
         params: { orgId, datasetId: dataset.id },
+        ignoreBlocker: true,
       });
     }
     return result;

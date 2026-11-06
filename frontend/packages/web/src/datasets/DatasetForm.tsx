@@ -4,7 +4,7 @@ import {
   scrollBehavior,
   useActiveSection,
 } from "@ehds-relay/ui";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FormProvider,
   useForm,
@@ -22,6 +22,7 @@ import {
   type DatasetFormValues,
 } from "./formValues";
 import { focusField } from "./focus";
+import { LeaveDialog } from "./LeaveDialog";
 import { MissingList } from "./MissingList";
 import { SaveMenu, type SaveIntent } from "./SaveMenu";
 import { AccessSection } from "./sections/AccessSection";
@@ -31,6 +32,7 @@ import { OrganisationsSection } from "./sections/OrganisationsSection";
 import { QuantumSection } from "./sections/QuantumSection";
 import { TechnicalSection } from "./sections/TechnicalSection";
 import type { DatasetSaveInput, SaveResult } from "./useDatasetSave";
+import { useLeaveGuard } from "./useLeaveGuard";
 import {
   serverIssues,
   toFieldErrors,
@@ -61,7 +63,11 @@ export interface DatasetFormProps {
    * (draft saved, missing fields, server errors on their fields, conflict). The caller
    * decides where to go next.
    */
-  onSubmit: (input: DatasetSaveInput) => Promise<SaveResult>;
+  onSubmit: (
+    input: DatasetSaveInput,
+    /** `leaving`: the user is saving on the way out, so do not navigate after saving. */
+    options?: { leaving?: boolean },
+  ) => Promise<SaveResult>;
   /** Feedback to show on arrival, e.g. after the first save moved to the edit page. */
   initialFeedback?: SaveFeedback;
   /** Whether the dataset being edited is published; changes what the Save menu offers. */
@@ -118,7 +124,34 @@ export function DatasetForm({
   const [saved, flashSaved, clearSaved] = useSavedFlash();
   const activeId = useActiveSection(sectionIds);
 
-  async function save(values: DatasetFormValues, intent: SaveIntent) {
+  // What the form looked like when it loaded or was last saved, to tell whether it has changed
+  const baseline = useRef<string | null>(null);
+  useEffect(() => {
+    baseline.current ??= JSON.stringify(form.getValues());
+  }, [form]);
+  // Set while saving on the way out: problems are shown, and focused once the dialog closes
+  const focusLater = useRef<(() => void) | null>(null);
+  const leaving = useRef(false);
+
+  function isChanged(): boolean {
+    return (
+      baseline.current !== null &&
+      JSON.stringify(form.getValues()) !== baseline.current
+    );
+  }
+
+  function showProblem(issues: readonly FormIssue[]) {
+    if (leaving.current) {
+      focusLater.current = () => {
+        focusIssue(issues);
+      };
+    } else focusIssue(issues);
+  }
+
+  async function save(
+    values: DatasetFormValues,
+    intent: SaveIntent,
+  ): Promise<boolean> {
     const { metadata, indexMap } = mapToMetadata(values);
     const publish = intent === "publish";
     clearSaved();
@@ -127,6 +160,7 @@ export function DatasetForm({
       intent === "unpublish"
         ? { metadata, publish: false, unpublish: true }
         : { metadata, publish },
+      { leaving: leaving.current },
     );
     switch (result.kind) {
       case "saved": {
@@ -139,7 +173,8 @@ export function DatasetForm({
         } else if (publish) setFeedback({ type: "incomplete", missing });
         else setFeedback({ type: "draft" });
         flashSaved();
-        break;
+        baseline.current = JSON.stringify(values);
+        return true;
       }
       case "invalid": {
         const issues = serverIssues(result.issues, indexMap);
@@ -167,7 +202,7 @@ export function DatasetForm({
         } else {
           setFeedback({ type: "error", message: text.status.fixErrors });
         }
-        focusIssue(issues);
+        showProblem(issues);
         break;
       }
       case "conflict":
@@ -177,6 +212,7 @@ export function DatasetForm({
         setFeedback({ type: "error", message: text.status.failed });
         break;
     }
+    return false;
   }
 
   function onInvalid() {
@@ -190,11 +226,27 @@ export function DatasetForm({
       type: "error",
       message: titleOnly ? text.status.titleRequired : text.status.fixErrors,
     });
-    focusIssue(result.issues);
+    showProblem(result.issues);
   }
 
   function onSave(intent: SaveIntent) {
-    void form.handleSubmit((values) => save(values, intent), onInvalid)();
+    void form.handleSubmit(async (values) => {
+      await save(values, intent);
+    }, onInvalid)();
+  }
+
+  /** The form's default save, as chosen from the Save menu; true when it saved. */
+  async function saveForLeave(): Promise<boolean> {
+    leaving.current = true;
+    let saved = false;
+    try {
+      await form.handleSubmit(async (values) => {
+        saved = await save(values, published ? "keepPublished" : "draft");
+      }, onInvalid)();
+    } finally {
+      leaving.current = false;
+    }
+    return saved;
   }
 
   function onClear() {
@@ -210,6 +262,7 @@ export function DatasetForm({
     ?.find((t) => t.text.trim())
     ?.text.trim();
   const busy = feedback?.type === "saving";
+  const leave = useLeaveGuard({ isChanged, saveForLeave });
   return (
     <FormProvider {...form}>
       <div className="flex flex-col md:flex-row">
@@ -270,6 +323,21 @@ export function DatasetForm({
           <QuantumSection />
         </form>
       </div>
+      <LeaveDialog
+        open={leave.open}
+        datasetTitle={datasetTitle}
+        pending={leave.pending}
+        onKeepEditing={leave.keepEditing}
+        onLeave={leave.leave}
+        onSave={() => void leave.saveAndLeave()}
+        onCloseAutoFocus={(event) => {
+          const focus = focusLater.current;
+          focusLater.current = null;
+          if (!focus) return;
+          event.preventDefault();
+          focus();
+        }}
+      />
     </FormProvider>
   );
 }
