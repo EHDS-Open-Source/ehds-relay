@@ -43,6 +43,11 @@ export {
 } from "./lib/isoDate";
 export { SaveButton, type SaveButtonProps } from "./form/SaveButton";
 export { Checkbox, type CheckboxProps } from "./form/Checkbox";
+export {
+  Dropdown,
+  type DropdownOption,
+  type DropdownProps,
+} from "./form/Dropdown";
 export { Toggle, type ToggleProps } from "./form/Toggle";
 export {
   RadioChoices,
@@ -78,7 +83,6 @@ export {
 } from "./layout/SideMenu";
 export type { NavItem, NavLinkProps, RenderNavLink } from "./layout/types";
 export { FormMessage } from "./components/form-message";
-export { NativeSelect } from "./components/native-select";
 export { Badge, badgeVariants } from "./components/badge";
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/tabs";
 export {
