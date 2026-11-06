@@ -24,10 +24,23 @@ export {
   FieldHint,
   fieldErrorId,
   fieldHintId,
+  fieldLabelId,
   joinIds,
   useFieldDescribedBy,
   type FieldProps,
 } from "./form/Field";
+export { DatePicker, type DatePickerProps } from "./form/DatePicker";
+export {
+  DATE_LOCALE,
+  addDays,
+  addMonths,
+  addYears,
+  clampIso,
+  formatLongDate,
+  isIsoDate,
+  isWithin,
+  todayIso,
+} from "./lib/isoDate";
 export { SaveButton, type SaveButtonProps } from "./form/SaveButton";
 export { Checkbox, type CheckboxProps } from "./form/Checkbox";
 export { Toggle, type ToggleProps } from "./form/Toggle";

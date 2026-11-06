@@ -7,11 +7,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
+  DatePicker,
   ConfirmDialog,
   Field,
   FormMessage,
   Icon,
-  Input,
   fieldErrorId,
   useToast,
 } from "@ehds-relay/ui";
@@ -23,7 +23,7 @@ import {
   REMINDER_MAX_YEARS_AHEAD,
   addYears,
   initialReminderDate,
-  isIsoDate,
+  formatIsoDate,
   nextDay,
   reminderDateProblem,
   todayIso,
@@ -31,20 +31,6 @@ import {
 
 const m = shellMessages.datasets.reminder;
 const INPUT_ID = "reminder-date";
-
-const longDateFormat = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-/** A `YYYY-MM-DD` date written out in full, e.g. "4 November 2027". */
-function longDate(iso: string): string {
-  return isIsoDate(iso)
-    ? longDateFormat.format(new Date(`${iso}T00:00:00Z`))
-    : iso;
-}
 
 function saveErrorMessage(error: unknown): string {
   switch (errorStatus(error)) {
@@ -108,7 +94,10 @@ export function ReminderDialog({
     save.mutate(value, {
       onSuccess: () => {
         onOpenChange(false);
-        toast.show({ tone: "success", message: m.savedToast(longDate(value)) });
+        toast.show({
+          tone: "success",
+          message: m.savedToast(formatIsoDate(value)),
+        });
       },
     });
   }
@@ -146,7 +135,7 @@ export function ReminderDialog({
               <p>
                 {m.saved}{" "}
                 <strong className="font-bold">
-                  <time dateTime={current}>{longDate(current)}</time>
+                  <time dateTime={current}>{formatIsoDate(current)}</time>
                 </strong>
               </p>
             ) : null}
@@ -158,17 +147,15 @@ export function ReminderDialog({
             error={fieldError}
             required
           >
-            <Input
+            <DatePicker
               id={INPUT_ID}
-              type="date"
               value={value}
               min={nextDay(today)}
               max={addYears(today, REMINDER_MAX_YEARS_AHEAD)}
-              required
-              aria-invalid={fieldError ? true : undefined}
+              invalid={Boolean(fieldError)}
               aria-describedby={fieldError ? fieldErrorId(INPUT_ID) : undefined}
-              onChange={(e) => {
-                setValue(e.target.value);
+              onChange={(next) => {
+                setValue(next);
                 setShowProblem(true);
               }}
             />
@@ -222,7 +209,7 @@ export function ReminderDialog({
             description={
               <>
                 {m.clearDialog.lead}{" "}
-                <strong className="font-bold">{longDate(current)}</strong>{" "}
+                <strong className="font-bold">{formatIsoDate(current)}</strong>{" "}
                 {m.clearDialog.trail}
               </>
             }

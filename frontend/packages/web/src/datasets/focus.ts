@@ -6,7 +6,9 @@ import { fieldAnchorId } from "./fields";
 export function focusAnchor(id: string): void {
   const anchor = document.getElementById(id);
   if (!anchor) return;
-  const input = anchor.querySelector<HTMLElement>("input, textarea, select");
+  const input = anchor.querySelector<HTMLElement>(
+    "input:not([type=hidden]), textarea, select, [data-focus-target]",
+  );
   anchor.scrollIntoView?.({ behavior: scrollBehavior(), block: "center" });
   (input ?? anchor).focus({ preventScroll: true });
 }
