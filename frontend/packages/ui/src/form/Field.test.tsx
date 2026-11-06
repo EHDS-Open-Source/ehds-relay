@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { Input } from "../components/input";
-import { Field, fieldErrorId, fieldHintId } from "./Field";
+import { Field, fieldErrorId, fieldHintId, fieldLabelId } from "./Field";
 import { RadioChoices } from "./RadioChoices";
 import { RepeatableList } from "./RepeatableList";
 import { SaveButton } from "./SaveButton";
@@ -243,5 +243,20 @@ describe("SaveButton", () => {
     const saved = screen.getByRole("button", { name: "Saved" });
     expect(saved).toHaveClass("bg-success-bg", "text-success-on-white");
     expect(saved.lastElementChild).toHaveAttribute("data-icon", "tick");
+  });
+});
+
+describe("Field label id", () => {
+  it("gives the label a stable id", () => {
+    render(
+      <Field label="Title" htmlFor="title">
+        <input id="title" />
+      </Field>,
+    );
+    expect(screen.getByText("Title")).toHaveAttribute(
+      "id",
+      fieldLabelId("title"),
+    );
+    expect(fieldLabelId("title")).toBe("title-label");
   });
 });
