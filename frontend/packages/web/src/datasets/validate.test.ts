@@ -29,6 +29,18 @@ describe("validateForSave", () => {
     });
   });
 
+  it("rejects a title and keywords over the length limits", () => {
+    const values = fromMetadata({ title: [{ lang: "en", text: "T" }] });
+    values.title = [{ lang: "en", text: "x".repeat(201) }];
+    values.keyword = Array.from({ length: 21 }, (_, i) => `k${i}`);
+    const result = validateForSave(values);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    const paths = result.issues.map((i) => i.path);
+    expect(paths).toContain("title.0.text");
+    expect(paths).toContain("keyword");
+  });
+
   it("reports the backend's rules on the field they belong to", () => {
     const values = fromMetadata({ title: [{ lang: "en", text: "T" }] });
     values.health_theme = [emptyTerm(), { label: "Theme", uri: "not a url" }];

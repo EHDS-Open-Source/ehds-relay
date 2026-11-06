@@ -45,6 +45,14 @@ export const zDatasetPublishDto = z.object({
 export const zDatasetStatus = z.enum(['draft', 'published']);
 
 /**
+ * DescriptionText
+ */
+export const zDescriptionText = z.object({
+    lang: z.string().regex(/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/).optional().default('en'),
+    text: z.string().min(1).max(2000)
+});
+
+/**
  * Edition
  */
 export const zEdition = z.enum(['open-source', 'hosted']);
@@ -86,16 +94,6 @@ export const zInvitationStatus = z.enum([
     'cancelled',
     'expired'
 ]);
-
-/**
- * LangText
- *
- * A text in one language.
- */
-export const zLangText = z.object({
-    lang: z.string().regex(/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/).optional().default('en'),
-    text: z.string().min(1)
-});
 
 /**
  * LogoutDTO
@@ -331,6 +329,14 @@ export const zPublisher = z.object({
 });
 
 /**
+ * TitleText
+ */
+export const zTitleText = z.object({
+    lang: z.string().regex(/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/).optional().default('en'),
+    text: z.string().min(1).max(200)
+});
+
+/**
  * ValidationError
  */
 export const zValidationError = z.object({
@@ -386,7 +392,7 @@ export const zValidationReportDto = z.object({
 export const zVariable = z.object({
     coding_system: z.url().min(1).nullish(),
     data_type: z.string().min(1),
-    definition: z.string().min(1),
+    definition: z.string().min(1).max(500),
     name: z.string().min(1)
 });
 
@@ -400,7 +406,7 @@ export const zDatasetMetadata = z.object({
     coding_system: z.array(zTerm).optional(),
     conforms_to: z.array(zTerm).optional(),
     contact_points: z.array(zContactPoint).optional(),
-    description: z.array(zLangText).optional(),
+    description: z.array(zDescriptionText).optional(),
     distributions: z.array(zDistribution).optional(),
     generated_by: z.array(zTerm).optional(),
     geographical_coverage: z.array(zTerm).optional(),
@@ -410,16 +416,16 @@ export const zDatasetMetadata = z.object({
     health_data_holder: zOrganisation.nullish(),
     health_theme: z.array(zTerm).optional(),
     identifier: z.array(z.string().min(1)).optional(),
-    keyword: z.array(z.string().min(1)).optional(),
+    keyword: z.array(z.string().min(1).max(50)).max(20).optional(),
     language: z.array(zTerm).optional(),
     number_of_records: z.int().gte(0).nullish(),
     number_of_unique_individuals: z.int().gte(0).nullish(),
-    provenance: z.string().nullish(),
+    provenance: z.string().max(2000).nullish(),
     publisher: zPublisher.nullish(),
     quantum_label: z.string().nullish(),
     structured_data: z.boolean().nullish(),
     temporal_coverage: zTemporalCoverage.nullish(),
-    title: z.array(zLangText).optional(),
+    title: z.array(zTitleText).optional(),
     type: z.array(zTerm).optional(),
     variables: z.array(zVariable).optional()
 });
