@@ -55,8 +55,11 @@ oidc:
   clientSecret: ehds-relay-dev-secret
   existingSecret: ""
 
-# Bundled Keycloak in dev mode (in-memory H2, realm imported from files/ehds-relay-realm.json
-# on every start). For local development and evaluation only: nothing is persisted.
+# Bundled Keycloak in dev mode, for local development and evaluation only. Its data lives in its
+# own database on the bundled Postgres (same volume as the app data), so users keep their ids
+# across restarts. The realm in files/ehds-relay-realm.json is imported once, when the realm does
+# not exist yet; later changes are applied by realm-init (see below). With postgres.enabled=false
+# Keycloak falls back to in-pod H2 and loses everything on restart.
 keycloak:
   enabled: true
   image:
@@ -73,6 +76,13 @@ keycloak:
   # Empty webUrl: web.url.
   webUrl: ""
   apiUrl: http://localhost:8000
+  # Database on the bundled Postgres. The role and database are created if missing.
+  database:
+    enabled: true
+    name: keycloak
+    user: keycloak
+    # Dev-only throwaway value
+    password: keycloak
   # Dev-only throwaway admin login for the Keycloak console
   admin:
     user: admin
@@ -80,6 +90,17 @@ keycloak:
   resources:
     requests:
       memory: 512Mi
+
+# Applies later realm changes to the existing realm and runs run-once migrations (see
+# files/realm-init). Runs as its own Deployment: stock python image, script from a ConfigMap.
+# Signs in with the Keycloak bootstrap admin above (dev only).
+realmInit:
+  enabled: true
+  image:
+    repository: python
+    tag: 3.13-slim
+    pullPolicy: IfNotPresent
+  resources: {}
 
 # Mail server for outgoing email. Defaults to the bundled Mailpit when it is enabled.
 smtp:

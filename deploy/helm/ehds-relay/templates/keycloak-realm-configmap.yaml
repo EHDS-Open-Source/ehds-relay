@@ -1,6 +1,7 @@
 {{- if .Values.keycloak.enabled }}
-# Realm imported by Keycloak at start-up. The ${RELAY_*} placeholders in the JSON are filled
-# from the Keycloak container's environment (see keycloak-deployment.yaml). The test-user
+# Realm imported by Keycloak at start-up when the realm does not exist yet, and read by realm-init
+# to apply later additions. The ${RELAY_*} placeholders in the JSON are filled from the container's
+# environment (see the keycloakRealmEnv helper). The test-user
 # passwords in it are dev-only throwaway values; do not use this realm outside local development.
 apiVersion: v1
 kind: ConfigMap

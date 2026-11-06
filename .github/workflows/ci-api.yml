@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "backend/**"
+      - "deploy/helm/ehds-relay/files/realm-init/**"
       - "frontend/packages/api-client/**"
       - ".github/workflows/ci-api.yml"
   push:
@@ -12,6 +13,7 @@ on:
       - mvp-integration
     paths:
       - "backend/**"
+      - "deploy/helm/ehds-relay/files/realm-init/**"
       - "frontend/packages/api-client/**"
       - ".github/workflows/ci-api.yml"
 

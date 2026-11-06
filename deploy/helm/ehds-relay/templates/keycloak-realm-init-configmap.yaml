@@ -1,0 +1,17 @@
+{{- if and .Values.keycloak.enabled .Values.realmInit.enabled }}
+# Script and migrations of the realm-init job. ConfigMap keys cannot contain slashes, so a path
+# such as migrations/__init__.py is stored as migrations--__init__.py and mounted back at its
+# path (see keycloak-realm-init-deployment.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ehds-relay.fullname" . }}-keycloak-realm-init
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: realm-init
+data:
+  {{- range $path, $_ := .Files.Glob "files/realm-init/**.py" }}
+  {{ trimPrefix "files/realm-init/" $path | replace "/" "--" }}: |-
+    {{- $.Files.Get $path | nindent 4 }}
+  {{- end }}
+{{- end }}

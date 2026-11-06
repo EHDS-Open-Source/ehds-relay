@@ -75,8 +75,13 @@ Before finishing a change run `make check` and `make test`.
   in components, so they can be translated later.
 - Tests sit next to the code as `*.test.ts(x)` (vitest + Testing Library).
 
+### Keycloak realm changes
+- The realm JSON is imported once. A change to a realm-level setting or to something that already
+  exists needs a new append-only migration in `deploy/helm/ehds-relay/files/realm-init/migrations/`
+  as well as the JSON edit (see the README). Never edit a migration that has shipped.
+
 ### CI (GitHub Actions)
-- `ci-api.yml`: backend `make -C backend install check test`, on changes to `backend/**` or the API client.
+- `ci-api.yml`: backend `make -C backend install check test`, on changes to `backend/**`, the API client or the realm-init files.
 - `ci-ui.yml`: frontend `make -C frontend install check test build`, on changes to `frontend/**`.
 - Every `uses:` is pinned to a full commit SHA with the version in a comment; keep it that way when bumping.
 
