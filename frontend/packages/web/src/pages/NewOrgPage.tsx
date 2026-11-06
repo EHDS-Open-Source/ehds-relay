@@ -1,10 +1,10 @@
 import {
   Button,
+  Dropdown,
   Field,
   FormMessage,
   Icon,
   Input,
-  NativeSelect,
   fieldErrorId,
 } from "@ehds-relay/ui";
 import { useNavigate } from "@tanstack/react-router";
@@ -113,26 +113,24 @@ export function NewOrgPage() {
           required
           error={errors.country}
         >
-          <NativeSelect
+          <Dropdown
             tone="onBlue"
             id="org-country"
             value={country}
+            placeholder={text.countryPlaceholder}
             aria-invalid={errors.country ? true : undefined}
             aria-describedby={
               errors.country ? fieldErrorId("org-country") : undefined
             }
-            onChange={(event) => {
-              setCountry(event.target.value);
+            options={[...euCountryCodes, OTHER_COUNTRY].map((code) => ({
+              value: code,
+              label: countryName(code),
+            }))}
+            onValueChange={(value) => {
+              setCountry(value);
               setErrors((current) => ({ ...current, country: undefined }));
             }}
-          >
-            <option value="">{text.countryPlaceholder}</option>
-            {[...euCountryCodes, OTHER_COUNTRY].map((code) => (
-              <option key={code} value={code}>
-                {countryName(code)}
-              </option>
-            ))}
-          </NativeSelect>
+          />
         </Field>
         {errors.form ? (
           <FormMessage className="text-error">{errors.form}</FormMessage>
