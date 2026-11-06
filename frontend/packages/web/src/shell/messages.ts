@@ -634,6 +634,13 @@ export const shellMessages = {
       saved: "Saved",
       saveDraft: "Save draft",
       saveAndPublish: "Save and Publish",
+      saveKeepPublished: "Save and keep published",
+      unpublish: "Unpublish and save as draft",
+      unpublishTitle: "Unpublish this dataset?",
+      unpublishDescription:
+        "It will leave the catalogue and the export, and be saved as a draft.",
+      unpublishConfirm: "Unpublish and save",
+      unpublishCancel: "Keep it published",
       clear: "Clear",
       clearTitle: "Clear all fields?",
       clearDescription: "Every field in",
@@ -647,6 +654,8 @@ export const shellMessages = {
       saving: "Saving…",
       savedDraft: "Saved as a draft.",
       published: "Published.",
+      savedPublished: "Saved. Still published.",
+      unpublished: "Unpublished. Saved as a draft.",
       titleRequired: "Add a title before saving.",
       fixErrors: "Fix the answers marked below, then save again.",
       conflict:
@@ -657,6 +666,11 @@ export const shellMessages = {
       title: "Not ready to publish",
       description:
         "The dataset was saved as a draft. Fill in these fields to publish it:",
+    },
+    stillPublished: {
+      title: "Not ready to stay published",
+      description:
+        "Nothing was saved. The dataset is still published. Fill in these fields, or unpublish it to save it as a draft:",
     },
     invalid: "Check this answer and try again.",
     errors: {

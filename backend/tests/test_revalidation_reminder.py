@@ -232,9 +232,19 @@ def test_edit_14_publish_route_and_resave_update_validation_date(
     _set_columns(db, ds["id"], published_at=long_ago)
     assert client.get(ds_url(org, ds["id"])).json()["overdue"] is True
 
-    # Saving as a draft keeps the date, and drafts are never overdue
+    # A keep-published save leaves the date alone, so it is still overdue
     res = client.put(
         ds_url(org, ds["id"]), json={"metadata": complete_metadata(), "version": ds["version"]}
+    )
+    ds = res.json()
+    assert ds["status"] == "published"
+    assert datetime.fromisoformat(ds["published_at"]) == long_ago
+    assert ds["overdue"] is True
+
+    # Unpublishing keeps the date, and drafts are never overdue
+    res = client.put(
+        ds_url(org, ds["id"]),
+        json={"metadata": complete_metadata(), "version": ds["version"], "unpublish": True},
     )
     ds = res.json()
     assert ds["status"] == "draft"
@@ -501,3 +511,19 @@ def test_migration_0009_round_trip(database_url: str) -> None:
         with admin.connect() as conn:
             conn.execute(text(f"DROP DATABASE {name} WITH (FORCE)"))
         admin.dispose()
+
+
+def test_edit_14_keep_published_save_leaves_reminder_untouched(
+    client: TestClient, org: str
+) -> None:
+    ds = _create(client, org, publish=True)
+    when = date.today() + timedelta(days=30)
+    assert _put_reminder(client, org, ds["id"], when).status_code == 200
+    before = client.get(ds_url(org, ds["id"])).json()
+    res = client.put(
+        ds_url(org, ds["id"]), json={"metadata": complete_metadata(), "version": before["version"]}
+    )
+    after = res.json()
+    assert after["status"] == "published"
+    for key in ("reminder_date", "reminder_set_by", "reminder_set_at", "reminder_sent_at"):
+        assert after[key] == before[key]

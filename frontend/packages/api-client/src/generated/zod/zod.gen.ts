@@ -470,6 +470,7 @@ export const zDatasetDto = z.object({
 export const zDatasetUpdateDto = z.object({
     metadata: zDatasetMetadata,
     publish: z.boolean().optional().default(false),
+    unpublish: z.boolean().optional().default(false),
     version: z.int().gte(1)
 });
 

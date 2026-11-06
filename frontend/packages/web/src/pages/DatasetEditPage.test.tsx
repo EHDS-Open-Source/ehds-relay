@@ -44,7 +44,7 @@ const titleBox = () =>
 
 describe("dataset edit page", () => {
   it("fills the form with the saved dataset", async () => {
-    stubApi({ [`GET ${base}`]: () => json(makeDataset()) });
+    stubApi({ [`GET ${base}`]: () => json(makeDataset({ status: "draft" })) });
     renderApp(edit);
     expect(
       await screen.findByRole("form", { name: form.formLabel }),
@@ -56,7 +56,7 @@ describe("dataset edit page", () => {
     const versions: unknown[] = [];
     let version = 3;
     stubApi({
-      [`GET ${base}`]: () => json(makeDataset()),
+      [`GET ${base}`]: () => json(makeDataset({ status: "draft" })),
       [`PUT ${base}`]: async (request) => {
         versions.push(((await request.json()) as { version: number }).version);
         version += 1;
@@ -79,7 +79,7 @@ describe("dataset edit page", () => {
   it("opens the record after a successful publish", async () => {
     let body: unknown;
     stubApi({
-      [`GET ${base}`]: () => json(makeDataset()),
+      [`GET ${base}`]: () => json(makeDataset({ status: "draft" })),
       [`PUT ${base}`]: async (request) => {
         body = await request.json();
         return json(makeDataset({ version: 4 }));
@@ -115,8 +115,8 @@ describe("dataset edit page", () => {
     stubApi({
       [`GET ${base}`]: () => {
         reads += 1;
-        if (reads === 1) return json(makeDataset());
-        const changed = makeDataset({ version: 5 });
+        if (reads === 1) return json(makeDataset({ status: "draft" }));
+        const changed = makeDataset({ status: "draft", version: 5 });
         changed.metadata.title = [{ lang: "en", text: "Changed elsewhere" }];
         return json(changed);
       },
@@ -146,7 +146,7 @@ describe("dataset edit page", () => {
 
   it("says when the user may not change the dataset", async () => {
     stubApi({
-      [`GET ${base}`]: () => json(makeDataset()),
+      [`GET ${base}`]: () => json(makeDataset({ status: "draft" })),
       [`PUT ${base}`]: () => json({ detail: "no" }, 403),
     });
     renderApp(edit);
@@ -164,7 +164,9 @@ describe("dataset edit page", () => {
   it.each(["provenance", "publisher.contact_point"])(
     "focuses the field named in the address (%s)",
     async (key) => {
-      stubApi({ [`GET ${base}`]: () => json(makeDataset()) });
+      stubApi({
+        [`GET ${base}`]: () => json(makeDataset({ status: "draft" })),
+      });
       renderApp(`${edit}#${fieldAnchorId(key)}`);
       await screen.findByRole("form", { name: form.formLabel });
       await waitFor(() => {

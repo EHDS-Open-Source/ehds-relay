@@ -91,13 +91,17 @@ export function createFakeServer(seed: DatasetDTO[] = []) {
     previous: DatasetDTO | undefined,
     metadata: DatasetMetadata,
     publish: boolean,
+    unpublish = false,
   ): DatasetDTO {
     const missing = missingForPublish(metadata);
+    const keep = previous?.status === "published" && !unpublish;
+    const status = keep || (publish && !missing.length) ? "published" : "draft";
     const dataset: DatasetDTO = {
       ...noRevalidationData,
+      published_at: previous?.published_at ?? null,
       id: previous?.id ?? `00000000-0000-4000-8000-00000000000${nextId++}`,
       org_id: orgId,
-      status: publish && !missing.length ? "published" : "draft",
+      status,
       title: metadata.title?.[0]?.text ?? null,
       description: metadata.description?.[0]?.text ?? null,
       metadata: metadata,
@@ -130,6 +134,7 @@ export function createFakeServer(seed: DatasetDTO[] = []) {
     const save = body as {
       metadata: DatasetMetadata;
       publish: boolean;
+      unpublish?: boolean;
       version?: number;
     };
 
@@ -148,7 +153,23 @@ export function createFakeServer(seed: DatasetDTO[] = []) {
       if (save.version !== existing.version) {
         return json(409, { detail: "stale version" });
       }
-      return json(200, store(orgId, existing, save.metadata, save.publish));
+      if (
+        existing.status === "published" &&
+        !save.unpublish &&
+        missingForPublish(save.metadata).length
+      ) {
+        return json(422, {
+          detail: missingForPublish(save.metadata).map((key) => ({
+            loc: ["body", "metadata", key],
+            msg: "required to keep the dataset published",
+            type: "missing",
+          })),
+        });
+      }
+      return json(
+        200,
+        store(orgId, existing, save.metadata, save.publish, save.unpublish),
+      );
     }
     return json(405, { detail: "not allowed" });
   }

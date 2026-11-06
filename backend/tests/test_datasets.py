@@ -216,26 +216,122 @@ def test_add_9_save_and_publish_incomplete_saves_draft_with_missing(
     assert "provenance" in res.json()["missing_for_publish"]
 
 
-def test_edit_6_save_draft_on_published_returns_to_draft(client: TestClient, org_id: str) -> None:
+def _published(client: TestClient, org_id: str) -> dict[str, Any]:
     ds = client.post(url(org_id), json={"metadata": complete_metadata(), "publish": True}).json()
     assert ds["status"] == "published"
-    # Unchanged and complete, but saved as a draft
+    return ds
+
+
+def _listed_published(client: TestClient, org_id: str) -> list[Any]:
+    return client.get(url(org_id), params={"dataset_status": "published"}).json()
+
+
+def test_edit_6_save_keeps_complete_published_dataset_published(
+    client: TestClient, org_id: str
+) -> None:
+    ds = _published(client, org_id)
     res = client.put(url(org_id, ds["id"]), json={"metadata": complete_metadata(), "version": 1})
     assert res.status_code == 200
+    saved = res.json()
+    assert saved["status"] == "published"
+    assert saved["published_at"] == ds["published_at"]
+    assert saved["version"] == ds["version"] + 1
+    assert [d["id"] for d in _listed_published(client, org_id)] == [ds["id"]]
+
+
+def test_edit_6_keep_published_save_stores_the_edit(client: TestClient, org_id: str) -> None:
+    ds = _published(client, org_id)
+    meta = complete_metadata() | {"title": [{"lang": "en", "text": "Renamed"}]}
+    res = client.put(url(org_id, ds["id"]), json={"metadata": meta, "version": 1})
+    assert res.json()["title"] == "Renamed"
+    assert res.json()["status"] == "published"
+
+
+def test_edit_6_incomplete_save_of_published_is_rejected(client: TestClient, org_id: str) -> None:
+    ds = _published(client, org_id)
+    for publish in (False, True):
+        body = {"metadata": TITLED, "version": ds["version"], "publish": publish}
+        res = client.put(url(org_id, ds["id"]), json=body)
+        assert res.status_code == 422
+        detail = res.json()["detail"]
+        assert detail
+        assert all(i["type"] == "missing" and i["loc"][:2] == ["body", "metadata"] for i in detail)
+        assert ["body", "metadata", "description"] in [i["loc"] for i in detail]
+    # Nothing was stored
+    again = client.get(url(org_id, ds["id"])).json()
+    assert again["status"] == "published"
+    assert again["version"] == ds["version"]
+    assert again["metadata"]["description"] == ds["metadata"]["description"]
+
+
+def test_edit_6_publish_true_on_published_resets_validation_date(
+    client: TestClient, org_id: str
+) -> None:
+    ds = _published(client, org_id)
+    body = {"metadata": complete_metadata(), "version": 1, "publish": True}
+    res = client.put(url(org_id, ds["id"]), json=body)
+    assert res.json()["status"] == "published"
+    assert res.json()["published_at"] > ds["published_at"]
+
+
+@pytest.mark.parametrize("complete", [True, False])
+def test_edit_6_unpublish_saves_a_draft_and_keeps_published_at(
+    client: TestClient, org_id: str, complete: bool
+) -> None:
+    ds = _published(client, org_id)
+    meta = complete_metadata() if complete else TITLED
+    res = client.put(
+        url(org_id, ds["id"]), json={"metadata": meta, "version": 1, "unpublish": True}
+    )
+    assert res.status_code == 200
     assert res.json()["status"] == "draft"
-    assert res.json()["missing_for_publish"] == []
-    assert client.get(url(org_id), params={"dataset_status": "published"}).json() == []
+    assert res.json()["published_at"] == ds["published_at"]
+    assert _listed_published(client, org_id) == []
 
 
-def test_edit_6_published_never_has_missing_fields(client: TestClient, org_id: str) -> None:
-    ds = client.post(url(org_id), json={"metadata": complete_metadata(), "publish": True}).json()
-    # Save and Publish with a field removed: saved, but no longer published
-    body = {"metadata": TITLED, "version": ds["version"], "publish": True}
+def test_edit_6_unpublish_on_draft_is_a_plain_draft_save(client: TestClient, org_id: str) -> None:
+    ds = client.post(url(org_id), json={"metadata": complete_metadata()}).json()
+    body = {"metadata": complete_metadata(), "version": 1, "unpublish": True}
     res = client.put(url(org_id, ds["id"]), json=body)
     assert res.status_code == 200
     assert res.json()["status"] == "draft"
-    for d in client.get(url(org_id), params={"dataset_status": "published"}).json():
-        assert d["missing_for_publish"] == []
+
+
+def test_edit_6_draft_publish_true_incomplete_stays_draft(client: TestClient, org_id: str) -> None:
+    ds = client.post(url(org_id), json={"metadata": TITLED}).json()
+    res = client.put(
+        url(org_id, ds["id"]), json={"metadata": TITLED, "version": 1, "publish": True}
+    )
+    assert res.status_code == 200
+    assert res.json()["status"] == "draft"
+
+
+def test_edit_6_publish_and_unpublish_together_is_rejected(client: TestClient, org_id: str) -> None:
+    ds = _published(client, org_id)
+    body = {"metadata": complete_metadata(), "version": 1, "publish": True, "unpublish": True}
+    assert client.put(url(org_id, ds["id"]), json=body).status_code == 422
+
+
+def test_edit_6_unpublish_on_create_is_rejected(client: TestClient, org_id: str) -> None:
+    body = {"metadata": TITLED, "unpublish": True}
+    assert client.post(url(org_id), json=body).status_code == 422
+
+
+def test_edit_6_unpublish_with_stale_version_conflicts(client: TestClient, org_id: str) -> None:
+    ds = _published(client, org_id)
+    body = {"metadata": complete_metadata(), "version": 99, "unpublish": True}
+    assert client.put(url(org_id, ds["id"]), json=body).status_code == 409
+
+
+def test_edit_6_standard_member_can_unpublish(
+    client: TestClient, org: str, standard: AppUser, as_user: AsUser
+) -> None:
+    org_id = org
+    ds = _published(client, org_id)
+    body = {"metadata": complete_metadata(), "version": 1, "unpublish": True}
+    res = as_user(standard).put(url(org_id, ds["id"]), json=body)
+    assert res.status_code == 200
+    assert res.json()["status"] == "draft"
 
 
 @pytest.mark.parametrize(

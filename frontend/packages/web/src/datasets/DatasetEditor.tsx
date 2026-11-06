@@ -22,6 +22,8 @@ export type SavedOnArrival = "draft" | "incomplete";
 export interface DatasetFormRenderProps {
   initialValues: DatasetFormValues;
   initialFeedback?: SaveFeedback;
+  /** Whether the dataset is published, so the form offers the matching save actions. */
+  published: boolean;
   onSubmit: (input: DatasetSaveInput) => Promise<SaveResult>;
 }
 
@@ -165,7 +167,13 @@ function LoadedEditor({
           {m.save.forbidden}
         </p>
       ) : null}
-      <div key={formKey}>{renderForm({ ...formProps, onSubmit })}</div>
+      <div key={formKey}>
+        {renderForm({
+          ...formProps,
+          published: dataset.status === "published",
+          onSubmit,
+        })}
+      </div>
       <ConfirmDialog
         open={confirmingReload}
         onOpenChange={setConfirmingReload}
