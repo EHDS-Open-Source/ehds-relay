@@ -118,3 +118,23 @@ def test_message_has_text_and_html_parts() -> None:
     assert msg.get_content_type() == "multipart/alternative"
     parts = [p.get_content_type() for p in msg.iter_parts()]
     assert parts == ["text/plain", "text/html"]
+
+
+def test_invitation_email_name_and_message() -> None:
+    from datetime import UTC, datetime
+
+    from relay.email.messages import invitation_email
+
+    expires = datetime(2026, 12, 3, tzinfo=UTC)
+    args = ("Acme", "Olive", "standard", "http://x/invitations/t", expires)
+    subject, text, html = invitation_email(*args, invitee_name="Ada\r\nX", message="a\nb<i>")
+    assert "\n" not in subject
+    assert "Ada" not in subject
+    assert text.startswith("Hi Ada")
+    assert "Message from Olive:\na\nb<i>" in text
+    assert "a<br>\nb&lt;i&gt;" in html
+    _plain_subject, plain_text, plain_html = invitation_email(*args)
+
+    assert plain_text.startswith("Hello,")
+    assert "Message from" not in plain_text
+    assert "Message from" not in plain_html

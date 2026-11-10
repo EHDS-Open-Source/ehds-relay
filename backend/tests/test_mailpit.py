@@ -36,7 +36,13 @@ def test_invitation_email_arrives_in_mailpit(mailpit: tuple[Settings, str]) -> N
     settings, api = mailpit
     link = "http://localhost:5173/invitations/tok-123"
     subject, text, html = invitation_email(
-        "Acme Hospital", "Olive Owner", "standard", link, datetime(2026, 12, 3, tzinfo=UTC)
+        "Acme Hospital",
+        "Olive Owner",
+        "standard",
+        link,
+        datetime(2026, 12, 3, tzinfo=UTC),
+        invitee_name="Ines Invitee",
+        message="Welcome to the team",
     )
     row = EmailOutbox(
         to_address="invitee@example.org", subject=subject, text_body=text, html_body=html
@@ -52,3 +58,5 @@ def test_invitation_email_arrives_in_mailpit(mailpit: tuple[Settings, str]) -> N
     assert link in full["HTML"]
     assert "Acme Hospital" in full["Text"]
     assert "Olive Owner" in full["Text"]
+    assert "Ines Invitee" in full["Text"]
+    assert "Welcome to the team" in full["HTML"]
