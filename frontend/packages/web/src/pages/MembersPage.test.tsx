@@ -1,6 +1,12 @@
 import { ToastProvider } from "@ehds-relay/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -210,6 +216,7 @@ describe("invitations", () => {
   const expired = makeInvitation({
     id: "inv-2",
     email: "old@example.org",
+    name: null,
     status: "expired",
     last_sent_at: "2026-01-20T10:00:00Z",
   });
@@ -231,24 +238,53 @@ describe("invitations", () => {
 
   it("lists email, role, date sent and status, and filters by status", async () => {
     const calls = open();
-    expect(await screen.findByText("new@example.org")).toBeVisible();
+    expect(await screen.findByText("Nina New")).toBeVisible();
     expect(
-      screen.getByText(m.invitations.subline("Standard", "3 February 2026")),
+      screen.getByText(
+        m.invitations.subline("new@example.org", "Standard", "3 February 2026"),
+      ),
     ).toBeVisible();
     // Invited people are not members yet: their address is in ink, not blue.
-    expect(screen.getByText("new@example.org")).toHaveClass("text-ink");
+    expect(screen.getByText("Nina New")).toHaveClass("text-ink");
     expect(screen.getByText("old@example.org")).toBeVisible();
     await userEvent.click(
       screen.getByRole("button", { name: m.invitations.filters.expired }),
     );
     await waitFor(() => {
-      expect(screen.queryByText("new@example.org")).not.toBeInTheDocument();
+      expect(screen.queryByText("Nina New")).not.toBeInTheDocument();
     });
     expect(await screen.findByText("old@example.org")).toBeVisible();
     expect(calls.some((c) => c.url.includes("status=expired"))).toBe(true);
   });
 
-  it("invites with email and role and refreshes the list", async () => {
+  const openInvite = async () => {
+    await screen.findByText("Nina New");
+    await userEvent.click(
+      screen.getByRole("button", { name: m.invitations.invite }),
+    );
+    return screen.findByRole("alertdialog", {
+      name: m.invitations.dialog.title,
+    });
+  };
+  const sendButton = () =>
+    screen.getByRole("button", { name: m.invitations.dialog.send });
+  const nameLabel = new RegExp(`^${m.invitations.nameLabel}`);
+
+  it("opens the pop-up with the organisation named and email focused", async () => {
+    open();
+    const dialog = await openInvite();
+    expect(within(dialog).getByText("Demo org")).toBeVisible();
+    expect(screen.getByLabelText(emailLabel)).toHaveFocus();
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+    expect(
+      screen.getByRole("button", { name: m.invitations.invite }),
+    ).toHaveFocus();
+  });
+
+  it("invites with name, message and role and refreshes the list", async () => {
     let sentBody: unknown;
     const calls = open({
       [`POST ${invitesUrl}`]: async (request) => {
@@ -257,24 +293,30 @@ describe("invitations", () => {
         return json(makeInvitation({ id: "inv-3", email: body.email }), 201);
       },
     });
-    await screen.findByText("new@example.org");
+    await openInvite();
     await userEvent.type(
       screen.getByLabelText(emailLabel),
-      "carol@example.org",
+      "  carol@example.org ",
+    );
+    await userEvent.type(screen.getByLabelText(nameLabel), " Carol Jones ");
+    await userEvent.type(
+      screen.getByLabelText(m.invitations.messageLabel),
+      "Welcome aboard",
     );
     await chooseOption(
       screen.getByLabelText(m.invitations.roleLabel),
       m.roles.owner,
     );
-    await userEvent.click(
-      screen.getByRole("button", { name: m.invitations.send }),
-    );
+    await userEvent.click(sendButton());
     expect(
       await screen.findByText(m.invitations.sent("carol@example.org")),
     ).toBeVisible();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(sentBody).toEqual({
       email: "carol@example.org",
+      name: "Carol Jones",
       role: "owner",
+      message: "Welcome aboard",
     });
     await waitFor(() => {
       expect(
@@ -285,20 +327,59 @@ describe("invitations", () => {
     });
   });
 
-  it("checks the email before sending", async () => {
-    const calls = open();
-    await screen.findByText("new@example.org");
-    await userEvent.click(
-      screen.getByRole("button", { name: m.invitations.send }),
+  it("leaves a blank message out", async () => {
+    let sentBody: unknown;
+    open({
+      [`POST ${invitesUrl}`]: async (request) => {
+        sentBody = await request.json();
+        return json(makeInvitation({ id: "inv-3" }), 201);
+      },
+    });
+    await openInvite();
+    await userEvent.type(screen.getByLabelText(emailLabel), "c@example.org");
+    await userEvent.type(screen.getByLabelText(nameLabel), "Carol");
+    await userEvent.type(
+      screen.getByLabelText(m.invitations.messageLabel),
+      "   ",
     );
+    await userEvent.click(sendButton());
+    await waitFor(() => {
+      expect(sentBody).toEqual({
+        email: "c@example.org",
+        name: "Carol",
+        role: "standard",
+      });
+    });
+  });
+
+  it("checks the fields before sending", async () => {
+    const calls = open();
+    await openInvite();
+    await userEvent.click(sendButton());
     expect(await screen.findByText(m.invitations.emailRequired)).toBeVisible();
-    // Clicking Send takes people to the field that needs fixing
+    expect(screen.getByText(m.invitations.nameRequired)).toBeVisible();
+    // The first field that needs fixing gets focus
     expect(screen.getByLabelText(emailLabel)).toHaveFocus();
     await userEvent.type(screen.getByLabelText(emailLabel), "nope");
-    await userEvent.click(
-      screen.getByRole("button", { name: m.invitations.send }),
-    );
+    await userEvent.click(sendButton());
     expect(await screen.findByText(m.invitations.emailInvalid)).toBeVisible();
+    await userEvent.clear(screen.getByLabelText(emailLabel));
+    await userEvent.type(screen.getByLabelText(emailLabel), "a@example.org");
+    await userEvent.type(screen.getByLabelText(nameLabel), "x".repeat(201));
+    await userEvent.click(sendButton());
+    expect(
+      await screen.findByText(m.invitations.nameTooLong(200)),
+    ).toBeVisible();
+    expect(screen.getByLabelText(nameLabel)).toHaveFocus();
+    await userEvent.clear(screen.getByLabelText(nameLabel));
+    await userEvent.type(screen.getByLabelText(nameLabel), "Ann");
+    fireEvent.change(screen.getByLabelText(m.invitations.messageLabel), {
+      target: { value: "y".repeat(1001) },
+    });
+    await userEvent.click(sendButton());
+    expect(
+      await screen.findByText(m.invitations.messageTooLong(1000)),
+    ).toBeVisible();
     expect(calls.some((c) => c.method === "POST")).toBe(false);
   });
 
@@ -311,14 +392,56 @@ describe("invitations", () => {
       "already invited; resend the pending invitation instead",
       m.invitations.errors.alreadyInvited,
     ],
-  ])("explains the 409 %s", async (detail, message) => {
+  ])("explains the 409 %s on the email field", async (detail, message) => {
     open({ [`POST ${invitesUrl}`]: () => json({ detail }, 409) });
-    await screen.findByText("new@example.org");
+    await openInvite();
     await userEvent.type(screen.getByLabelText(emailLabel), "x@example.org");
-    await userEvent.click(
-      screen.getByRole("button", { name: m.invitations.send }),
-    );
+    await userEvent.type(screen.getByLabelText(nameLabel), "Xavier");
+    await userEvent.click(sendButton());
     expect(await screen.findByText(message)).toBeVisible();
+    expect(screen.getByLabelText(emailLabel)).toBeInvalid();
+    expect(screen.getByLabelText(nameLabel)).toHaveValue("Xavier");
+  });
+
+  it("shows a 422 on the field it names", async () => {
+    open({
+      [`POST ${invitesUrl}`]: () =>
+        json(
+          { detail: [{ loc: ["body", "name"], msg: "bad", type: "x" }] },
+          422,
+        ),
+    });
+    await openInvite();
+    await userEvent.type(screen.getByLabelText(emailLabel), "x@example.org");
+    await userEvent.type(screen.getByLabelText(nameLabel), "Xavier");
+    await userEvent.click(sendButton());
+    expect(
+      await screen.findByText(m.invitations.fieldInvalid.name),
+    ).toBeVisible();
+    expect(screen.getByLabelText(nameLabel)).toBeInvalid();
+    expect(screen.getByLabelText(emailLabel)).toHaveValue("x@example.org");
+  });
+
+  it("shows other failures as a form message and keeps the values", async () => {
+    open({ [`POST ${invitesUrl}`]: () => json({ detail: "boom" }, 500) });
+    await openInvite();
+    await userEvent.type(screen.getByLabelText(emailLabel), "x@example.org");
+    await userEvent.type(screen.getByLabelText(nameLabel), "Xavier");
+    await userEvent.click(sendButton());
+    expect(await screen.findByText(m.invitations.errors.failed)).toBeVisible();
+    expect(screen.getByLabelText(nameLabel)).toHaveValue("Xavier");
+  });
+
+  it("shows the invitee's name, or the email for old invitations", async () => {
+    open({
+      [`GET ${invitesUrl}`]: () =>
+        json([
+          makeInvitation({ id: "a", email: "a@x.org", name: "Ann Named" }),
+          makeInvitation({ id: "b", email: "b@x.org", name: null }),
+        ]),
+    });
+    expect(await screen.findByText("Ann Named")).toBeVisible();
+    expect(screen.getAllByText("b@x.org")[0]).toBeVisible();
   });
 
   it("resends an invitation", async () => {
@@ -382,8 +505,18 @@ describe("invitations", () => {
         json([
           pending,
           expired,
-          makeInvitation({ id: "a", email: "a@x.org", status: "accepted" }),
-          makeInvitation({ id: "c", email: "c@x.org", status: "cancelled" }),
+          makeInvitation({
+            id: "a",
+            email: "a@x.org",
+            name: null,
+            status: "accepted",
+          }),
+          makeInvitation({
+            id: "c",
+            email: "c@x.org",
+            name: null,
+            status: "cancelled",
+          }),
         ]),
     });
     renderAs(path, demoSession);
@@ -436,12 +569,13 @@ describe("invitations", () => {
     ).toBeVisible();
   });
 
-  it("puts the add-user icon after Send invitation", async () => {
+  it("puts the add-user icon after Send invite", async () => {
     open();
-    const send = await screen.findByRole("button", {
-      name: m.invitations.send,
-    });
-    expect(send.lastElementChild).toHaveAttribute("data-icon", "addUser");
+    await openInvite();
+    expect(sendButton().lastElementChild).toHaveAttribute(
+      "data-icon",
+      "addUser",
+    );
   });
 
   it("shows a 409 on cancel inside the dialog", async () => {
