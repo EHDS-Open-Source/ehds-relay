@@ -3,3 +3,6 @@ pnpm-lock.yaml
 **/coverage
 **/src/generated
 **/openapi.json
+# Playwright output
+e2e/test-results
+e2e/playwright-report

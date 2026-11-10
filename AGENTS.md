@@ -16,6 +16,7 @@ Root `Makefile` (delegates to `backend/Makefile` and `frontend/Makefile`):
 | `make web` | Vite dev server on `${WEB_PORT:-5173}`, proxying `/api`, `/healthz`, `/readyz` to `localhost:${API_LOCAL_PORT:-8000}` |
 | `make test` | pytest (uses a throwaway Postgres via testcontainers, so docker must be running) and vitest |
 | `make check` | ruff (lint + format check) and pyright; eslint, prettier --check and tsc |
+| `make e2e` | Playwright specs in `frontend/e2e/` against the running stack (Tilt); not part of `make test`. Needs `pnpm exec playwright install chromium` once |
 | `make pip_compile` / `make pip_compile_dev` | Re-lock `requirements.txt` / `requirements-dev.txt` |
 | `make api_client` | Dump the OpenAPI spec from the backend (no database or server needed) and regenerate the typed client in `frontend/packages/api-client`. Run it after changing routes or DTOs and commit the result; CI fails if it is out of date |
 
@@ -73,7 +74,8 @@ Before finishing a change run `make check` and `make test`.
   `fetch`. Requests are same-origin (relative URLs); the Vite dev server proxies them to the API.
 - TypeScript is strict. Keep user-facing strings in each package's `src/messages.ts`, not inline
   in components, so they can be translated later.
-- Tests sit next to the code as `*.test.ts(x)` (vitest + Testing Library).
+- Tests sit next to the code as `*.test.ts(x)` (vitest + Testing Library). End-to-end specs are
+  `frontend/e2e/*.spec.ts` (Playwright); find elements by role and the text in `messages.ts`, not by CSS.
 
 ### Keycloak realm changes
 - The realm JSON is imported once. A change to a realm-level setting or to something that already
@@ -83,6 +85,7 @@ Before finishing a change run `make check` and `make test`.
 ### CI (GitHub Actions)
 - `ci-api.yml`: backend `make -C backend install check test`, on changes to `backend/**`, the API client or the realm-init files.
 - `ci-ui.yml`: frontend `make -C frontend install check test build`, on changes to `frontend/**`.
+- `ci-e2e.yml`: brings up the Helm chart on a kind cluster on the runner (`scripts/e2e-stack.sh`), starts Vite and runs `make e2e`, on changes to `backend/**`, `frontend/**`, `deploy/**` or the Tiltfile.
 - Every `uses:` is pinned to a full commit SHA with the version in a comment; keep it that way when bumping.
 
 ### kind / Tilt / kube context

@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 PNPM ?= pnpm
 
-.PHONY: install dev lint format typecheck test check build api_client
+.PHONY: install dev lint format typecheck test check build api_client e2e
 
 install:
 	$(PNPM) install --frozen-lockfile
@@ -32,3 +32,8 @@ api_client:
 	$(PNPM) --filter @ehds-relay/api-client generate
 
 check: lint typecheck
+
+# Playwright specs in e2e/ against a running stack (Tilt): the web app on ${WEB_PORT:-5173}.
+# Not part of `make test`. Needs a browser once: pnpm exec playwright install chromium
+e2e:
+	$(PNPM) e2e $(ARGS)

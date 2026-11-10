@@ -105,7 +105,7 @@ def test_unknown_org_and_dataset_404(client: TestClient, org_id: str) -> None:
     assert client.get(url(org_id, str(uuid.uuid4()))).status_code == 404
 
 
-def test_dataset_not_visible_via_other_org(client: TestClient, org_id: str) -> None:
+def test_auth_5_dataset_not_visible_via_other_org(client: TestClient, org_id: str) -> None:
     ds = client.post(url(org_id), json={"metadata": TITLED}).json()
     other = client.post("/api/v1/organisations", json={"name": "Other", "country": "NL"}).json()[
         "id"

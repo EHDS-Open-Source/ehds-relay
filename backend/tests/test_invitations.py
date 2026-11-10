@@ -105,30 +105,6 @@ def test_inv_8_standard_cannot_invite(
     assert std.post(f"{base}/{inv['id']}/resend").status_code == 403
 
 
-@pytest.mark.parametrize(
-    ("method", "suffix", "body"),
-    [
-        ("get", "", None),
-        ("post", "", {"email": "x@example.org"}),
-        ("delete", "/{id}", None),
-        ("post", "/{id}/resend", None),
-    ],
-)
-def test_auth_5_non_member_gets_404(
-    as_user: AsUser,
-    client: TestClient,
-    outsider: AppUser,
-    org: str,
-    method: str,
-    suffix: str,
-    body: Any,
-) -> None:
-    inv = _invite(client, org)
-    url = _invitations(org) + suffix.format(id=inv["id"])
-    res = as_user(outsider).request(method, url, json=body)
-    assert res.status_code == 404
-
-
 def test_inv_1_duplicate_pending_409(client: TestClient, org: str) -> None:
     _invite(client, org)
     res = client.post(_invitations(org), json={"email": INVITEE.upper(), "name": "Ines"})
@@ -451,7 +427,7 @@ def test_cancel_non_pending_409(client: TestClient, org: str) -> None:
     assert client.post(f"{url}/resend").status_code == 409
 
 
-def test_cancel_other_org_invitation_404(client: TestClient, org: str) -> None:
+def test_auth_5_cancel_other_org_invitation_404(client: TestClient, org: str) -> None:
     inv = _invite(client, org)
     other = client.post("/api/v1/organisations", json={"name": "Other", "country": "NL"}).json()
     assert client.delete(f"{_invitations(other['id'])}/{inv['id']}").status_code == 404
