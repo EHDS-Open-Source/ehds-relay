@@ -149,6 +149,7 @@ SCOPED: list[tuple[str, str, Any]] = [
     ("get", "/members", None),
     ("patch", "/members/{user}", {"role": "standard"}),
     ("delete", "/members/{user}", None),
+    ("post", "/members/{user}/transfer-ownership", None),
     ("get", "/datasets", None),
     ("post", "/datasets", {}),
     ("get", "/datasets/{dataset}", None),
