@@ -738,13 +738,34 @@
             "title": "Email",
             "type": "string"
           },
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional personal note shown in the email. Blank counts as none. At most 1000 characters.",
+            "title": "Message"
+          },
+          "name": {
+            "description": "Who is being invited; the email greets them by this name. Runs of whitespace become one space. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
           "role": {
             "$ref": "#/components/schemas/MemberRole",
             "default": "standard"
           }
         },
         "required": [
-          "email"
+          "email",
+          "name"
         ],
         "title": "InvitationCreateDTO",
         "type": "object"
@@ -790,6 +811,29 @@
             "title": "Last Sent At",
             "type": "string"
           },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Empty on invitations created before names existed",
+            "title": "Name"
+          },
           "org_id": {
             "format": "uuid",
             "title": "Org Id",
@@ -808,6 +852,8 @@
           "org_id",
           "email",
           "role",
+          "name",
+          "message",
           "status",
           "invited_by",
           "created_at",
@@ -2814,7 +2860,7 @@
         ]
       },
       "post": {
-        "description": "Owners only. Emails the invitee a link that is valid for 30 days.",
+        "description": "Owners only. Emails the invitee, by name and with the optional message, a link that is\nvalid for 30 days.",
         "operationId": "create_invitation_api_v1_organisations__org_id__invitations_post",
         "parameters": [
           {
