@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 
-.PHONY: cluster up down deploy tilt web install pip_compile pip_compile_dev api_client test check
+.PHONY: cluster up down deploy tilt web install pip_compile pip_compile_dev api_client test check check_password_flows
 
 # make cluster up | make cluster down [--remove-registries]
 cluster:
@@ -41,3 +41,9 @@ test:
 check:
 	$(MAKE) -C backend check
 	$(MAKE) -C frontend check
+
+# End-to-end check of registration, password reset and change against the running stack (Tilt).
+# Not part of `make test`. Add ARGS=--check-expiry to also wait for a reset link to expire.
+check_password_flows:
+	set -a; [ -f .dev.env ] && . ./.dev.env; set +a; \
+	backend/.venv/bin/python scripts/check_password_flows.py $(ARGS)
