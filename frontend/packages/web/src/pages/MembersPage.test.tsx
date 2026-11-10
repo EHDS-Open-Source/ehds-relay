@@ -378,7 +378,7 @@ describe("invitations", () => {
     });
     await userEvent.click(sendButton());
     expect(
-      await screen.findByText(m.invitations.messageTooLong(1000)),
+      await screen.findByText(m.invitations.messageTooLong(1000, 1)),
     ).toBeVisible();
     expect(calls.some((c) => c.method === "POST")).toBe(false);
   });
@@ -386,11 +386,11 @@ describe("invitations", () => {
   it.each([
     [
       "already a member of this organisation",
-      m.invitations.errors.alreadyMember,
+      m.invitations.alreadyMemberFor("x@example.org"),
     ],
     [
       "already invited; resend the pending invitation instead",
-      m.invitations.errors.alreadyInvited,
+      m.invitations.alreadyInvitedFor("x@example.org"),
     ],
   ])("explains the 409 %s on the email field", async (detail, message) => {
     open({ [`POST ${invitesUrl}`]: () => json({ detail }, 409) });

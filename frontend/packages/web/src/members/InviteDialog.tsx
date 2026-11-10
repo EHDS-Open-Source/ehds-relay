@@ -63,19 +63,25 @@ function check(values: {
   else if (values.name.length > NAME_MAX)
     errors.name = text.nameTooLong(NAME_MAX);
   if (values.message.length > MESSAGE_MAX)
-    errors.message = text.messageTooLong(MESSAGE_MAX);
+    errors.message = text.messageTooLong(
+      MESSAGE_MAX,
+      values.message.length - MESSAGE_MAX,
+    );
   return errors;
 }
 
 /** Where a failed send is shown: on the field it names, or as a form message. */
-function serverProblem(error: unknown): { errors: Errors; form?: string } {
+function serverProblem(
+  error: unknown,
+  email: string,
+): { errors: Errors; form?: string } {
   const status = errorStatus(error);
   if (status === 409) {
     const detail = error instanceof DetailedApiError ? error.detail : "";
     const message = detail.includes("already a member")
-      ? text.errors.alreadyMember
+      ? text.alreadyMemberFor(email)
       : detail.includes("already invited")
-        ? text.errors.alreadyInvited
+        ? text.alreadyInvitedFor(email)
         : text.errors.notPending;
     return { errors: { email: message } };
   }
@@ -175,7 +181,7 @@ export function InviteDialog({
         toast.show({ tone: "success", message: text.sent(created.email) });
       },
       onError: (error) => {
-        const problem = serverProblem(error);
+        const problem = serverProblem(error, values.email);
         setServerErrors(problem.errors);
         setFormError(problem.form);
         const first = ORDER.find((field) => problem.errors[field]);
@@ -225,6 +231,7 @@ export function InviteDialog({
             <Input
               {...props("email")}
               type="email"
+              placeholder={text.emailPlaceholder}
               value={email}
               autoComplete="off"
               onChange={(event) => {
@@ -237,10 +244,12 @@ export function InviteDialog({
             label={text.nameLabel}
             htmlFor={ID.name}
             required
+            hint={text.nameHint}
             error={errors.name}
           >
             <Input
               {...props("name")}
+              placeholder={text.namePlaceholder}
               value={name}
               autoComplete="off"
               onChange={(event) => {
@@ -270,6 +279,9 @@ export function InviteDialog({
           >
             <Textarea
               {...props("message")}
+              rows={3}
+              placeholder={text.messagePlaceholder}
+              className="min-h-[88px] resize-y"
               value={message}
               onChange={(event) => {
                 setMessage(event.target.value);

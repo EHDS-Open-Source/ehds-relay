@@ -404,9 +404,10 @@ export const shellMessages = {
       invite: "Invite user",
       dialog: {
         title: "Invite a user",
-        lead: "Invite someone to join",
-        trail: "They will get an email with a link to join.",
-        fallbackOrg: "this organisation",
+        lead: "They'll get an email with a link to join",
+        trail:
+          "Everyone in the organisation can view and edit all of its datasets.",
+        fallbackOrg: "your organisation",
         cancel: "Cancel",
         send: "Send invite",
         sending: "Sending invite…",
@@ -415,13 +416,22 @@ export const shellMessages = {
       nameLabel: "Full name",
       roleLabel: "Role",
       messageLabel: "Personal message",
-      messageHint: "Optional. It is added to the invitation email.",
+      emailPlaceholder: "name@organisation.eu",
+      namePlaceholder: "e.g. Marco Rossi",
+      nameHint: "Shown in the list until they accept.",
+      messagePlaceholder: "Add a note to the invite email",
+      messageHint: "Optional. Included in the invite email.",
+      alreadyMemberFor: (email: string) =>
+        `${email} is already a member of this organisation.`,
+      alreadyInvitedFor: (email: string) =>
+        `${email} has already been invited. Use Resend in the list if they need the email again.`,
       sent: (email: string) => `Invite sent to ${email}.`,
-      emailRequired: "Enter the email address of the person to invite.",
+      emailRequired: "Enter the email address to send the invite to.",
       emailInvalid: "Enter an email address like name@organisation.eu.",
       nameRequired: "Enter the full name of the person to invite.",
-      nameTooLong: (max: number) => `Use at most ${max} characters.`,
-      messageTooLong: (max: number) => `Use at most ${max} characters.`,
+      nameTooLong: (max: number) => `Use ${max} characters or fewer.`,
+      messageTooLong: (max: number, over: number) =>
+        `Shorten the message to ${max.toLocaleString("en-GB")} characters or fewer. It's ${over} over.`,
       fieldInvalid: {
         email: "Check the email address and try again.",
         name: "Check the name and try again.",
