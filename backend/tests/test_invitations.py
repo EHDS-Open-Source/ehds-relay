@@ -27,7 +27,7 @@ def _invitations(org_id: str) -> str:
 
 
 def _invite(client: TestClient, org_id: str, **body: Any) -> dict[str, Any]:
-    res = client.post(_invitations(org_id), json={"email": INVITEE, **body})
+    res = client.post(_invitations(org_id), json={"email": INVITEE, "name": "Ines Invitee", **body})
     assert res.status_code == 201, res.text
     data: dict[str, Any] = res.json()
     return data
@@ -99,7 +99,7 @@ def test_inv_8_standard_cannot_invite(
     inv = _invite(client, org)
     std = as_user(standard)
     base = _invitations(org)
-    assert std.post(base, json={"email": "x@example.org"}).status_code == 403
+    assert std.post(base, json={"email": "x@example.org", "name": "X"}).status_code == 403
     assert std.get(base).status_code == 403
     assert std.delete(f"{base}/{inv['id']}").status_code == 403
     assert std.post(f"{base}/{inv['id']}/resend").status_code == 403
@@ -131,13 +131,13 @@ def test_auth_5_non_member_gets_404(
 
 def test_inv_1_duplicate_pending_409(client: TestClient, org: str) -> None:
     _invite(client, org)
-    res = client.post(_invitations(org), json={"email": INVITEE.upper()})
+    res = client.post(_invitations(org), json={"email": INVITEE.upper(), "name": "Ines"})
     assert res.status_code == 409
     assert "resend" in res.json()["detail"]
 
 
 def test_inv_1_existing_member_409(client: TestClient, org: str, standard: AppUser) -> None:
-    res = client.post(_invitations(org), json={"email": standard.email.upper()})
+    res = client.post(_invitations(org), json={"email": standard.email.upper(), "name": "Sam"})
     assert res.status_code == 409
     assert res.json()["detail"] == "already a member of this organisation"
 
@@ -178,7 +178,8 @@ def test_inv_3_failed_create_writes_no_email(
     client: TestClient, org: str, db: sessionmaker[Session]
 ) -> None:
     _invite(client, org)
-    assert client.post(_invitations(org), json={"email": INVITEE}).status_code == 409
+    res = client.post(_invitations(org), json={"email": INVITEE, "name": "Ines"})
+    assert res.status_code == 409
     assert len(_outbox(db)) == 1
 
 
@@ -536,3 +537,123 @@ def test_openapi_documents_error_responses(app: Any) -> None:
     assert {"403", "404", "410"} <= set(accept)
     props = app.openapi()["components"]["schemas"]["InvitationDTO"]["properties"]
     assert "last_sent_at" in props
+
+
+# --- name and message ---------------------------------------------------------------------
+
+
+def _create(client: TestClient, org: str, **body: Any) -> Any:
+    return client.post(_invitations(org), json={"email": INVITEE, **body})
+
+
+def test_name_and_message_are_trimmed_and_echoed(client: TestClient, org: str) -> None:
+    data = _invite(client, org, name="  Ada   Lovelace ", message="  Welcome\r\naboard!\n ")
+    assert data["name"] == "Ada Lovelace"
+    assert data["message"] == "Welcome\naboard!"
+    listed = client.get(_invitations(org)).json()[0]
+    assert (listed["name"], listed["message"]) == ("Ada Lovelace", "Welcome\naboard!")
+
+
+@pytest.mark.parametrize("message", [None, "", "  \n "])
+def test_blank_message_becomes_null(client: TestClient, org: str, message: str | None) -> None:
+    body: dict[str, Any] = {"name": "Ada"}
+    if message is not None:
+        body["message"] = message
+    res = _create(client, org, **body)
+    assert res.status_code == 201, res.text
+    assert res.json()["message"] is None
+
+
+@pytest.mark.parametrize("name", ["", "   ", None])
+def test_name_required(client: TestClient, org: str, name: str | None) -> None:
+    body = {} if name is None else {"name": name}
+    res = _create(client, org, **body)
+    assert res.status_code == 422
+    assert res.json()["detail"][0]["loc"] == ["body", "name"]
+
+
+@pytest.mark.parametrize(("field", "limit"), [("name", 200), ("message", 1000)])
+def test_length_limits(client: TestClient, org: str, field: str, limit: int) -> None:
+    base = {"name": "Ada"}
+    ok = _create(client, org, **{**base, field: "é" * limit})
+    assert ok.status_code == 201, ok.text
+    client.delete(f"{_invitations(org)}/{ok.json()['id']}")
+    res = _create(client, org, **{**base, field: "é" * (limit + 1)})
+    assert res.status_code == 422
+    err = res.json()["detail"][0]
+    assert err["loc"] == ["body", field]
+    assert err["type"] == "string_too_long"
+    assert err["ctx"]["max_length"] == limit
+
+
+def test_email_has_name_and_escaped_message(client: TestClient, org: str, db: Any) -> None:
+    _invite(client, org, name="Ada <b>&", message='Hi "you"\n<script>x</script> & co')
+    row = _outbox(db)[-1]
+    assert "Hi Ada <b>&," in (row.text_body or "")
+    assert "<script>x</script> & co" in (row.text_body or "")
+    html = row.html_body or ""
+    assert "Hi Ada &lt;b&gt;&amp;," in html
+    assert "&lt;script&gt;x&lt;/script&gt; &amp; co" in html
+    assert "<script>" not in html
+    assert "&quot;you&quot;<br>\n" in html
+    assert "Ada" not in row.subject
+    assert "Hi" not in row.subject
+    assert "\n" not in row.subject
+
+
+def test_resend_keeps_name_and_message(client: TestClient, org: str, db: Any) -> None:
+    inv = _invite(client, org, name="Ada", message="Welcome")
+    res = client.post(f"{_invitations(org)}/{inv['id']}/resend")
+    assert res.status_code == 200, res.text
+    assert (res.json()["name"], res.json()["message"]) == ("Ada", "Welcome")
+    last = _outbox(db)[-1]
+    assert "Hi Ada," in (last.text_body or "")
+    assert "Welcome" in (last.text_body or "")
+
+
+def test_invitation_without_name_lists_resends_and_accepts(
+    client: TestClient, invitee_client: TestClient, org: str, db: Any
+) -> None:
+    inv = _invite(client, org)
+    with db() as session:
+        session.execute(update(Invitation).values(name=None, message=None))
+        session.commit()
+    listed = client.get(_invitations(org)).json()[0]
+    assert listed["name"] is None
+    assert listed["message"] is None
+    assert client.post(f"{_invitations(org)}/{inv['id']}/resend").status_code == 200
+    assert (_outbox(db)[-1].text_body or "").startswith("Hello,")
+    assert invitee_client.post(f"/api/v1/invitations/{_latest_token(db)}/accept").status_code == 200
+
+
+def test_openapi_publishes_limits(client: TestClient) -> None:
+    schema = client.get("/openapi.json").json()["components"]["schemas"]["InvitationCreateDTO"]
+    assert schema["properties"]["name"]["maxLength"] == 200
+    assert schema["properties"]["message"]["anyOf"][0]["maxLength"] == 1000
+    assert "name" in schema["required"]
+
+
+def test_migration_cycle_and_single_head(app_database_url: str) -> None:
+    from alembic import command
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+    from sqlalchemy import create_engine, inspect
+
+    cfg = Config("alembic.ini")
+    cfg.attributes["database_url"] = app_database_url
+    assert len(ScriptDirectory.from_config(cfg).get_heads()) == 1
+
+    def columns() -> set[str]:
+        engine = create_engine(app_database_url)
+        try:
+            return {c["name"] for c in inspect(engine).get_columns("invitation")}
+        finally:
+            engine.dispose()
+
+    try:
+        command.downgrade(cfg, "0010")
+        assert not {"name", "message"} & columns()
+        command.upgrade(cfg, "head")
+        assert {"name", "message"} <= columns()
+    finally:
+        command.upgrade(cfg, "head")

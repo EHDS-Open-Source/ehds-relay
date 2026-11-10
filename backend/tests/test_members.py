@@ -290,7 +290,9 @@ def test_standard_cannot_transfer(
 def test_transfer_to_non_member_404(
     client: TestClient, org: str, owner: AppUser, outsider: AppUser, db: sessionmaker[Session]
 ) -> None:
-    pending = client.post(f"{ORGS}/{org}/invitations", json={"email": "invited@example.org"})
+    pending = client.post(
+        f"{ORGS}/{org}/invitations", json={"email": "invited@example.org", "name": "Ines Invitee"}
+    )
     assert pending.status_code == 201, pending.text
     for user_id in (uuid.uuid4(), outsider.id, pending.json().get("id", uuid.uuid4())):
         assert client.post(transfer(org, user_id)).status_code == 404

@@ -20,7 +20,7 @@ export function MembersPage() {
       {role === "owner" && session ? (
         <>
           <MembersSection orgId={orgId} currentUserId={session.user.id} />
-          <InvitationsSection orgId={orgId} />
+          <InvitationsSection orgId={orgId} orgName={orgName} />
         </>
       ) : (
         <EmptyState title={shellMessages.members.ownersOnly} description="" />

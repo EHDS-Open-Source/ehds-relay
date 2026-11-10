@@ -412,14 +412,44 @@ export const shellMessages = {
     },
     invitations: {
       title: "Invitations",
+      invite: "Invite user",
+      dialog: {
+        title: "Invite a user",
+        lead: "They'll get an email with a link to join",
+        trail:
+          "Everyone in the organisation can view and edit all of its datasets.",
+        fallbackOrg: "your organisation",
+        cancel: "Cancel",
+        send: "Send invite",
+        sending: "Sending invite…",
+      },
       emailLabel: "Email address",
+      nameLabel: "Full name",
       roleLabel: "Role",
-      send: "Send invitation",
-      sending: "Sending…",
-      sent: (email: string) => `Invitation sent to ${email}.`,
-      emailHint: "We will email them a link to join this organisation.",
-      emailRequired: "Enter the email address of the person to invite.",
+      messageLabel: "Personal message",
+      emailPlaceholder: "name@organisation.eu",
+      namePlaceholder: "e.g. Marco Rossi",
+      nameHint: "Shown in the list until they accept.",
+      messagePlaceholder: "Add a note to the invite email",
+      messageHint: "Optional. Included in the invite email.",
+      alreadyMemberFor: (email: string) =>
+        `${email} is already a member of this organisation.`,
+      alreadyInvitedFor: (email: string) =>
+        `${email} has already been invited. Use Resend in the list if they need the email again.`,
+      sent: (email: string) => `Invite sent to ${email}.`,
+      emailRequired: "Enter the email address to send the invite to.",
       emailInvalid: "Enter an email address like name@organisation.eu.",
+      nameRequired: "Enter the full name of the person to invite.",
+      nameTooLong: (max: number) => `Use ${max} characters or fewer.`,
+      messageTooLong: (max: number, over: number) =>
+        `Shorten the message to ${max.toLocaleString("en-GB")} characters or fewer. It's ${over} over.`,
+      fieldInvalid: {
+        email: "Check the email address and try again.",
+        name: "Check the name and try again.",
+        message: "Check the message and try again.",
+      },
+      subline: (email: string, role: string, date: string) =>
+        `${email} · ${role} · Invited ${date}`,
       filterLabel: "Show invitations",
       filters: {
         all: "All",
@@ -434,7 +464,6 @@ export const shellMessages = {
         cancelled: "Cancelled",
         expired: "Expired",
       },
-      subline: (role: string, date: string) => `${role} · Invited ${date}`,
       resend: "Resend",
       resending: "Sending…",
       resent: (email: string) => `Invitation sent again to ${email}.`,

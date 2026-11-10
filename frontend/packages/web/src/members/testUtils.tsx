@@ -26,6 +26,8 @@ export function makeInvitation(
     id: "inv-1",
     org_id: "demo",
     email: "new@example.org",
+    name: "Nina New",
+    message: null,
     role: "standard",
     status: "pending",
     invited_by: "Ada Owner",

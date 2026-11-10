@@ -144,3 +144,23 @@ def test_reminder_email_untitled_fallback_and_last_validated() -> None:
     assert "Untitled dataset" in subject
     assert "last validated on 03 November 2025" in text
     assert "last validated on 03 November 2025" in html
+
+
+def test_invitation_email_name_and_message() -> None:
+    from datetime import UTC, datetime
+
+    from relay.email.messages import invitation_email
+
+    expires = datetime(2026, 12, 3, tzinfo=UTC)
+    args = ("Acme", "Olive", "standard", "http://x/invitations/t", expires)
+    subject, text, html = invitation_email(*args, invitee_name="Ada\r\nX", message="a\nb<i>")
+    assert "\n" not in subject
+    assert "Ada" not in subject
+    assert text.startswith("Hi Ada")
+    assert "Message from Olive:\na\nb<i>" in text
+    assert "a<br>\nb&lt;i&gt;" in html
+    _plain_subject, plain_text, plain_html = invitation_email(*args)
+
+    assert plain_text.startswith("Hello,")
+    assert "Message from" not in plain_text
+    assert "Message from" not in plain_html

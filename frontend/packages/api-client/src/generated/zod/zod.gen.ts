@@ -141,6 +141,8 @@ export const zMemberRole = z.enum(['owner', 'standard']);
  */
 export const zInvitationCreateDto = z.object({
     email: z.string().max(254).regex(/^(?:"[^"]+"|[^\s@"][^\s@]*)@[^@\s]+$/),
+    message: z.string().max(1000).nullish(),
+    name: z.string().min(1).max(200),
     role: zMemberRole.optional().default('standard')
 });
 
@@ -154,6 +156,8 @@ export const zInvitationDto = z.object({
     id: z.uuid(),
     invited_by: z.uuid().nullable(),
     last_sent_at: z.iso.datetime(),
+    message: z.string().nullable(),
+    name: z.string().nullable(),
     org_id: z.uuid(),
     role: zMemberRole,
     status: zInvitationStatus

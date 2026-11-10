@@ -397,7 +397,8 @@ export interface paths {
         put?: never;
         /**
          * Create Invitation
-         * @description Owners only. Emails the invitee a link that is valid for 30 days.
+         * @description Owners only. Emails the invitee, by name and with the optional message, a link that is
+         *     valid for 30 days.
          */
         post: operations["create_invitation_api_v1_organisations__org_id__invitations_post"];
         delete?: never;
@@ -841,6 +842,16 @@ export interface components {
              * @description Compared and stored lower-cased
              */
             email: string;
+            /**
+             * Message
+             * @description Optional personal note shown in the email. Blank counts as none. At most 1000 characters.
+             */
+            message?: string | null;
+            /**
+             * Name
+             * @description Who is being invited; the email greets them by this name. Runs of whitespace become one space. At most 200 characters.
+             */
+            name: string;
             /** @default standard */
             role: components["schemas"]["MemberRole"];
         };
@@ -877,6 +888,13 @@ export interface components {
              * @description When the invitation email was last sent: on create and on every resend
              */
             last_sent_at: string;
+            /** Message */
+            message: string | null;
+            /**
+             * Name
+             * @description Empty on invitations created before names existed
+             */
+            name: string | null;
             /**
              * Org Id
              * Format: uuid

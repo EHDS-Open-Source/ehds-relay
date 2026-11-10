@@ -1,30 +1,25 @@
 import {
   Button,
   ConfirmDialog,
-  Dropdown,
   EmptyState,
-  Field,
   FilterChips,
   Icon,
-  Input,
   LoadingStar,
-  fieldErrorId,
   useMinimumPending,
   useToast,
 } from "@ehds-relay/ui";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 
 import { shellMessages } from "../shell/messages";
 import { invitationErrorMessage } from "./errors";
-import { dateFormat, roleOptions } from "./format";
+import { InviteDialog } from "./InviteDialog";
+import { dateFormat } from "./format";
 import {
   useCancelInvitation,
   useInvitations,
-  useInvite,
   useResendInvitation,
   type Invitation,
   type InvitationStatus,
-  type MemberRole,
 } from "./queries";
 import {
   rowActions,
@@ -43,51 +38,24 @@ const filterOptions = (
   ["all", "pending", "accepted", "cancelled", "expired"] as const
 ).map((value) => ({ value, label: text.filters[value] }));
 
-// A loose check; the server has the final say.
-const looksLikeEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value);
-
-export function InvitationsSection({ orgId }: { orgId: string }) {
+export function InvitationsSection({
+  orgId,
+  orgName,
+}: {
+  orgId: string;
+  orgName: string | undefined;
+}) {
   const [filter, setFilter] = useState<Filter>("all");
   const invitations = useInvitations(
     orgId,
     filter === "all" ? undefined : filter,
   );
   const loadingList = useMinimumPending(invitations.isPending);
-  const invite = useInvite(orgId);
   const resend = useResendInvitation(orgId);
   const cancel = useCancelInvitation(orgId);
   const toast = useToast();
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<MemberRole>("standard");
-  const [emailError, setEmailError] = useState<string | undefined>();
+  const [inviting, setInviting] = useState(false);
   const [cancelling, setCancelling] = useState<Invitation | null>(null);
-
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    const trimmed = email.trim();
-    invite.reset();
-    const problem =
-      trimmed === ""
-        ? text.emailRequired
-        : !looksLikeEmail(trimmed)
-          ? text.emailInvalid
-          : undefined;
-    if (problem) {
-      setEmailError(problem);
-      document.getElementById("invite-email")?.focus();
-      return;
-    }
-    setEmailError(undefined);
-    invite.mutate(
-      { email: trimmed, role },
-      {
-        onSuccess: (created) => {
-          setEmail("");
-          toast.show({ tone: "success", message: text.sent(created.email) });
-        },
-      },
-    );
-  };
 
   const doResend = (invitation: Invitation) => {
     resend.mutate(invitation.id, {
@@ -111,71 +79,28 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
     });
   };
 
-  const serverError = invite.isError
-    ? invitationErrorMessage(invite.error)
-    : undefined;
-  const shownError = emailError ?? serverError;
-
   return (
     <section aria-labelledby="invitations-heading">
       <h2 id="invitations-heading" className={sectionHeading}>
         {text.title}
       </h2>
-      {/* On wider screens the fields share rows (label, control, message, hint), so the
-          button lines up with the controls whatever is shown under them. */}
-      <form
-        noValidate
-        onSubmit={submit}
-        className="mb-6 flex flex-col gap-4 md:grid md:grid-cols-[minmax(0,1fr)_11rem_auto] md:grid-rows-[repeat(4,auto)] md:gap-x-4 md:gap-y-0"
-      >
-        <Field
-          className="md:row-span-4 md:grid md:grid-rows-subgrid"
-          label={text.emailLabel}
-          htmlFor="invite-email"
-          required
-          hint={text.emailHint}
-          error={shownError}
-        >
-          <Input
-            id="invite-email"
-            type="email"
-            value={email}
-            autoComplete="off"
-            aria-invalid={shownError ? true : undefined}
-            aria-describedby={
-              shownError ? fieldErrorId("invite-email") : undefined
-            }
-            onChange={(event) => {
-              setEmail(event.target.value);
-            }}
-          />
-        </Field>
-        <Field
-          className="md:row-span-4 md:grid md:grid-rows-subgrid"
-          label={text.roleLabel}
-          htmlFor="invite-role"
-        >
-          <Dropdown
-            id="invite-role"
-            value={role}
-            options={roleOptions.map((option) => ({
-              value: option,
-              label: m.roles[option],
-            }))}
-            onValueChange={(value) => {
-              setRole(value as MemberRole);
-            }}
-          />
-        </Field>
+      <div className="mb-6">
         <Button
-          type="submit"
-          className="self-start md:col-start-3 md:row-start-2 md:self-center"
-          busy={invite.isPending}
+          type="button"
+          onClick={() => {
+            setInviting(true);
+          }}
         >
-          {invite.isPending ? text.sending : text.send}
+          {text.invite}
           <Icon name="addUser" />
         </Button>
-      </form>
+      </div>
+      <InviteDialog
+        orgId={orgId}
+        orgName={orgName}
+        open={inviting}
+        onOpenChange={setInviting}
+      />
 
       <div className="mb-4">
         <FilterChips
@@ -210,10 +135,11 @@ export function InvitationsSection({ orgId }: { orgId: string }) {
             <li key={invitation.id} className={rowCard}>
               <div className={rowInfo}>
                 <p className={`${rowName} break-all text-ink`}>
-                  {invitation.email}
+                  {invitation.name ?? invitation.email}
                 </p>
                 <p className="text-[0.9em] leading-[1.6] font-medium text-ink-3">
                   {text.subline(
+                    invitation.email,
                     m.roles[invitation.role],
                     dateFormat.format(new Date(invitation.last_sent_at)),
                   )}
