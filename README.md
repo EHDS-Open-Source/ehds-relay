@@ -235,6 +235,33 @@ the past on a published dataset and watch Mailpit; later runs send nothing more.
 Invitation links have the form `{RELAY_WEB_URL}/invitations/{token}` and stay valid for
 `RELAY_INVITATION_TTL_DAYS` (default 30) days.
 
+## End-to-end tests
+
+Playwright specs in `frontend/e2e/` drive the real app in Chromium: an owner signs in through
+Keycloak's own page, creates an organisation, saves a draft dataset, sees what is missing,
+publishes it and opens its output; a second user cannot open that organisation's dataset.
+Each run creates its own organisation, so runs can repeat against the same database. They
+are not part of `make test`.
+
+Locally, against the running stack (`make tilt`, with the web app on `WEB_PORT`):
+
+```bash
+make install                                             # once
+(cd frontend && pnpm exec playwright install chromium)   # once; add --with-deps for system libraries
+make e2e                                                 # ARGS=--headed to watch, ARGS=--ui to step through
+```
+
+The specs sign in as the dev users above. If your realm still has older passwords, set
+`E2E_OWNER_PASSWORD` and `E2E_STANDARD_PASSWORD` (and `E2E_OWNER_USER`, `E2E_STANDARD_USER`).
+On a failure, the trace is in `frontend/e2e/test-results/`
+(`pnpm exec playwright show-trace <path>` from `frontend/`).
+
+In CI, `ci-e2e.yml` runs `scripts/e2e-stack.sh`, which creates a kind cluster on the runner,
+builds and loads the API image, installs the Helm chart with the same browser-facing settings
+as Tilt, port-forwards the API, Keycloak and Mailpit and waits until they are ready. It then
+starts Vite and runs `make e2e`. A failed run uploads the Playwright report and traces as an
+artifact and prints the pods' logs.
+
 ## API
 
 | Method | Path | |
