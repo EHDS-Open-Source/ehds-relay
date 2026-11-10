@@ -1,6 +1,8 @@
 import threading
 import time
 import uuid
+from collections.abc import Callable
+from typing import Any
 
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, select, text
@@ -219,3 +221,168 @@ def test_mgt_5_concurrent_demotions_keep_one_owner(
             )
         ).all()
     assert len(owners) == 1
+
+
+def transfer(org: str, user_id: object) -> str:
+    return members(org, user_id, "transfer-ownership")
+
+
+def owner_ids(db: sessionmaker[Session], org: str) -> list[uuid.UUID]:
+    with db() as session:
+        return list(
+            session.scalars(
+                select(Membership.user_id).where(
+                    Membership.org_id == uuid.UUID(org), Membership.role == "owner"
+                )
+            ).all()
+        )
+
+
+def test_owner_transfers_ownership_to_standard(
+    client: TestClient, org: str, owner: AppUser, standard: AppUser, as_user: AsUser
+) -> None:
+    res = client.post(transfer(org, standard.id))
+    assert res.status_code == 200, res.text
+    assert (res.json()["user_id"], res.json()["role"]) == (str(standard.id), "owner")
+
+    assert client.get(f"{ORGS}/{org}").json()["role"] == "standard"
+    assert client.get(members(org)).status_code == 403
+    them = as_user(standard)
+    assert sorted(roles(them, org)) == [
+        ("owner@example.org", "standard"),
+        ("standard@example.org", "owner"),
+    ]
+
+
+def test_new_owner_gains_owner_actions_old_owner_loses_them(
+    client: TestClient, org: str, owner: AppUser, standard: AppUser, as_user: AsUser
+) -> None:
+    client.post(transfer(org, standard.id))
+    them = as_user(standard)
+    assert them.get(members(org)).status_code == 200
+    assert client.patch(members(org, standard.id), json={"role": "standard"}).status_code == 403
+    assert them.delete(members(org, owner.id)).status_code == 204
+
+
+def test_other_owners_keep_their_role(
+    client: TestClient,
+    org: str,
+    standard: AppUser,
+    make_user: MakeUser,
+    add_member: AddMember,
+    as_user: AsUser,
+) -> None:
+    other = make_user("other@example.org", "Olga Other")
+    add_member(org, other, "owner")
+    assert client.post(transfer(org, standard.id)).status_code == 200
+    assert ("other@example.org", "owner") in roles(as_user(other), org)
+
+
+def test_standard_cannot_transfer(
+    org: str, owner: AppUser, standard: AppUser, as_user: AsUser, db: sessionmaker[Session]
+) -> None:
+    them = as_user(standard)
+    assert them.post(transfer(org, standard.id)).status_code == 403
+    assert them.post(transfer(org, owner.id)).status_code == 403
+    assert owner_ids(db, org) == [owner.id]
+
+
+def test_transfer_to_non_member_404(
+    client: TestClient, org: str, owner: AppUser, outsider: AppUser, db: sessionmaker[Session]
+) -> None:
+    pending = client.post(f"{ORGS}/{org}/invitations", json={"email": "invited@example.org"})
+    assert pending.status_code == 201, pending.text
+    for user_id in (uuid.uuid4(), outsider.id, pending.json().get("id", uuid.uuid4())):
+        assert client.post(transfer(org, user_id)).status_code == 404
+    assert owner_ids(db, org) == [owner.id]
+
+
+def test_transfer_to_existing_owner_409(
+    client: TestClient,
+    org: str,
+    owner: AppUser,
+    standard: AppUser,
+    db: sessionmaker[Session],
+) -> None:
+    client.patch(members(org, standard.id), json={"role": "owner"})
+    res = client.post(transfer(org, standard.id))
+    assert res.status_code == 409
+    assert res.json()["detail"] == "member is already an owner"
+    assert sorted(owner_ids(db, org)) == sorted([owner.id, standard.id])
+
+
+def test_transfer_to_self_409(
+    client: TestClient, org: str, owner: AppUser, db: sessionmaker[Session]
+) -> None:
+    assert client.post(transfer(org, owner.id)).status_code == 409
+    assert owner_ids(db, org) == [owner.id]
+
+
+def _run_while_org_locked(
+    org: str, engine: Engine, calls: dict[str, Callable[[], Any]]
+) -> dict[str, tuple[int, str]]:
+    """Start every call, let them all queue on the organisation lock, then release it."""
+    results: dict[str, tuple[int, str]] = {}
+
+    def run(name: str, call: Callable[[], Any]) -> None:
+        res = call()
+        results[name] = (res.status_code, res.text)
+
+    threads = [threading.Thread(target=run, args=(n, c)) for n, c in calls.items()]
+    with engine.connect() as conn, conn.begin():
+        conn.execute(text("SELECT id FROM organisation WHERE id = :id FOR UPDATE"), {"id": org})
+        for t in threads:
+            t.start()
+        _wait_for_lock_waiters(engine, len(threads))
+    for t in threads:
+        t.join(timeout=10)
+    return results
+
+
+def test_concurrent_transfers_by_sole_owner_leave_one_owner(
+    client: TestClient,
+    org: str,
+    standard: AppUser,
+    make_user: MakeUser,
+    add_member: AddMember,
+    engine: Engine,
+    db: sessionmaker[Session],
+) -> None:
+    other = make_user("other@example.org", "Olga Other")
+    add_member(org, other, "standard")
+    results = _run_while_org_locked(
+        org,
+        engine,
+        {
+            "standard": lambda: client.post(transfer(org, standard.id)),
+            "other": lambda: client.post(transfer(org, other.id)),
+        },
+    )
+    assert sorted(code for code, _ in results.values()) == [200, 403], results
+    assert len(owner_ids(db, org)) == 1
+
+
+def test_transfer_racing_target_removal_keeps_an_owner(
+    client: TestClient,
+    org: str,
+    owner: AppUser,
+    standard: AppUser,
+    make_user: MakeUser,
+    add_member: AddMember,
+    as_user: AsUser,
+    engine: Engine,
+    db: sessionmaker[Session],
+) -> None:
+    other = make_user("other@example.org", "Olga Other")
+    add_member(org, other, "owner")
+    theirs = as_user(other)
+    results = _run_while_org_locked(
+        org,
+        engine,
+        {
+            "transfer": lambda: client.post(transfer(org, standard.id)),
+            "remove": lambda: theirs.delete(members(org, standard.id)),
+        },
+    )
+    assert {code for code, _ in results.values()} <= {200, 204, 404}, results
+    assert len(owner_ids(db, org)) >= 1

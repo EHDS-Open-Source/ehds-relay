@@ -3133,6 +3133,63 @@
         ]
       }
     },
+    "/api/v1/organisations/{org_id}/members/{user_id}/transfer-ownership": {
+      "post": {
+        "description": "Make a member the owner and turn the caller into a standard member.\n\nBoth changes happen in one transaction under the organisation lock, so the organisation\nnever has fewer owners than before. Other owners keep their role. Returns the new owner.",
+        "operationId": "transfer_ownership_api_v1_organisations__org_id__members__user_id__transfer_ownership_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "The member is already an owner"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Transfer Ownership",
+        "tags": [
+          "members"
+        ]
+      }
+    },
     "/healthz": {
       "get": {
         "description": "Liveness: the process is up.",

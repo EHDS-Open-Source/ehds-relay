@@ -490,6 +490,29 @@ export interface paths {
         patch: operations["update_member_api_v1_organisations__org_id__members__user_id__patch"];
         trace?: never;
     };
+    "/api/v1/organisations/{org_id}/members/{user_id}/transfer-ownership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Transfer Ownership
+         * @description Make a member the owner and turn the caller into a standard member.
+         *
+         *     Both changes happen in one transaction under the organisation lock, so the organisation
+         *     never has fewer owners than before. Other owners keep their role. Returns the new owner.
+         */
+        post: operations["transfer_ownership_api_v1_organisations__org_id__members__user_id__transfer_ownership_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -2208,6 +2231,45 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MemberDTO"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transfer_ownership_api_v1_organisations__org_id__members__user_id__transfer_ownership_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberDTO"];
+                };
+            };
+            /** @description The member is already an owner */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

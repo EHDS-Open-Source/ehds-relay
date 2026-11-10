@@ -27,6 +27,7 @@ router = APIRouter(
 SessionDep = Annotated[Session, Depends(get_session)]
 
 LAST_OWNER_DETAIL = "cannot remove or demote the last owner"
+ALREADY_OWNER_DETAIL = "member is already an owner"
 
 
 def _locked_target(session: Session, owner: Membership, user_id: uuid.UUID) -> Membership:
@@ -74,3 +75,28 @@ def remove_member(user_id: uuid.UUID, owner: OwnerDep, session: SessionDep) -> N
     recheck_owner(session, owner)
     session.delete(target)
     session.commit()
+
+
+@router.post(
+    "/{user_id}/transfer-ownership",
+    response_model=MemberDTO,
+    responses={status.HTTP_409_CONFLICT: {"description": "The member is already an owner"}},
+)
+def transfer_ownership(user_id: uuid.UUID, owner: OwnerDep, session: SessionDep) -> MemberRow:
+    """Make a member the owner and turn the caller into a standard member.
+
+    Both changes happen in one transaction under the organisation lock, so the organisation
+    never has fewer owners than before. Other owners keep their role. Returns the new owner.
+    """
+    target = _locked_target(session, owner, user_id)
+    recheck_owner(session, owner)
+    if target.role == MemberRole.OWNER:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=ALREADY_OWNER_DETAIL)
+    caller = session.get(Membership, (owner.org_id, owner.user_id), populate_existing=True)
+    assert caller is not None  # recheck_owner just confirmed it under the lock
+    target.role = MemberRole.OWNER.value
+    caller.role = MemberRole.STANDARD.value
+    session.commit()
+    row = member_row(session, owner.org_id, user_id)
+    assert row is not None  # just updated under the organisation lock
+    return row
