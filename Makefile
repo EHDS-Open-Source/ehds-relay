@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 
-.PHONY: cluster up down deploy tilt web install pip_compile pip_compile_dev api_client test check check_password_flows
+.PHONY: cluster up down deploy tilt web install pip_compile pip_compile_dev api_client test check check_password_flows e2e
 
 # make cluster up | make cluster down [--remove-registries]
 cluster:
@@ -47,3 +47,9 @@ check:
 check_password_flows:
 	set -a; [ -f .dev.env ] && . ./.dev.env; set +a; \
 	backend/.venv/bin/python scripts/check_password_flows.py $(ARGS)
+
+# Playwright end-to-end specs (frontend/e2e) against the running stack (Tilt). Not part of
+# `make test`. Pass Playwright options with ARGS, e.g. ARGS=--headed.
+e2e:
+	set -a; [ -f .dev.env ] && . ./.dev.env; set +a; \
+	$(MAKE) -C frontend e2e
