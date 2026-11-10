@@ -26,10 +26,10 @@ import secrets
 import sys
 import time
 from html.parser import HTMLParser
-from http.cookiejar import DefaultCookiePolicy
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urljoin
 
 import requests
+from requests.cookies import RequestsCookieJar
 
 WEB = f"http://localhost:{os.environ.get('WEB_PORT', '5173')}"
 KEYCLOAK = f"http://localhost:{os.environ.get('KEYCLOAK_LOCAL_PORT', '8080')}"
@@ -43,7 +43,9 @@ EXPECTED_POLICY = (
     " and notUsername and notEmail and maxLength(128)"
 )
 EXPECTED_LIFESPAN_SECONDS = 300
-ACTION_LINK = re.compile(r"https?://[^\s\"'<>]+/login-actions/action-token\?[^\s\"'<>]+")
+ACTION_LINK = re.compile(
+    r"https?://[^\s\"'<>]+/login-actions/action-token\?[^\s\"'<>]+"
+)
 TIMEOUT = 15
 
 
@@ -69,18 +71,19 @@ def step(message: str) -> None:
 # Browser stand-in
 
 
-class LocalhostSecureCookies(DefaultCookiePolicy):
+class LocalhostCookies(RequestsCookieJar):
     """Send Secure cookies to localhost over http, as Chrome and Firefox do. Keycloak marks its
-    login cookies Secure even on http, and requests would otherwise drop them."""
+    login cookies Secure even on http, and requests would otherwise drop them. (A cookie policy
+    would not help: requests copies the jar into a new one for every request.)"""
 
-    def return_ok_secure(self, cookie, request):
-        host = urlsplit(request.get_full_url()).hostname
-        return host in ("localhost", "127.0.0.1") or super().return_ok_secure(cookie, request)
+    def set_cookie(self, cookie, *args, **kwargs):
+        cookie.secure = False
+        super().set_cookie(cookie, *args, **kwargs)
 
 
 def browser() -> requests.Session:
     session = requests.Session()
-    session.cookies.set_policy(LocalhostSecureCookies())
+    session.cookies = LocalhostCookies()
     return session
 
 
@@ -110,8 +113,16 @@ class Page(HTMLParser):
                     "fields": {},
                 }
             )
-        elif tag in ("input", "button", "textarea", "select") and self.forms and a.get("name"):
+        elif (
+            tag in ("input", "button", "textarea", "select")
+            and self.forms
+            and a.get("name")
+        ):
             if a.get("type") in ("checkbox", "radio") and "checked" not in a:
+                return
+            if a["name"].startswith(
+                "cancel"
+            ):  # a "Cancel" button is only sent when clicked
                 return
             self.forms[-1]["fields"].setdefault(a["name"], a.get("value", ""))
         elif tag == "a" and a.get("href"):
@@ -156,8 +167,13 @@ def signed_in(session: requests.Session) -> bool:
 
 def start(session: requests.Session, **params: str) -> Page:
     res = session.get(f"{WEB}/api/v1/auth/login", params=params, timeout=TIMEOUT)
-    check(res.status_code == 200, f"login start answered {res.status_code} at {res.url}")
-    check(res.url.startswith(KEYCLOAK), f"login did not reach Keycloak, ended at {res.url}")
+    check(
+        res.status_code == 200, f"login start answered {res.status_code} at {res.url}"
+    )
+    check(
+        res.url.startswith(KEYCLOAK),
+        f"login did not reach Keycloak, ended at {res.url}",
+    )
     return Page(res)
 
 
@@ -191,10 +207,14 @@ def mails_to(address: str) -> list[dict]:
     return res.json().get("messages") or []
 
 
-def wait_for_mail(address: str, subject_part: str, count: int = 1, seconds: int = 30) -> list[dict]:
+def wait_for_mail(
+    address: str, subject_part: str, count: int = 1, seconds: int = 30
+) -> list[dict]:
     deadline = time.monotonic() + seconds
     while True:
-        found = [m for m in mails_to(address) if subject_part.lower() in m["Subject"].lower()]
+        found = [
+            m for m in mails_to(address) if subject_part.lower() in m["Subject"].lower()
+        ]
         if len(found) >= count or time.monotonic() > deadline:
             return found
         time.sleep(1)
@@ -232,7 +252,8 @@ def check_realm() -> None:
         f"{KEYCLOAK}/admin/realms/{REALM}", headers=headers, timeout=TIMEOUT
     ).json()
     check(
-        realm.get("passwordPolicy") == EXPECTED_POLICY, f"policy is {realm.get('passwordPolicy')!r}"
+        realm.get("passwordPolicy") == EXPECTED_POLICY,
+        f"policy is {realm.get('passwordPolicy')!r}",
     )
     step("password policy set")
     lifespan = realm.get("actionTokenGeneratedByUserLifespan")
@@ -255,25 +276,50 @@ def check_registration(username: str, email: str, password: str) -> requests.Ses
     print("Registration")
     session = browser()
     page = start(session, signup="true", redirect="/")
+    # Keycloak 26 with "verify email" on asks for the password only after the address is verified;
+    # the registration page then has no password fields. Older setups ask for it up front.
     form = need(
-        page.form_with("email", "username", "password", "password-confirm"),
+        page.form_with("email", "username"),
         "no registration form (is registration allowed?)",
     )
-    details = {"firstName": "Pat", "lastName": "Check", "email": email, "username": username}
+    details = {
+        "firstName": "Pat",
+        "lastName": "Check",
+        "email": email,
+        "username": username,
+    }
+    password_on_form = "password" in form["fields"]
 
-    weak = "short"
-    res = submit(session, form, **details, password=weak, **{"password-confirm": weak})
-    page = Page(res)
-    form = need(page.form_with("email", "password", "password-confirm"), "weak password accepted")
-    check("invalid password" in page.text.lower(), f"no policy message: {page.text[:200]}")
-    step(f"weak password refused: {_message(page)}")
-
-    res = submit(session, form, **details, password=password, **{"password-confirm": password})
+    if password_on_form:
+        weak = "short"
+        res = submit(
+            session, form, **details, password=weak, **{"password-confirm": weak}
+        )
+        page = Page(res)
+        form = need(
+            page.form_with("email", "password", "password-confirm"),
+            "weak password accepted",
+        )
+        check(
+            "invalid password" in page.text.lower(),
+            f"no policy message: {page.text[:200]}",
+        )
+        step(f"weak password refused: {_message(page)}")
+        res = submit(
+            session,
+            form,
+            **details,
+            password=password,
+            **{"password-confirm": password},
+        )
+    else:
+        res = submit(session, form, **details)
     page = Page(res)
     check(
-        "verify" in page.text.lower(), f"no verify-email page after registering: {page.text[:200]}"
+        "verify" in page.text.lower(),
+        f"no verify-email page after registering: {page.text[:200]}",
     )
-    step("valid password accepted; asked to verify the email address")
+    step("registration accepted; asked to verify the email address")
 
     mails = wait_for_mail(email, "verif")
     check(len(mails) == 1, f"expected one verification email, got {len(mails)}")
@@ -281,9 +327,30 @@ def check_registration(username: str, email: str, password: str) -> requests.Ses
     step("verification email arrived in Mailpit")
 
     res = proceed(session, session.get(link, timeout=TIMEOUT))
-    check(on_web(res), f"verification link did not lead back to the app: {res.url}")
-    check(signed_in(session), "not signed in after verifying the email")
-    step("verification link signed the new user in")
+    if not password_on_form:
+        page = Page(res)
+        form = need(
+            page.form_with("password-new", "password-confirm"),
+            f"no set-password page after verifying the email: {page.text[:200]}",
+        )
+        step("verification link leads to a set-password page")
+        weak = "short"
+        res = submit(session, form, **{"password-new": weak, "password-confirm": weak})
+        page = Page(res)
+        form = need(
+            page.form_with("password-new", "password-confirm"), "weak password accepted"
+        )
+        check(
+            "invalid password" in page.text.lower(),
+            f"no policy message: {page.text[:200]}",
+        )
+        step(f"weak password refused: {_message(page)}")
+        res = submit(
+            session, form, **{"password-new": password, "password-confirm": password}
+        )
+    check(on_web(res), f"registration did not lead back to the app: {res.url}")
+    check(signed_in(session), "not signed in after registering")
+    step("new user chose a valid password and is signed in")
     return session
 
 
@@ -296,20 +363,26 @@ def _message(page: Page) -> str:
 def request_reset(session: requests.Session, address: str) -> Page:
     page = start(session, redirect="/")
     reset = need(
-        page.link("reset-credentials"), "no 'Forgot Password?' link on Keycloak's sign-in page"
+        page.link("reset-credentials"),
+        "no 'Forgot Password?' link on Keycloak's sign-in page",
     )
     page = Page(session.get(reset, timeout=TIMEOUT))
     form = need(page.form_with("username"), "no form on the reset page")
     return Page(submit(session, form, username=address))
 
 
-def check_reset(username: str, email: str, old_password: str, new_password: str) -> None:
+def check_reset(
+    username: str, email: str, old_password: str, new_password: str
+) -> None:
     print("Forgotten password")
     session = browser()
     known = request_reset(session, email)
     unknown_address = f"nobody-{secrets.token_hex(6)}@example.org"
     unknown = request_reset(browser(), unknown_address)
-    check(known.text == unknown.text, "reset page differs for a registered and an unknown address")
+    check(
+        known.text == unknown.text,
+        "reset page differs for a registered and an unknown address",
+    )
     step(f"same answer for a registered and an unknown address: '{known.text[:90]}…'")
 
     mails = wait_for_mail(email, "reset")
@@ -324,8 +397,14 @@ def check_reset(username: str, email: str, old_password: str, new_password: str)
         page.form_with("password-new", "password-confirm"),
         f"reset link shows no new-password form: {page.text[:200]}",
     )
-    res = submit(session, form, **{"password-new": new_password, "password-confirm": new_password})
-    check(on_web(res) and signed_in(session), f"not signed in after the reset: {res.url}")
+    res = submit(
+        session,
+        form,
+        **{"password-new": new_password, "password-confirm": new_password},
+    )
+    check(
+        on_web(res) and signed_in(session), f"not signed in after the reset: {res.url}"
+    )
     step("reset link set a new password and signed in")
 
     again = Page(browser().get(link, timeout=TIMEOUT))
@@ -352,7 +431,9 @@ def check_link_back_to_app(email: str) -> None:
     )
     return_password = f"Back-{secrets.token_hex(4)}-9!"
     res = submit(
-        other, form, **{"password-new": return_password, "password-confirm": return_password}
+        other,
+        form,
+        **{"password-new": return_password, "password-confirm": return_password},
     )
     page = Page(res)
     if on_web(res):
@@ -375,14 +456,22 @@ def check_expiry(email: str) -> None:
     step(f"waiting {wait} s for the link to expire")
     time.sleep(wait)
     page = Page(browser().get(link, timeout=TIMEOUT))
-    check(page.form_with("password-new") is None, "reset link still works after its lifetime")
+    check(
+        page.form_with("password-new") is None,
+        "reset link still works after its lifetime",
+    )
     step(f"expired link refused: '{page.text[:90]}…'")
 
 
-def check_change_password(session: requests.Session, username: str, current: str, new: str) -> None:
+def check_change_password(
+    session: requests.Session, username: str, current: str, new: str
+) -> None:
     print("Change password")
     page = start(session, action="change_password", redirect="/account")
-    form = need(page.form_with("password"), "change password did not ask for the current password")
+    form = need(
+        page.form_with("password"),
+        "change password did not ask for the current password",
+    )
     values = {"password": current}
     if "username" in form["fields"]:
         values["username"] = username
@@ -408,7 +497,9 @@ def check_change_password(session: requests.Session, username: str, current: str
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
-    parser.add_argument("--check-expiry", action="store_true", help="wait for a link to expire")
+    parser.add_argument(
+        "--check-expiry", action="store_true", help="wait for a link to expire"
+    )
     args = parser.parse_args()
 
     suffix = secrets.token_hex(4)
@@ -428,7 +519,10 @@ def main() -> int:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1
     except requests.ConnectionError as exc:
-        print(f"FAIL: cannot reach the dev stack (is `make tilt` running?): {exc}", file=sys.stderr)
+        print(
+            f"FAIL: cannot reach the dev stack (is `make tilt` running?): {exc}",
+            file=sys.stderr,
+        )
         return 1
     print("OK: password flows work")
     return 0

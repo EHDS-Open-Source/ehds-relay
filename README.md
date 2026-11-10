@@ -184,8 +184,9 @@ with the API change.
 Keycloak handles passwords; the app has no password code of its own, only links into Keycloak.
 
 - **Set a password (new account):** "Create one" on `/sign-in` opens Keycloak's registration
-  page. The user chooses a password there, then gets an email to verify the address; its link
-  finishes registration and signs them in.
+  page (name and address only). Keycloak emails a link to verify the address; the link leads to a
+  page where the user chooses a password (checked against the policy), then signs them in. This
+  is Keycloak 26's behaviour when email verification is on.
 - **Forgotten password:** "Forgot Password?" on Keycloak's sign-in page (the app's `/sign-in`
   says so). Keycloak shows the same answer whether or not the address has an account and only
   emails a registered one. The link sets a new password and works once.
