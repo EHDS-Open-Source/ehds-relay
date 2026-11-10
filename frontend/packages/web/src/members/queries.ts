@@ -21,10 +21,25 @@ export { ApiError, errorStatus } from "../datasets/queries";
 /** A failed call that also keeps the server's reason, to tell apart answers sharing a status. */
 export class DetailedApiError extends ApiError {
   readonly detail: string;
-  constructor(status: number, detail: string) {
+  /** For a 422: which body fields the server rejected (the last part of each `loc`). */
+  readonly fields: readonly string[];
+  constructor(status: number, detail: string, fields: readonly string[] = []) {
     super(status);
     this.detail = detail;
+    this.fields = fields;
   }
+}
+
+function fieldsOf(body: unknown): string[] {
+  const detail = (body as { detail?: unknown } | undefined)?.detail;
+  if (!Array.isArray(detail)) return [];
+  return detail.flatMap((item: unknown) => {
+    const loc = (item as { loc?: unknown } | null)?.loc;
+    const last = Array.isArray(loc)
+      ? (loc[loc.length - 1] as unknown)
+      : undefined;
+    return typeof last === "string" ? [last] : [];
+  });
 }
 
 function detailOf(body: unknown): string {
@@ -33,7 +48,7 @@ function detailOf(body: unknown): string {
 }
 
 export function failure(response: Response, body: unknown): ApiError {
-  return new DetailedApiError(response.status, detailOf(body));
+  return new DetailedApiError(response.status, detailOf(body), fieldsOf(body));
 }
 
 /** Query keys for one organisation's members and invitations. */
@@ -134,7 +149,7 @@ export function useRemoveMember(orgId: string) {
 export function useInvite(orgId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { email: string; role: MemberRole }) => {
+    mutationFn: async (input: Schemas["InvitationCreateDTO"]) => {
       const { data, response, error } = await api.POST(
         "/api/v1/organisations/{org_id}/invitations",
         { params: { path: { org_id: orgId } }, body: input },
