@@ -161,6 +161,67 @@ def test_login_signup_opens_registration(anon_client: TestClient, fake_oidc: Fak
     assert _query(_login(anon_client, signup="true"))["prompt"] == "create"
 
 
+def test_login_change_password_asks_for_current_password_first(
+    anon_client: TestClient, fake_oidc: FakeOIDC
+) -> None:
+    q = _query(_login(anon_client, action="change_password", redirect="/account"))
+    assert q["kc_action"] == "UPDATE_PASSWORD"
+    assert q["prompt"] == "login"
+
+
+@pytest.mark.parametrize(
+    "params",
+    [{"action": "change_password", "signup": "true"}, {"action": "delete_account"}],
+    ids=["with signup", "unknown action"],
+)
+def test_login_rejects_bad_action(
+    anon_client: TestClient, fake_oidc: FakeOIDC, params: dict[str, str]
+) -> None:
+    res = anon_client.get("/api/v1/auth/login", params=params)
+    assert res.status_code == 422
+
+
+def test_login_without_action_sends_no_kc_action(
+    anon_client: TestClient, fake_oidc: FakeOIDC
+) -> None:
+    for q in (_query(_login(anon_client)), _query(_login(anon_client, signup="true"))):
+        assert "kc_action" not in q
+
+
+@pytest.mark.parametrize(
+    ("redirect", "kc_action_status", "expected"),
+    [
+        ("/account", "success", "/account?password=success"),
+        ("/account", "cancelled", "/account?password=cancelled"),
+        ("/account", "error", "/account?password=error"),
+        ("/account?tab=1", "success", "/account?tab=1&password=success"),
+        ("/account#pw", "success", "/account?password=success#pw"),
+        ("/account", "bogus", "/account"),
+        ("/account", "https://evil.test", "/account"),
+    ],
+)
+def test_callback_passes_on_action_status(
+    anon_client: TestClient,
+    fake_oidc: FakeOIDC,
+    redirect: str,
+    kc_action_status: str,
+    expected: str,
+) -> None:
+    location = _login(anon_client, action="change_password", redirect=redirect)
+    code = fake_oidc.authorize(location)
+    res = anon_client.get(
+        "/api/v1/auth/callback",
+        params={
+            "code": code,
+            "state": _query(location)["state"],
+            "kc_action_status": kc_action_status,
+        },
+    )
+    assert res.status_code == 302
+    assert res.headers["location"] == f"{get_settings().web_base_url}{expected}"
+    assert get_settings().session_cookie_name in _set_cookies(res)
+
+
 def test_login_state_is_fresh_each_time(anon_client: TestClient, fake_oidc: FakeOIDC) -> None:
     a, b = _query(_login(anon_client)), _query(_login(anon_client))
     assert a["state"] != b["state"] and a["nonce"] != b["nonce"]

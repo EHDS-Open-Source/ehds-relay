@@ -2,7 +2,8 @@
 
 Run on every start of the realm-init pod, in order:
   1. wait for Keycloak and sign in as the master admin (dev only);
-  2. refresh values that follow the local setup (client redirect URIs and secret, realm SMTP);
+  2. refresh values that follow the local setup (client redirect URIs, base URL and secret,
+     realm SMTP);
   3. partial-import clients, roles, groups and users from the realm JSON, skipping what exists;
   4. run the ordered, run-once migrations (see migrations/__init__.py).
 Realm-level settings are never replayed from the JSON, so edits made in the console survive.
@@ -153,7 +154,8 @@ def refresh_clients(admin: Admin, definition: dict) -> None:
             logger.info("Client %s not found yet, partial import will create it", wanted["clientId"])
             continue
         updated = dict(existing)
-        for key in ("redirectUris", "webOrigins", "secret"):
+        # baseUrl is where Keycloak's "Back to application" link goes, e.g. from a reset email
+        for key in ("redirectUris", "webOrigins", "secret", "baseUrl"):
             if key in wanted:
                 updated[key] = wanted[key]
         logout = (wanted.get("attributes") or {}).get("post.logout.redirect.uris")

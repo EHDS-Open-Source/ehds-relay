@@ -268,6 +268,8 @@ export const shellMessages = {
     noAccount: "Don’t have an organisation?",
     createAccount: "Create one",
     failed: "Sign-in failed. Please try again.",
+    forgot:
+      "Forgot your password? Choose Sign in, then “Forgot Password?” to get a reset link by email.",
   },
   orgPicker: {
     title: "Select your organisation",
@@ -347,6 +349,15 @@ export const shellMessages = {
       country: "Country",
       role: "Your role",
       unknownCountry: "Not set",
+    },
+    password: {
+      title: "Password",
+      description:
+        "You will be asked for your current password first. A new password needs at least 12 characters, with an upper-case letter, a lower-case letter, a digit and a special character.",
+      change: "Change password",
+      success: "Your password has been changed.",
+      cancelled: "Your password was not changed.",
+      error: "Your password could not be changed. Try again in a moment.",
     },
     notifications: {
       title: "Notifications",

@@ -36,9 +36,17 @@ tilt up                  # deploy everything below, with live reload
 | Mailpit | http://localhost:8025 (SMTP `localhost:1025`) | Catches mail from the worker and from Keycloak (sign-up verification, password reset) |
 | Postgres | `localhost:5432` | Database `relay`, user/password `relay`/`relay` |
 
-Keycloak test users in the `ehds-relay` realm (password = username): `owner`, `standard`
-and `invitee` (`<username>@example.org`). They are plain accounts: roles and organisation
-membership live in the app database. All credentials here, including the BFF client secret,
+Keycloak test users in the `ehds-relay` realm (`<username>@example.org`):
+
+| Username | Password |
+|---|---|
+| `owner` | `Owner-pass-1!` |
+| `standard` | `Standard-pass-1!` |
+| `invitee` | `Invitee-pass-1!` |
+
+They are plain accounts: roles and organisation membership live in the app database. A realm
+created before the password policy was added keeps the old passwords (password = username)
+until you start over (see below); the policy only applies when a password is next set. All credentials here, including the BFF client secret,
 are throwaway values for local development only.
 
 Keycloak runs in dev mode with its data in a separate `keycloak` database on the bundled
@@ -131,7 +139,8 @@ opaque HttpOnly cookie. The browser always talks to the API through the web app'
 Vite proxy), so the cookie belongs to that origin.
 
 - `GET /api/v1/auth/login?redirect=/orgs` sends the browser to the provider
-  (`&signup=true` opens its registration page). `redirect` must be a path on the site;
+  (`&signup=true` opens its registration page, `&action=change_password` its change-password
+  page, see "Passwords" below). `redirect` must be a path on the site;
   anything else becomes `/`.
 - The provider returns to `GET /api/v1/auth/callback`, which creates or updates the user,
   sets the session cookie and redirects to `redirect`. If anything goes wrong it redirects to
@@ -169,6 +178,38 @@ sign-in flow tests, and the other tests insert a session row and set the cookie 
 The API client in `frontend/packages/api-client` is generated from the backend's OpenAPI spec
 (`python -m relay.openapi`, which needs no database). Commit the regenerated spec and client
 with the API change.
+
+### Passwords
+
+Keycloak handles passwords; the app has no password code of its own, only links into Keycloak.
+
+- **Set a password (new account):** "Create one" on `/sign-in` opens Keycloak's registration
+  page (name and address only). Keycloak emails a link to verify the address; the link leads to a
+  page where the user chooses a password (checked against the policy), then signs them in. This
+  is Keycloak 26's behaviour when email verification is on.
+- **Forgotten password:** "Forgot Password?" on Keycloak's sign-in page (the app's `/sign-in`
+  says so). Keycloak shows the same answer whether or not the address has an account and only
+  emails a registered one. The link sets a new password and works once.
+- **Change password:** the "Change password" link on `/account` goes to
+  `GET /api/v1/auth/login?action=change_password&redirect=/account`. Keycloak asks for the
+  current password, then the new one, and the API sends the browser back to
+  `/account?password=success` (or `cancelled` / `error`), which the page reports.
+
+The dev realm's password policy: at least 12 and at most 128 characters, with an upper-case
+letter, a lower-case letter, a digit and a special character, and not the username or email.
+Keycloak only shows the rules after a refused attempt. Links sent by email (verification and
+reset) are valid for 5 minutes (`actionTokenGeneratedByUserLifespan`). In development the
+emails land in Mailpit.
+
+These are realm-level settings: they are in the realm JSON for new realms and in the realm
+migration `m002_password_settings.py` for existing ones (see "Changing a realm-level setting"
+above). The client's base URL (`RELAY_WEB_URL`), used for Keycloak's "Back to application"
+link, is refreshed on every realm-init start.
+
+`make check_password_flows` runs all three flows against the running stack (`make tilt`): it
+registers a new random user, reads the emails from Mailpit, changes and resets the password,
+and checks the realm settings. It is not part of `make test`. Add `ARGS=--check-expiry` to also
+wait for a reset link to expire.
 
 ## Email in development
 

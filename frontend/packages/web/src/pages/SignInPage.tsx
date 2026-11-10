@@ -23,15 +23,25 @@ export function SignInPage() {
         </>
       }
       below={
-        <BelowCard>
-          {text.noAccount}{" "}
-          <a
-            href={loginUrl({ redirect, signup: true })}
-            className={belowCardLinkClass}
+        <>
+          <BelowCard>
+            {text.noAccount}{" "}
+            <a
+              href={loginUrl({ redirect, signup: true })}
+              className={belowCardLinkClass}
+            >
+              {text.createAccount}
+            </a>
+          </BelowCard>
+          {/* Keycloak's own sign-in page has the reset link; there is no standard way to
+              open its reset page directly with this app's sign-in state. */}
+          <p
+            data-slot="forgot-password"
+            className="w-full max-w-[620px] text-center text-[0.95em] text-ink-3"
           >
-            {text.createAccount}
-          </a>
-        </BelowCard>
+            {text.forgot}
+          </p>
+        </>
       }
     >
       {error === "signin_failed" ? (

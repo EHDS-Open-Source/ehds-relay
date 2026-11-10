@@ -15,6 +15,18 @@ describe("loginUrl", () => {
     );
   });
 
+  it("adds the change-password action", () => {
+    expect(loginUrl({ redirect: "/account", action: "change_password" })).toBe(
+      "/api/v1/auth/login?redirect=%2Faccount&action=change_password",
+    );
+  });
+
+  it("never combines signup with an action", () => {
+    expect(
+      loginUrl({ redirect: "/", signup: true, action: "change_password" }),
+    ).toBe("/api/v1/auth/login?redirect=%2F&signup=true");
+  });
+
   it("returns home for anything that leaves the site", () => {
     expect(loginUrl({ redirect: "//evil.example" })).toBe(
       "/api/v1/auth/login?redirect=%2F",

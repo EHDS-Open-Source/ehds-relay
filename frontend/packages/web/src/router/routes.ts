@@ -19,6 +19,7 @@ import { DatasetNewPage } from "../pages/DatasetNewPage";
 import { MembersPage } from "../pages/MembersPage";
 import { BareNotFound, NotFound } from "../pages/NotFound";
 import { NewOrgPage } from "../pages/NewOrgPage";
+import { isPasswordResult, type PasswordResult } from "../pages/passwordResult";
 import { OrgPickerPage } from "../pages/OrgPickerPage";
 import { SettingsPage } from "../pages/SettingsPage";
 import { SignInPage } from "../pages/SignInPage";
@@ -85,6 +86,11 @@ const accountRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "account",
   beforeLoad: requireSession,
+  // Set by the API after the identity provider's change-password page
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { password?: PasswordResult } =>
+    isPasswordResult(search.password) ? { password: search.password } : {},
   component: AccountPage,
 });
 
