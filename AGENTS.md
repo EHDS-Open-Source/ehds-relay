@@ -109,3 +109,6 @@ Before finishing a change run `make check` and `make test`.
 - Run `make check` (fast, no docker) before handing over; `make test` starts a Postgres container,
   so run it from one place at a time rather than in every worktree at once.
 - Don't hard-code dev ports; read them from env with a default so worktrees can run side by side.
+- A second Tilt stack in the same cluster also needs its own `NAMESPACE`, `RELEASE_NAME` and
+  `RELAY_SESSION_COOKIE_NAME` in `.dev.env` and `tilt up --port <other>`; otherwise it deploys over
+  the first stack (see the README).
