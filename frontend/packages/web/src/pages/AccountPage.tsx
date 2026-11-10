@@ -16,7 +16,7 @@ import {
   useMinimumPending,
   useToast,
 } from "@ehds-relay/ui";
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 
@@ -31,10 +31,12 @@ import {
 } from "../members/rowStyles";
 import { RoleTag } from "../members/tags";
 import { countryName } from "../orgs/countries";
+import { loginUrl } from "../session/login";
 import { useSession, useSessionStore, useSignOut } from "../session/useSession";
 import type { OrgRole } from "../session/types";
 import { AccountLayout } from "../shell/AccountLayout";
 import { shellMessages } from "../shell/messages";
+import { isPasswordResult } from "./passwordResult";
 import { useSavedFlash } from "./useSavedFlash";
 
 const text = shellMessages.account;
@@ -60,6 +62,7 @@ export function AccountPage() {
         // With one organisation the page knows which role to show.
         role={orgs.length === 1 ? orgs[0]!.role : undefined}
       />
+      <PasswordSection />
       <OrganisationsSection />
       <NotificationsSection key={`notifications-${user.id}`} />
       {orgs.length === 0 ? (
@@ -221,6 +224,43 @@ function ProfileForm({
           </Button>
         </div>
       </form>
+    </section>
+  );
+}
+
+/**
+ * Changing the password happens at the identity provider, which asks for the current password
+ * first and then sends the browser back here with the outcome in `?password=`.
+ */
+function PasswordSection() {
+  const { password } = useSearch({ from: "/account" });
+  // Other search values pass through the router untouched, so check again here.
+  const result = isPasswordResult(password) ? password : undefined;
+  const copy = text.password;
+  return (
+    <section aria-labelledby="account-password" className="mt-12 max-w-[560px]">
+      <h2 id="account-password" className={cn(sectionHeading, "mb-2")}>
+        {copy.title}
+      </h2>
+      <p className="mb-4 text-ink-3">{copy.description}</p>
+      <div role="status">
+        {result ? (
+          <FormMessage
+            tone={result === "error" ? "error" : "info"}
+            // The status region announces it; a second alert would repeat it.
+            role={undefined}
+            className="mb-4"
+            data-result={result}
+          >
+            {copy[result]}
+          </FormMessage>
+        ) : null}
+      </div>
+      <Button asChild variant="secondary">
+        <a href={loginUrl({ redirect: "/account", action: "change_password" })}>
+          {copy.change}
+        </a>
+      </Button>
     </section>
   );
 }

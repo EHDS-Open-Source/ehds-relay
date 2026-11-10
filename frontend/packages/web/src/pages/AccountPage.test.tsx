@@ -68,14 +68,17 @@ function stubApi(
   return fetch;
 }
 
-function renderPage(navigateExternal: (url: string) => void = vi.fn()) {
+function renderPage(
+  navigateExternal: (url: string) => void = vi.fn(),
+  path = "/account",
+) {
   const queryClient = new QueryClient();
   const session = createApiSessionStore(api);
   const router = createRelayRouter({
     queryClient,
     session,
     navigateExternal,
-    history: createMemoryHistory({ initialEntries: ["/account"] }),
+    history: createMemoryHistory({ initialEntries: [path] }),
   });
   render(
     <QueryClientProvider client={queryClient}>
@@ -109,6 +112,45 @@ describe("AccountPage", () => {
     const email = screen.getByLabelText(text.emailLabel);
     expect(email).toHaveValue(demoSession.user.email);
     expect(email).toHaveAttribute("readonly");
+  });
+
+  it("links to the provider's change-password page and back here", async () => {
+    stubApi();
+    renderPage();
+    const section = within(
+      await screen.findByRole("region", { name: text.password.title }),
+    );
+    expect(
+      section.getByRole("link", { name: text.password.change }),
+    ).toHaveAttribute(
+      "href",
+      "/api/v1/auth/login?redirect=%2Faccount&action=change_password",
+    );
+    expect(section.getByText(text.password.description)).toBeVisible();
+    expect(section.getByRole("status")).toBeEmptyDOMElement();
+  });
+
+  it.each(["success", "cancelled", "error"] as const)(
+    "says how changing the password went: %s",
+    async (result) => {
+      stubApi();
+      renderPage(vi.fn(), `/account?password=${result}`);
+      const section = within(
+        await screen.findByRole("region", { name: text.password.title }),
+      );
+      expect(section.getByRole("status")).toHaveTextContent(
+        text.password[result],
+      );
+    },
+  );
+
+  it("ignores an unknown password result", async () => {
+    stubApi();
+    renderPage(vi.fn(), "/account?password=bogus");
+    const section = within(
+      await screen.findByRole("region", { name: text.password.title }),
+    );
+    expect(section.getByRole("status")).toBeEmptyDOMElement();
   });
 
   it("works for someone with no organisation", async () => {

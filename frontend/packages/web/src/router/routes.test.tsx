@@ -162,6 +162,12 @@ describe("signed out", () => {
     );
   });
 
+  it("tells people where to reset a forgotten password", async () => {
+    renderApp("/sign-in", null);
+    await screen.findByRole("heading", { name: "Sign in" });
+    expect(screen.getByText(shellMessages.signIn.forgot)).toBeVisible();
+  });
+
   it("shows no message without an error", async () => {
     renderApp("/sign-in", null);
     await screen.findByRole("heading", { name: "Sign in" });
