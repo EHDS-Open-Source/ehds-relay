@@ -156,7 +156,7 @@ def test_export_rejects_unknown_format(client: TestClient, org_id: str) -> None:
     assert res.status_code == 422
 
 
-def test_cross_tenant_is_404(
+def test_auth_5_export_cross_tenant_404(
     client: TestClient, org_id: str, as_user: AsUser, outsider: Any
 ) -> None:
     ds = create(client, org_id, complete_public())

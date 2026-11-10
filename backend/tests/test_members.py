@@ -278,7 +278,7 @@ def test_other_owners_keep_their_role(
     assert ("other@example.org", "owner") in roles(as_user(other), org)
 
 
-def test_standard_cannot_transfer(
+def test_mgt_3_standard_cannot_transfer(
     org: str, owner: AppUser, standard: AppUser, as_user: AsUser, db: sessionmaker[Session]
 ) -> None:
     them = as_user(standard)
@@ -287,7 +287,7 @@ def test_standard_cannot_transfer(
     assert owner_ids(db, org) == [owner.id]
 
 
-def test_transfer_to_non_member_404(
+def test_mgt_3_transfer_to_non_member_404(
     client: TestClient, org: str, owner: AppUser, outsider: AppUser, db: sessionmaker[Session]
 ) -> None:
     pending = client.post(
