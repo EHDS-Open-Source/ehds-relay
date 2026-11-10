@@ -72,6 +72,8 @@ def _issue(session: Session, invitation: Invitation, inviter: AppUser) -> None:
         role=invitation.role,
         link=f"{settings.web_base_url}/invitations/{token}",
         expires_at=invitation.expires_at,
+        invitee_name=invitation.name,
+        message=invitation.message,
     )
     enqueue(session, invitation.email, subject, text, html)
 
@@ -120,7 +122,8 @@ def list_invitations(
 def create_invitation(
     body: InvitationCreateDTO, owner: OwnerDep, user: CurrentUserDep, session: SessionDep
 ) -> Invitation:
-    """Owners only. Emails the invitee a link that is valid for 30 days."""
+    """Owners only. Emails the invitee, by name and with the optional message, a link that is
+    valid for 30 days."""
     email = body.email.strip().lower()
     is_member = session.scalar(
         select(func.count())
@@ -151,7 +154,12 @@ def create_invitation(
     if pending is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=ALREADY_INVITED)
     invitation = Invitation(
-        org_id=owner.org_id, email=email, role=body.role.value, invited_by=user.id
+        org_id=owner.org_id,
+        email=email,
+        role=body.role.value,
+        name=body.name,
+        message=body.message,
+        invited_by=user.id,
     )
     _issue(session, invitation, user)
     session.add(invitation)

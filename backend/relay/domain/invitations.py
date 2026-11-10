@@ -60,6 +60,10 @@ class Invitation(Base):
     # Stored lower-cased
     email: Mapped[str] = mapped_column(Text, nullable=False)
     role: Mapped[str] = mapped_column(Text, nullable=False)
+    # Who the invitee is and an optional note from the sender; both are shown in the email.
+    # Empty on invitations created before these existed.
+    name: Mapped[str | None] = mapped_column(Text)
+    message: Mapped[str | None] = mapped_column(Text)
     token_hash: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     # What was last written; read `status` instead, which accounts for expiry
     stored_status: Mapped[str] = mapped_column(
