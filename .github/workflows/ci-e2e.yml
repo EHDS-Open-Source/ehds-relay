@@ -16,7 +16,6 @@ on:
     branches:
       - main
       - mvp-integration
-      - T-021-add-cross-tenant-tests-and-playwright-ha
     paths:
       - "backend/**"
       - "frontend/**"
