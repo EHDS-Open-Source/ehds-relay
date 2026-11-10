@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from relay.db import set_tenant
 from relay.domain.datasets import Dataset
-from relay.domain.memberships import Membership
+from relay.domain.memberships import MemberRole, Membership
 from relay.domain.organisations import Organisation, OrganisationStatus
 from relay.domain.users import AppUser
 
@@ -60,6 +60,7 @@ class DueReminder:
     org_id: uuid.UUID
     dataset_id: uuid.UUID
     dataset_title: str | None
+    status: str
     reminder_date: date
     recipient_id: uuid.UUID | None
     recipient_email: str | None
@@ -74,6 +75,7 @@ def _due_in_tenant(session: Session, org_id: uuid.UUID, today: date) -> list[Due
         select(
             Dataset.id,
             Dataset.title,
+            Dataset.status,
             Dataset.reminder_date,
             AppUser.id,
             AppUser.email,
@@ -93,8 +95,8 @@ def _due_in_tenant(session: Session, org_id: uuid.UUID, today: date) -> list[Due
     )
     return [
         # The query only returns rows with a date
-        DueReminder(org_id, ds_id, title, cast(date, when), uid, email, name)
-        for ds_id, title, when, uid, email, name in session.execute(stmt).all()
+        DueReminder(org_id, ds_id, title, status, cast(date, when), uid, email, name)
+        for ds_id, title, status, when, uid, email, name in session.execute(stmt).all()
     ]
 
 
@@ -144,3 +146,18 @@ def mark_revalidation_reminder_sent(
         .execution_options(synchronize_session=False)
     )
     return result.rowcount == 1
+
+
+def reminder_recipients(
+    session: Session, org_id: uuid.UUID, setter_id: uuid.UUID | None
+) -> list[AppUser]:
+    """Who a reminder is for: the organisation's Owners and the member who set it (if they are
+    still a member), each once, ordered by email."""
+    is_setter = Membership.user_id == setter_id if setter_id is not None else False
+    stmt = (
+        select(AppUser)
+        .join(Membership, Membership.user_id == AppUser.id)
+        .where(Membership.org_id == org_id, (Membership.role == MemberRole.OWNER.value) | is_setter)
+        .order_by(AppUser.email, AppUser.id)
+    )
+    return list(session.scalars(stmt).all())
