@@ -1,9 +1,12 @@
 # EHDS Relay
 
-Proof of concept: FastAPI + PostgreSQL backend, run on a local kind cluster with Tilt, and a
-React + Vite frontend.
+EHDS Relay helps health data holders describe their datasets in Health DCAT-AP. Members of an
+organisation fill in dataset records in a web form, save them as drafts, publish them to the
+organisation's catalogue, download them as Turtle, JSON-LD or RDF/XML and check them against the
+official SHACL shapes. Owners invite colleagues by email.
 
-Not here yet: gateway.
+It is a proof of concept: a FastAPI + PostgreSQL backend and a React + Vite frontend, run on a
+local kind cluster with Tilt. See "Demo walkthrough" below for a first tour.
 
 ## Layout
 
@@ -17,15 +20,21 @@ Not here yet: gateway.
 
 ## Prerequisites
 
-docker, kind, kubectl, helm, tilt, Python 3.13, Node 24 and pnpm (`corepack enable`; version
-pinned in `frontend/package.json`).
+GNU make, docker (give it at least 4 GB of memory), kind, kubectl, helm, tilt, Python 3.13,
+Node 24 and pnpm (version pinned in `frontend/package.json`; if pnpm is not installed,
+`corepack enable` provides it). The first `tilt up` also needs network access to pull images and
+the Postgres Helm chart.
 
 ## Quickstart
 
 ```bash
+make install             # backend/.venv + frontend node_modules (for the checks and scripts)
 make cluster up          # kind cluster "ehds-relay" + registries on localhost:5001-5003
 tilt up                  # deploy everything below, with live reload
 ```
+
+Wait until every resource in the Tilt UI (http://localhost:10350) is green, then open
+http://localhost:5173. A new stack starts with an empty database: see "Demo walkthrough" below.
 
 | Service | Where | Notes |
 |---|---|---|
@@ -56,7 +65,8 @@ exist. The test users have fixed ids in that file, so their sign-in subject stay
 if Keycloak's database is recreated. Restarting Keycloak, or `tilt down` and `tilt up`, keeps
 users, including ones you register. To start over, delete the Postgres volume (this also
 deletes the app data): `kubectl --context kind-ehds-relay -n ehds-relay delete pvc --all`
-after `tilt down`. With `postgres.enabled=false` Keycloak falls back to in-pod storage and
+after `tilt down`, with your `NAMESPACE` from `.dev.env` in place of `ehds-relay` if you changed
+it. With `postgres.enabled=false` Keycloak falls back to in-pod storage and
 forgets everything on restart.
 
 The `keycloak-realm-init` job runs after Keycloak starts and whenever the realm file or its
@@ -83,9 +93,31 @@ upgrading from the in-memory Keycloak gives the owner one new `app_user` (the ol
 longer exists); sign in once and re-invite, or reset the database, to avoid the duplicate.
 
 Tilt and the scripts only ever target the `kind-ehds-relay` context. Settings (cluster
-name, namespace, release name, local ports) are in `.dev.env`, created from
+name, namespace, release name, session cookie name, local ports) are in `.dev.env`, created from
 `.dev.env.example` on first run. Every local port can be changed there so several checkouts
 run side by side; Keycloak's issuer and redirect URLs follow the web, API and Keycloak ports.
+
+A second checkout in the same cluster needs more than new ports: with the same namespace and
+release name its `tilt up` would deploy over the first checkout's stack. Give it its own
+namespace, release name and cookie name too, for example this `.dev.env`:
+
+```bash
+CLUSTER_NAME=ehds-relay
+NAMESPACE=ehds-relay-b
+RELEASE_NAME=ehds-relay-b
+RELAY_SESSION_COOKIE_NAME=relay_session_b
+API_LOCAL_PORT=8100
+POSTGRES_LOCAL_PORT=5532
+KEYCLOAK_LOCAL_PORT=8180
+MAILPIT_UI_LOCAL_PORT=8125
+MAILPIT_SMTP_LOCAL_PORT=1125
+WEB_PORT=5273
+```
+
+Then run `make cluster up` (it reuses the cluster and creates the namespace) and
+`tilt up --port 10351`, since the first Tilt's UI already uses port 10350. Stop it with
+`tilt down` from the same checkout; the namespace stays until you delete it with
+`kubectl --context kind-ehds-relay delete namespace ehds-relay-b`.
 
 Keycloak tokens carry the browser-facing issuer (`http://localhost:8080/realms/ehds-relay`),
 while the API reaches Keycloak at its in-cluster address (`RELAY_OIDC_INTERNAL_URL`). Open
@@ -96,9 +128,36 @@ Keycloak 26 marks its login cookies `Secure` even over http. Chrome and Firefox 
 Without Tilt: `make deploy` builds and pushes the image and runs `helm upgrade --install`.
 
 Tear down: `make cluster down` (add `--remove-registries` to also remove the registries,
-which other kind clusters on the machine may share).
+which other kind clusters on the machine may share). This deletes the whole cluster, including
+every checkout's stack in it.
 
-## Backend
+## Demo walkthrough
+
+With the stack running (ports below are the defaults):
+
+1. Open http://localhost:5173 and sign in as `owner`. A new database has no organisations, so
+   you land on "Create my organisation". Enter a name and country.
+2. Open the menu, choose "Manage users" and invite `invitee@example.org` with "Invite user".
+3. Within about 10 seconds the worker sends the invitation. Open it in Mailpit
+   (http://localhost:8025) and follow the link in another browser profile or a private window.
+   Sign in there as `invitee` and accept the invitation.
+4. Back as `owner`, choose "Add a dataset", fill in the form and use "Save changes" > "Save
+   draft". "Save and Publish" lists any fields still missing; once the record is complete it is
+   published.
+5. In the catalogue, search for a word from the title and try the access-level filters.
+6. On the dataset, "View output" shows the record as Turtle, JSON-LD and RDF/XML, each with a
+   download button, and "Official checks" runs the SHACL validation.
+7. The whole published catalogue is available from the API only:
+   `/api/v1/organisations/{id}/catalogue/export?format=ttl` (or `jsonld`, `rdfxml`), opened in
+   the signed-in browser.
+
+As `invitee` (a Standard member) you can view and edit datasets but not manage users. The
+`standard` user is not a member of any organisation until someone invites it.
+
+`make check_password_flows` checks registration, password change and reset against the running
+stack (see "Passwords" below).
+
+## Checks and tests
 
 ```bash
 make install             # backend/.venv + frontend node_modules
@@ -168,8 +227,9 @@ To sign in during development, open
 `http://localhost:5173/api/v1/auth/login?redirect=/` and use one of the realm's test users.
 
 Cookies on `localhost` ignore the port, so two checkouts running side by side would sign each
-other out. Give each one its own cookie name, e.g. `RELAY_SESSION_COOKIE_NAME=relay_session_b`
-in that checkout's `backend/.env` (and its own `WEB_PORT` / `RELAY_WEB_URL`).
+other out. Give each one its own cookie name, e.g. `RELAY_SESSION_COOKIE_NAME=relay_session_b`:
+in that checkout's `.dev.env` for a Tilt stack, or in its `backend/.env` (with its own
+`WEB_PORT` / `RELAY_WEB_URL`) for an API run on the host.
 
 Tests never contact the provider: `backend/tests/fake_oidc.py` stands in for it in the
 sign-in flow tests, and the other tests insert a session row and set the cookie (see the
@@ -274,7 +334,7 @@ artifact and prints the pods' logs.
 | GET | `/api/v1/organisations/{id}/datasets/{dataset_id}/export?format=ttl\|jsonld\|rdfxml` | Members: the Health DCAT-AP record as a file; 422 if the record is incomplete |
 | POST | `/api/v1/organisations/{id}/datasets/{dataset_id}/validate` | Members: check against the official release 8 SHACL shapes for the access level (vendored in `backend/relay/rdf/shapes/`, no network) |
 | GET | `/api/v1/organisations/{id}/catalogue/export?format=…` | Members: one `dcat:Catalog` of the published datasets |
-| POST | `/api/v1/organisations/{id}/invitations` | Owners: invite `{"email": "a@example.org", "role": "standard"}`; emails a link |
+| POST | `/api/v1/organisations/{id}/invitations` | Owners: invite `{"email": "a@example.org", "name": "Ann Example", "role": "standard"}` (`name` required, `role` defaults to `standard`); emails a link |
 | GET | `/api/v1/organisations/{id}/invitations?status=pending` | Owners: list, newest first |
 | DELETE | `/api/v1/organisations/{id}/invitations/{invitation_id}` | Owners: cancel a pending invitation |
 | POST | `/api/v1/organisations/{id}/invitations/{invitation_id}/resend` | Owners: new link and expiry, old link stops working |
