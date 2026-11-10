@@ -7,6 +7,7 @@ The job is stdlib-only code mounted into a stock python image, so it is loaded b
 import importlib
 import json
 import logging
+import re
 import sys
 import textwrap
 from collections.abc import Iterator
@@ -228,6 +229,7 @@ def test_refresh_updates_redirects_secret_and_keeps_other_fields(realm_init) -> 
         "http://localhost:5199/*##http://localhost:8000/*"
     )
     assert updated["consentRequired"] is True
+    assert updated["baseUrl"] == "http://localhost:5199/"
     # A second run with the result changes nothing
     kc2 = FakeKeycloak(updated)
     realm_init.refresh_clients(kc2, definition)
@@ -239,3 +241,90 @@ def test_refresh_skips_a_client_that_does_not_exist_yet(realm_init) -> None:
     kc = FakeKeycloak(None)
     realm_init.refresh_clients(kc, definition)
     assert kc.updated == []
+
+
+# The realm JSON itself
+
+
+def test_realm_enables_the_password_flows(realm_init) -> None:
+    definition = realm_init.load_realm_definition(str(REALM_FILE), ENV)
+    assert definition["registrationAllowed"] is True
+    assert definition["resetPasswordAllowed"] is True
+    assert definition["verifyEmail"] is True
+    assert definition["loginWithEmailAllowed"] is True
+    assert definition["duplicateEmailsAllowed"] is False
+    assert definition["smtpServer"]["host"] == "mail"
+    assert definition["smtpServer"]["port"] == "1025"
+    assert definition["smtpServer"]["from"] == "from@example.org"
+    client = definition["clients"][0]
+    assert client["baseUrl"] == "http://localhost:5199/"
+    assert "http://localhost:5199/*" in client["redirectUris"]
+
+
+def test_realm_json_and_migration_agree_on_password_settings(realm_init) -> None:
+    definition = realm_init.load_realm_definition(str(REALM_FILE), ENV)
+    m002 = importlib.import_module("migrations.m002_password_settings")
+    assert definition["passwordPolicy"] == m002.PASSWORD_POLICY
+    assert definition["actionTokenGeneratedByUserLifespan"] == 300
+    assert m002.ACTION_TOKEN_LIFESPAN_SECONDS == 300
+    policy = dict(
+        re.fullmatch(r"(\w+)(?:\((\d+)\))?", part).groups()  # type: ignore[union-attr]
+        for part in definition["passwordPolicy"].split(" and ")
+    )
+    assert policy == {
+        "length": "12",
+        "upperCase": "1",
+        "lowerCase": "1",
+        "digits": "1",
+        "specialChars": "1",
+        "notUsername": None,
+        "notEmail": None,
+        "maxLength": "128",
+    }
+
+
+def test_dev_user_passwords_meet_the_policy(realm_init) -> None:
+    """Keycloak checks the policy when it imports users, so a weak dev password would break it."""
+    definition = realm_init.load_realm_definition(str(REALM_FILE), ENV)
+    for user in definition["users"]:
+        (credential,) = user["credentials"]
+        password = credential["value"]
+        assert 12 <= len(password) <= 128, user["username"]
+        assert re.search(r"[A-Z]", password), user["username"]
+        assert re.search(r"[a-z]", password), user["username"]
+        assert re.search(r"[0-9]", password), user["username"]
+        assert re.search(r"[^A-Za-z0-9]", password), user["username"]
+        assert password.lower() not in (user["username"].lower(), user["email"].lower())
+
+
+class FakeRealm:
+    def __init__(self, realm: dict):
+        self.realm = realm
+        self.puts = 0
+
+    def get_realm(self) -> dict:
+        return json.loads(json.dumps(self.realm))
+
+    def update_realm(self, realm: dict) -> None:
+        self.realm = realm
+        self.puts += 1
+
+
+def test_m002_sets_policy_and_lifetime_and_keeps_other_settings(realm_init) -> None:
+    m002 = importlib.import_module("migrations.m002_password_settings")
+    admin = FakeRealm({"realm": "ehds-relay", "rememberMe": True, "attributes": {"a": "b"}})
+    m002.migrate(admin)
+    assert admin.realm["passwordPolicy"] == m002.PASSWORD_POLICY
+    assert admin.realm["actionTokenGeneratedByUserLifespan"] == 300
+    assert admin.realm["rememberMe"] is True
+    assert admin.realm["attributes"] == {"a": "b"}
+    assert admin.puts == 1
+    # Idempotent, and a no-op on a fresh realm that got the settings from the JSON
+    m002.migrate(admin)
+    assert admin.puts == 1
+
+
+def test_m002_follows_the_baseline(realm_init) -> None:
+    migrations = importlib.import_module("migrations")
+    versions = [m.VERSION for m in migrations.discover(migrations)]
+    assert versions[:2] == [1, 2]

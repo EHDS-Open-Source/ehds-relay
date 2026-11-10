@@ -129,7 +129,7 @@ k8s_resource(
 # Keycloak in dev mode with its data in its own database on the bundled Postgres. The ehds-relay
 # realm (deploy/helm/ehds-relay/files) is imported once; users keep their ids across restarts.
 # Later realm edits are applied by the keycloak-realm-init resource below. Test users: owner,
-# standard, invitee (password = username).
+# standard, invitee (passwords in the README).
 k8s_resource(
   RELEASE_NAME + '-keycloak',
   new_name='keycloak',

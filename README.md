@@ -36,9 +36,17 @@ tilt up                  # deploy everything below, with live reload
 | Mailpit | http://localhost:8025 (SMTP `localhost:1025`) | Catches mail from the worker and from Keycloak (sign-up verification, password reset) |
 | Postgres | `localhost:5432` | Database `relay`, user/password `relay`/`relay` |
 
-Keycloak test users in the `ehds-relay` realm (password = username): `owner`, `standard`
-and `invitee` (`<username>@example.org`). They are plain accounts: roles and organisation
-membership live in the app database. All credentials here, including the BFF client secret,
+Keycloak test users in the `ehds-relay` realm (`<username>@example.org`):
+
+| Username | Password |
+|---|---|
+| `owner` | `Owner-pass-1!` |
+| `standard` | `Standard-pass-1!` |
+| `invitee` | `Invitee-pass-1!` |
+
+They are plain accounts: roles and organisation membership live in the app database. A realm
+created before the password policy was added keeps the old passwords (password = username)
+until you start over (see below); the policy only applies when a password is next set. All credentials here, including the BFF client secret,
 are throwaway values for local development only.
 
 Keycloak runs in dev mode with its data in a separate `keycloak` database on the bundled

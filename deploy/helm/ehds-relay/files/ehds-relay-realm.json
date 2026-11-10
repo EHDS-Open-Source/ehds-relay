@@ -10,6 +10,8 @@
   "resetPasswordAllowed": true,
   "verifyEmail": true,
   "rememberMe": true,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername and notEmail and maxLength(128)",
+  "actionTokenGeneratedByUserLifespan": 300,
   "smtpServer": {
     "host": "${RELAY_SMTP_HOST}",
     "port": "${RELAY_SMTP_PORT}",
@@ -25,6 +27,7 @@
       "name": "EHDS Relay API (backend for frontend)",
       "description": "Dev-only confidential client for the API's authorization-code flow. The secret comes from the environment and is a throwaway local value.",
       "enabled": true,
+      "baseUrl": "${RELAY_WEB_URL}/",
       "protocol": "openid-connect",
       "publicClient": false,
       "clientAuthenticatorType": "client-secret",
@@ -49,7 +52,7 @@
       "enabled": true,
       "firstName": "Olive",
       "lastName": "Owner",
-      "credentials": [{ "type": "password", "value": "owner", "temporary": false }]
+      "credentials": [{ "type": "password", "value": "Owner-pass-1!", "temporary": false }]
     },
     {
       "id": "6f1d2c3a-0b1e-4c5d-8a01-000000000002",
@@ -59,7 +62,7 @@
       "enabled": true,
       "firstName": "Sam",
       "lastName": "Standard",
-      "credentials": [{ "type": "password", "value": "standard", "temporary": false }]
+      "credentials": [{ "type": "password", "value": "Standard-pass-1!", "temporary": false }]
     },
     {
       "id": "6f1d2c3a-0b1e-4c5d-8a01-000000000003",
@@ -69,7 +72,7 @@
       "enabled": true,
       "firstName": "Ida",
       "lastName": "Invitee",
-      "credentials": [{ "type": "password", "value": "invitee", "temporary": false }]
+      "credentials": [{ "type": "password", "value": "Invitee-pass-1!", "temporary": false }]
     }
   ]
 }
