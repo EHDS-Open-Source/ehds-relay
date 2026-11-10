@@ -11,9 +11,9 @@ import logging
 import secrets
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -79,6 +79,19 @@ def safe_redirect(path: str | None) -> str:
     ):
         return "/"
     return path
+
+
+# Outcomes of an account action that the provider reports back on the callback
+ACTION_STATUSES = frozenset({"success", "cancelled", "error"})
+
+
+def with_action_status(path: str, action_status: str | None) -> str:
+    """Append `password=<status>` to a safe redirect path; unknown statuses are dropped."""
+    if action_status not in ACTION_STATUSES:
+        return path
+    path, hash_mark, fragment = path.partition("#")
+    separator = "&" if "?" in path else "?"
+    return f"{path}{separator}password={action_status}{hash_mark}{fragment}"
 
 
 def _login_cookie_name(settings: Settings) -> str:
@@ -147,9 +160,27 @@ def login(
     signup: Annotated[
         bool, Query(description="Open the provider's registration page instead")
     ] = False,
+    action: Annotated[
+        Literal["change_password"] | None,
+        Query(
+            description="Ask the provider to run an account action after the user signs in "
+            "again. `change_password` asks for the current password, then a new one."
+        ),
+    ] = None,
 ) -> RedirectResponse:
     """Redirect to the identity provider's sign-in page."""
     settings = get_settings()
+    if signup and action:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "signup and action cannot be combined"
+        )
+    extra_params: dict[str, str] = {}
+    if signup:
+        extra_params["prompt"] = "create"
+    elif action == "change_password":
+        # prompt=login makes the provider ask for the current password first, even when its
+        # own session is still active; then it shows its update-password form.
+        extra_params.update(prompt="login", kc_action="UPDATE_PASSWORD")
     login_state = LoginState(
         state=secrets.token_urlsafe(32),
         nonce=secrets.token_urlsafe(32),
@@ -162,7 +193,7 @@ def login(
             state=login_state.state,
             nonce=login_state.nonce,
             code_verifier=login_state.code_verifier,
-            prompt="create" if signup else None,
+            extra_params=extra_params,
         )
     except Exception as exc:  # provider unreachable or misconfigured
         return _sign_in_failed(settings, f"cannot start sign-in: {type(exc).__name__}: {exc}")
@@ -193,10 +224,13 @@ def auth_callback(
     state: str | None = None,
     error: str | None = None,
     error_description: str | None = None,
+    kc_action_status: str | None = None,
 ) -> RedirectResponse:
     """Complete sign-in, set the session cookie and redirect into the app.
 
     Any failure lands on the app's sign-in page with `?error=signin_failed`, never a raw error.
+    After an account action (see `action` on login) the provider reports its outcome in
+    `kc_action_status`; a known value is passed on as `?password=<status>`.
     """
     settings = get_settings()
     if error:
@@ -229,7 +263,8 @@ def auth_callback(
     token = create_session(db, user, settings, id_token=identity.id_token)
     db.commit()
 
-    res = RedirectResponse(f"{settings.web_base_url}{login_state.redirect}", status.HTTP_302_FOUND)
+    target = with_action_status(login_state.redirect, kc_action_status)
+    res = RedirectResponse(f"{settings.web_base_url}{target}", status.HTTP_302_FOUND)
     res.set_cookie(
         settings.session_cookie_name,
         token,

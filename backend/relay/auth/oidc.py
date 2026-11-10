@@ -6,6 +6,7 @@ overrides the network calls (`_discovery`, `_fetch_jwks`, `_fetch_token`).
 """
 
 import logging
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Self, cast
@@ -134,9 +135,10 @@ class OIDCClient:
         state: str,
         nonce: str,
         code_verifier: str,
-        prompt: str | None = None,
+        extra_params: Mapping[str, str] | None = None,
     ) -> str:
-        extra = {"prompt": prompt} if prompt else {}
+        """The provider's sign-in URL. `extra_params` adds query parameters such as `prompt`."""
+        extra = dict(extra_params or {})
         oauth = self._oauth_session(redirect_uri)
         try:
             url, _ = oauth.create_authorization_url(

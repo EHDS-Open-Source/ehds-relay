@@ -16,6 +16,8 @@ export interface paths {
          * @description Complete sign-in, set the session cookie and redirect into the app.
          *
          *     Any failure lands on the app's sign-in page with `?error=signin_failed`, never a raw error.
+         *     After an account action (see `action` on login) the provider reports its outcome in
+         *     `kc_action_status`; a known value is passed on as `?password=<status>`.
          */
         get: operations["auth_callback_api_v1_auth_callback_get"];
         put?: never;
@@ -1183,6 +1185,7 @@ export interface operations {
                 state?: string | null;
                 error?: string | null;
                 error_description?: string | null;
+                kc_action_status?: string | null;
             };
             header?: never;
             path?: never;
@@ -1215,6 +1218,8 @@ export interface operations {
                 redirect?: string | null;
                 /** @description Open the provider's registration page instead */
                 signup?: boolean;
+                /** @description Ask the provider to run an account action after the user signs in again. `change_password` asks for the current password, then a new one. */
+                action?: "change_password" | null;
             };
             header?: never;
             path?: never;

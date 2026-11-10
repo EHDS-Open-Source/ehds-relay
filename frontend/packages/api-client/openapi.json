@@ -1525,7 +1525,7 @@
   "paths": {
     "/api/v1/auth/callback": {
       "get": {
-        "description": "Complete sign-in, set the session cookie and redirect into the app.\n\nAny failure lands on the app's sign-in page with `?error=signin_failed`, never a raw error.",
+        "description": "Complete sign-in, set the session cookie and redirect into the app.\n\nAny failure lands on the app's sign-in page with `?error=signin_failed`, never a raw error.\nAfter an account action (see `action` on login) the provider reports its outcome in\n`kc_action_status`; a known value is passed on as `?password=<status>`.",
         "operationId": "auth_callback_api_v1_auth_callback_get",
         "parameters": [
           {
@@ -1591,6 +1591,22 @@
               ],
               "title": "Error Description"
             }
+          },
+          {
+            "in": "query",
+            "name": "kc_action_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kc Action Status"
+            }
           }
         ],
         "responses": {
@@ -1647,6 +1663,25 @@
               "description": "Open the provider's registration page instead",
               "title": "Signup",
               "type": "boolean"
+            }
+          },
+          {
+            "description": "Ask the provider to run an account action after the user signs in again. `change_password` asks for the current password, then a new one.",
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "const": "change_password",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ask the provider to run an account action after the user signs in again. `change_password` asks for the current password, then a new one.",
+              "title": "Action"
             }
           }
         ],
