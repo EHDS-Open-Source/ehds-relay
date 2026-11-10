@@ -1,7 +1,7 @@
 """The real SMTP sender against a Mailpit container, as used in development."""
 
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 import requests
@@ -10,7 +10,7 @@ from testcontainers.core.wait_strategies import HttpWaitStrategy
 
 from relay.domain.email_outbox import EmailOutbox
 from relay.email import smtp
-from relay.email.messages import invitation_email
+from relay.email.messages import invitation_email, revalidation_reminder_email
 from relay.settings import Settings
 
 
@@ -52,3 +52,25 @@ def test_invitation_email_arrives_in_mailpit(mailpit: tuple[Settings, str]) -> N
     assert link in full["HTML"]
     assert "Acme Hospital" in full["Text"]
     assert "Olive Owner" in full["Text"]
+
+
+def test_reminder_email_arrives_in_mailpit(mailpit: tuple[Settings, str]) -> None:
+    settings, api = mailpit
+    requests.delete(f"{api}/api/v1/messages", timeout=10)
+    link = "http://localhost:5173/orgs/o1/datasets/d1"
+    subject, text, html = revalidation_reminder_email(
+        "Acme Hospital", "Cancer registry", date(2026, 11, 3), None, link
+    )
+    row = EmailOutbox(
+        to_address="owner@example.org", subject=subject, text_body=text, html_body=html
+    )
+
+    smtp.send(row, settings)
+
+    messages = requests.get(f"{api}/api/v1/messages", timeout=10).json()["messages"]
+    assert [m["Subject"] for m in messages] == [subject]
+    full = requests.get(f"{api}/api/v1/message/{messages[0]['ID']}", timeout=10).json()
+    for part in (full["Text"], full["HTML"]):
+        assert link in part
+        assert "Acme Hospital" in part
+        assert "Cancer registry" in part

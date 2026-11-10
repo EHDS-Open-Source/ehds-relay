@@ -16,6 +16,7 @@ from procrastinate import App, PsycopgConnector
 
 from relay.db import get_sessionmaker
 from relay.jobs.email import send_pending_emails
+from relay.jobs.reminders import queue_revalidation_reminders
 from relay.settings import Settings, get_settings
 
 log = logging.getLogger("relay.worker")
@@ -25,6 +26,8 @@ SCHEMA_WAIT_SECONDS = 5.0
 
 # Every 10 seconds (the sixth cron field is seconds)
 EMAIL_CRON = "* * * * * */10"
+# Every 5 minutes
+REMINDER_CRON = "*/5 * * * *"
 
 
 def build_app(settings: Settings) -> App:
@@ -36,6 +39,13 @@ def build_app(settings: Settings) -> App:
         sent = send_pending_emails(get_sessionmaker(), get_settings())
         if sent:
             log.info("sent %s email(s)", sent)
+
+    @app.periodic(cron=REMINDER_CRON, periodic_id="queue_revalidation_reminders")
+    @app.task(name="queue_revalidation_reminders", queue="email", pass_context=False)
+    def queue_revalidation_reminders_task(timestamp: int) -> None:  # pyright: ignore[reportUnusedFunction]
+        queued = queue_revalidation_reminders(get_sessionmaker(), get_settings())
+        if queued:
+            log.info("queued %s reminder email(s)", queued)
 
     return app
 
