@@ -1,10 +1,11 @@
 import threading
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from relay.domain.email_outbox import EmailOutbox
+from relay.email.messages import revalidation_reminder_email
 from relay.email.outbox import enqueue
 from relay.email.smtp import build_message
 from relay.jobs.email import retry_delay, send_pending_emails
@@ -118,3 +119,28 @@ def test_message_has_text_and_html_parts() -> None:
     assert msg.get_content_type() == "multipart/alternative"
     parts = [p.get_content_type() for p in msg.iter_parts()]
     assert parts == ["text/plain", "text/html"]
+
+
+def test_reminder_email_has_text_and_html_and_escapes() -> None:
+    link = "http://web.test/orgs/1/datasets/2?a=1&b=2"
+    subject, text, html = revalidation_reminder_email(
+        "Acme <Hospital>", "Cancer\nregistry <b>", date(2026, 11, 3), None, link
+    )
+    assert "\n" not in subject
+    assert "Cancer registry" in subject
+    assert link in text
+    assert "Acme <Hospital>" in text
+    assert "03 November 2026" in text
+    assert "last validated" not in text
+    assert "&lt;Hospital&gt;" in html
+    assert "&lt;b&gt;" in html
+    assert "a=1&amp;b=2" in html
+
+
+def test_reminder_email_untitled_fallback_and_last_validated() -> None:
+    subject, text, html = revalidation_reminder_email(
+        "Acme", None, date(2026, 11, 3), datetime(2025, 11, 3, tzinfo=UTC), "http://x/y"
+    )
+    assert "Untitled dataset" in subject
+    assert "last validated on 03 November 2025" in text
+    assert "last validated on 03 November 2025" in html

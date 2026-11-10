@@ -27,7 +27,10 @@ def test_app_registers_periodic_email_task() -> None:
     app = _app()
     assert "send_pending_emails" in app.tasks
     periodic = [(pt.task.name, pt.cron) for pt in app.periodic_registry.periodic_tasks.values()]
-    assert periodic == [("send_pending_emails", worker.EMAIL_CRON)]
+    assert periodic == [
+        ("send_pending_emails", worker.EMAIL_CRON),
+        ("queue_revalidation_reminders", worker.REMINDER_CRON),
+    ]
 
 
 def test_app_connects_with_settings_dsn() -> None:

@@ -186,6 +186,11 @@ The worker's job queue (Procrastinate) keeps its tables in the same database; th
 migrations create them. At start-up the worker waits up to five minutes for them (the API
 pod's init container runs the migrations), then exits so it is restarted.
 
+Every 5 minutes the worker also queues revalidation reminders: for each published dataset whose
+reminder date is today or earlier and not yet sent, one email per Owner and per member who set
+the reminder (unless they switched the reminder off). To try it in Tilt, set a reminder date in
+the past on a published dataset and watch Mailpit; later runs send nothing more.
+
 Invitation links have the form `{RELAY_WEB_URL}/invitations/{token}` and stay valid for
 `RELAY_INVITATION_TTL_DAYS` (default 30) days.
 
