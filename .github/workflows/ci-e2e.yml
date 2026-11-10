@@ -1,0 +1,112 @@
+name: ci-e2e
+
+# Brings up the whole stack (Postgres, API, worker, Keycloak, Mailpit) on a kind cluster on
+# the runner with the same Helm chart as Tilt, runs the web app with Vite and the Playwright
+# specs in frontend/e2e against it.
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "deploy/**"
+      - "Tiltfile"
+      - "scripts/e2e-stack.sh"
+      - ".github/workflows/ci-e2e.yml"
+  push:
+    branches:
+      - main
+      - mvp-integration
+      - T-021-add-cross-tenant-tests-and-playwright-ha
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "deploy/**"
+      - "Tiltfile"
+      - "scripts/e2e-stack.sh"
+      - ".github/workflows/ci-e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-e2e-${{ github.ref }}
+  # Only cancel superseded PR runs; keep every run on main and mvp-integration
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The pnpm version comes from "packageManager" in frontend/package.json.
+      # This must run before setup-node so that `cache: pnpm` can find pnpm.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          package_json_file: frontend/package.json
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        run: make -C frontend install
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+
+      # The browser comes from the cache when the Playwright version is unchanged; its system
+      # libraries are installed every time.
+      - name: Install Chromium
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+
+      # kind, kubectl and helm are preinstalled on ubuntu-latest.
+      - name: Bring up the stack on kind
+        run: scripts/e2e-stack.sh
+
+      - name: Start the web app
+        run: |
+          nohup make -C frontend dev >"$RUNNER_TEMP/web.log" 2>&1 &
+          for _ in $(seq 120); do
+            if curl -fsS -o /dev/null http://localhost:5173/; then exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/web.log"
+          exit 1
+
+      - name: Run the Playwright specs
+        run: make e2e
+
+      - name: Upload the Playwright report and traces
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            frontend/e2e/test-results/
+            frontend/e2e/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Show pods and logs
+        if: failure()
+        run: |
+          scripts/e2e-stack.sh logs
+          if [ -f "$RUNNER_TEMP/web.log" ]; then
+            echo "=== web app log ==="
+            tail -n 100 "$RUNNER_TEMP/web.log"
+          fi
