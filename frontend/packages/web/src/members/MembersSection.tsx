@@ -30,6 +30,7 @@ import {
   sectionHeading,
 } from "./rowStyles";
 import { RoleTag } from "./tags";
+import { TransferOwnershipDialog } from "./TransferOwnershipDialog";
 
 const m = shellMessages.members;
 
@@ -48,6 +49,7 @@ export function MembersSection({
   const removeMember = useRemoveMember(orgId);
   const toast = useToast();
   const [removing, setRemoving] = useState<Member | null>(null);
+  const [transferring, setTransferring] = useState<Member | null>(null);
   const loading = useMinimumPending(members.isPending);
 
   if (loading || members.isPending) {
@@ -150,6 +152,14 @@ export function MembersSection({
                 size="sm"
                 aria-label={`${m.list.remove} ${member.name}`}
                 onClick={() => {
+                  // An owner removing themselves hands over ownership instead
+                  if (
+                    member.user_id === currentUserId &&
+                    member.role === "owner"
+                  ) {
+                    setTransferring(member);
+                    return;
+                  }
                   removeMember.reset();
                   setRemoving(member);
                 }}
@@ -161,6 +171,16 @@ export function MembersSection({
           </li>
         ))}
       </ul>
+      {canChangeRoles ? (
+        <TransferOwnershipDialog
+          orgId={orgId}
+          owner={transferring}
+          candidates={members.data.filter((member) => member.role !== "owner")}
+          onOpenChange={(open) => {
+            if (!open) setTransferring(null);
+          }}
+        />
+      ) : null}
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(open) => {

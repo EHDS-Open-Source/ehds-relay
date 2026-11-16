@@ -401,6 +401,25 @@ export const shellMessages = {
       confirm: "Remove user",
     },
     removed: (name: string) => `${name} has been removed.`,
+    transferDialog: {
+      title: (name: string) => `${name} is the owner`,
+      lead: "will become a standard user. Choose who takes over as owner.",
+      newOwnerLabel: "New owner",
+      cancel: "Cancel",
+      confirm: "Transfer ownership",
+      sending: "Transferring…",
+      close: "Close",
+      noCandidates:
+        "There is nobody to hand over to yet. Invite another user first, then transfer ownership.",
+    },
+    transferred: (name: string) => `${name} is now the owner.`,
+    transferErrors: {
+      forbidden: "Only an owner can transfer ownership.",
+      notFound: "This member no longer exists. The list has been refreshed.",
+      alreadyOwner:
+        "This member is already an owner. The list has been refreshed.",
+      failed: "Ownership could not be transferred. Try again in a moment.",
+    },
     roleChanged: (name: string, role: "owner" | "standard") =>
       `${name} is now ${role === "owner" ? "an owner" : "a standard user"}.`,
     errors: {

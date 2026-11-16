@@ -7,12 +7,15 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import { RouterProvider, createMemoryHistory } from "@tanstack/react-router";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { MembersSection } from "../members/MembersSection";
 import { makeInvitation, makeMember, renderAs } from "../members/testUtils";
-import { demoSession } from "../session/testing";
+import { createRelayRouter } from "../router/router";
+import { createSessionStore } from "../session/store";
+import { demoSession, makeOrg } from "../session/testing";
 import { chooseOption } from "../testing/dropdown";
 import { shellMessages } from "../shell/messages";
 import {
@@ -160,14 +163,15 @@ describe("members", () => {
     [403, m.errors.forbidden],
   ])("shows a %i answer inside the remove dialog", async (status, text) => {
     stubApi({
-      [`GET ${membersUrl}`]: () => json([ada]),
+      [`GET ${membersUrl}`]: () => json([ada, bob]),
       [`GET ${invitesUrl}`]: () => json([]),
-      [`DELETE ${membersUrl}/${ada.user_id}`]: () =>
-        json({ detail: "x" }, status),
+      [`DELETE ${membersUrl}/u-2`]: () => json({ detail: "x" }, status),
     });
     renderAs(path, demoSession);
     await userEvent.click(
-      await screen.findByRole("button", { name: `${m.list.remove} Ada Owner` }),
+      await screen.findByRole("button", {
+        name: `${m.list.remove} Bob Standard`,
+      }),
     );
     await userEvent.click(
       within(screen.getByRole("alertdialog")).getByRole("button", {
@@ -178,6 +182,191 @@ describe("members", () => {
       await within(screen.getByRole("alertdialog")).findByText(text),
     ).toBeVisible();
   });
+
+  const carol = makeMember({
+    user_id: "u-3",
+    name: "Carol Standard",
+    email: "carol@example.org",
+    role: "standard",
+  });
+  const dan = makeMember({
+    user_id: "u-4",
+    name: "Dan Coowner",
+    email: "dan@example.org",
+  });
+  const transferUrl = (id: string) => `${membersUrl}/${id}/transfer-ownership`;
+  const openTransfer = async () => {
+    await userEvent.click(
+      await screen.findByRole("button", { name: `${m.list.remove} Demo User` }),
+    );
+    return screen.getByRole("alertdialog");
+  };
+  const self = makeMember({ user_id: demoSession.user.id, name: "Demo User" });
+
+  it("opens the transfer pop-up from the owner's own Remove, with the first candidate chosen", async () => {
+    stubApi({
+      [`GET ${membersUrl}`]: () => json([self, dan, bob, carol]),
+      [`GET ${invitesUrl}`]: () => json([]),
+    });
+    renderAs(path, demoSession);
+    const dialog = await openTransfer();
+    expect(
+      within(dialog).getByText(m.transferDialog.title("Demo User")),
+    ).toBeVisible();
+    expect(
+      within(dialog).getByText("Demo User", { selector: "strong" }),
+    ).toBeVisible();
+    const select = within(dialog).getByRole("combobox", {
+      name: new RegExp(m.transferDialog.newOwnerLabel),
+    });
+    expect(select).toHaveTextContent("Bob Standard");
+    await userEvent.click(select);
+    const options = within(await screen.findByRole("listbox")).getAllByRole(
+      "option",
+    );
+    expect(options.map((o) => o.textContent)).toEqual([
+      "Bob Standard",
+      "Carol Standard",
+    ]);
+    await userEvent.keyboard("{Escape}");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("focuses Cancel first", async () => {
+    stubApi({
+      [`GET ${membersUrl}`]: () => json([self, bob]),
+      [`GET ${invitesUrl}`]: () => json([]),
+    });
+    renderAs(path, demoSession);
+    const dialog = await openTransfer();
+    expect(
+      within(dialog).getByRole("button", { name: m.transferDialog.cancel }),
+    ).toHaveFocus();
+  });
+
+  it("offers only Close when nobody can take over", async () => {
+    stubApi({
+      [`GET ${membersUrl}`]: () => json([self, dan]),
+      [`GET ${invitesUrl}`]: () => json([]),
+    });
+    renderAs(path, demoSession);
+    const dialog = await openTransfer();
+    expect(
+      within(dialog).getByText(m.transferDialog.noCandidates),
+    ).toBeVisible();
+    expect(
+      within(dialog).queryByRole("button", { name: m.transferDialog.confirm }),
+    ).not.toBeInTheDocument();
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: m.transferDialog.close }),
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("keeps the normal remove confirmation for a co-owner", async () => {
+    stubApi({
+      [`GET ${membersUrl}`]: () => json([self, dan, bob]),
+      [`GET ${invitesUrl}`]: () => json([]),
+    });
+    renderAs(path, demoSession);
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: `${m.list.remove} Dan Coowner`,
+      }),
+    );
+    expect(
+      within(screen.getByRole("alertdialog")).getByRole("button", {
+        name: m.removeDialog.confirm,
+      }),
+    ).toBeVisible();
+  });
+
+  it("transfers to the chosen member, toasts, and shows the owners-only note", async () => {
+    let members = [self, bob, carol];
+    let current = demoSession;
+    const calls = stubApi({
+      [`GET ${membersUrl}`]: () => json(members),
+      [`GET ${invitesUrl}`]: () => json([]),
+      [`POST ${transferUrl("u-3")}`]: () => {
+        members = [
+          { ...self, role: "standard" },
+          bob,
+          { ...carol, role: "owner" },
+        ];
+        return json({ ...carol, role: "owner" });
+      },
+    });
+    const router = createRelayRouter({
+      queryClient: new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      }),
+      session: createSessionStore(
+        {
+          load: () => Promise.resolve(current),
+          logout: () => Promise.resolve(null),
+        },
+        { session: demoSession },
+      ),
+      history: createMemoryHistory({ initialEntries: [path] }),
+      navigateExternal: () => {},
+    });
+    render(
+      <QueryClientProvider client={router.options.context.queryClient}>
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+    const dialog = await openTransfer();
+    current = { ...demoSession, orgs: [makeOrg({ role: "standard" })] };
+    await chooseOption(
+      within(dialog).getByRole("combobox", {
+        name: new RegExp(m.transferDialog.newOwnerLabel),
+      }),
+      "Carol Standard",
+    );
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: m.transferDialog.confirm }),
+    );
+    expect(
+      await screen.findByText(m.transferred("Carol Standard")),
+    ).toBeVisible();
+    expect(calls.filter((c) => c.method === "POST")).toHaveLength(1);
+    expect(await screen.findByText(m.ownersOnly)).toBeVisible();
+  });
+
+  it.each([
+    [403, m.transferErrors.forbidden],
+    [404, m.transferErrors.notFound],
+    [409, m.transferErrors.alreadyOwner],
+    [500, m.transferErrors.failed],
+  ])(
+    "shows a %i answer inside the transfer pop-up and refetches",
+    async (status, text) => {
+      const calls = stubApi({
+        [`GET ${membersUrl}`]: () => json([self, bob]),
+        [`GET ${invitesUrl}`]: () => json([]),
+        [`POST ${transferUrl("u-2")}`]: () => json({ detail: "x" }, status),
+      });
+      renderAs(path, demoSession);
+      const dialog = await openTransfer();
+      await userEvent.click(
+        within(dialog).getByRole("button", { name: m.transferDialog.confirm }),
+      );
+      expect(await within(dialog).findByText(text)).toBeVisible();
+      await waitFor(() => {
+        expect(
+          calls.filter((c) => c.method === "GET" && c.url.endsWith("/members"))
+            .length,
+        ).toBe(2);
+      });
+    },
+  );
 
   it("shows the role as a tag to someone who cannot change it", async () => {
     stubApi({ [`GET ${membersUrl}`]: () => json([ada, bob]) });
