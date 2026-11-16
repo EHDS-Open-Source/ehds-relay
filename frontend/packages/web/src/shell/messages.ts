@@ -752,6 +752,10 @@ export const shellMessages = {
         `Shorten this to ${max.toLocaleString("en-GB")} characters or fewer. It's ${over.toLocaleString("en-GB")} over.`,
       tooLongNoCount: (max: number) =>
         `Shorten this to ${max.toLocaleString("en-GB")} characters or fewer.`,
+      tagTooLong: (tag: string, max: number) =>
+        `Shorten \u201c${tag}\u201d to ${max} characters or fewer.`,
+      tooManyTags: (over: number, many: string, max: number) =>
+        `Remove ${over} ${many}: at most ${max} are allowed.`,
     },
     leave: {
       title: "Leave without saving?",

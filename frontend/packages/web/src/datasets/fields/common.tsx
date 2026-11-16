@@ -15,6 +15,7 @@ import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel, type FieldKey } from "../fields";
 import type { DatasetFormValues } from "../formValues";
+import { tagLimits } from "../tagLimits";
 import {
   errorProps,
   inputId,
@@ -162,6 +163,7 @@ export function TagField({
             onChange={field.onChange}
             onBlur={field.onBlur}
             noun={noun}
+            {...tagLimits(name)}
             invalid={Boolean(error)}
           />
         )}

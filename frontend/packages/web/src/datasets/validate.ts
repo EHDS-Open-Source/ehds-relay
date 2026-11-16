@@ -2,6 +2,7 @@ import { zDatasetMetadata } from "@ehds-relay/api-client";
 import type { FieldErrors } from "react-hook-form";
 
 import { shellMessages } from "../shell/messages";
+import { KEYWORD_LIMITS } from "./tagLimits";
 import {
   formPath,
   mapToMetadata,
@@ -82,6 +83,44 @@ function stringTooLong(
   );
 }
 
+const tagFieldPattern = /^keyword(?:\.(\d+))?$/;
+const tooBigKinds = new Set(["too_big", "string_too_long", "too_long"]);
+
+/**
+ * Over-limit issues on a keyword or one of its items, as a message for the whole Keywords
+ * field (the tags have no places of their own to show an error). `input` is the tag's text
+ * for an item, or the list's length for the list; undefined for any other issue.
+ */
+export function foldTagIssue(
+  path: string,
+  kind: string | undefined,
+  input: unknown,
+): FormIssue | undefined {
+  const match = tagFieldPattern.exec(path);
+  if (!match || !kind || !tooBigKinds.has(kind)) return undefined;
+  if (match[1] === undefined) {
+    const count = Array.isArray(input) ? input.length : Number(input);
+    const over = Number.isFinite(count)
+      ? Math.max(count - KEYWORD_LIMITS.maxTags, 1)
+      : 1;
+    return {
+      path: "keyword",
+      message: text.errors.tooManyTags(
+        over,
+        text.tagNouns.keyword.many,
+        KEYWORD_LIMITS.maxTags,
+      ),
+    };
+  }
+  return {
+    path: "keyword",
+    message: text.errors.tagTooLong(
+      typeof input === "string" ? input : "this keyword",
+      KEYWORD_LIMITS.maxLength,
+    ),
+  };
+}
+
 /** Form issues for the metadata the form values map to, or the metadata if it may be saved. */
 export function validateForSave(values: DatasetFormValues): ValidationResult {
   const { metadata, indexMap } = mapToMetadata(values);
@@ -93,10 +132,20 @@ export function validateForSave(values: DatasetFormValues): ValidationResult {
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
       const path = formPath(issue.path, indexMap);
-      issues.push({
+      const keywords = values.keyword;
+      const index = /^keyword\.(\d+)$/.exec(path)?.[1];
+      const tagIssue = foldTagIssue(
         path,
-        message: stringTooLong(issue, metadata) ?? messageFor(path, issue.code),
-      });
+        issue.code,
+        index === undefined ? keywords : keywords[Number(index)],
+      );
+      issues.push(
+        tagIssue ?? {
+          path,
+          message:
+            stringTooLong(issue, metadata) ?? messageFor(path, issue.code),
+        },
+      );
     }
   }
   return issues.length ? { ok: false, issues } : { ok: true, metadata };
@@ -108,6 +157,7 @@ export interface ServerIssue {
   msg: string;
   type?: string;
   ctx?: { max_length?: number };
+  /** The rejected value, which FastAPI includes in each issue. */
   input?: unknown;
 }
 
@@ -125,6 +175,8 @@ export function serverIssues(
         ? issue.loc.slice(2)
         : [];
     const path = formPath(loc, indexMap);
+    const tagIssue = foldTagIssue(path, issue.type, issue.input);
+    if (tagIssue) return tagIssue;
     if (path && issue.type === "string_too_long") {
       const max = issue.ctx?.max_length;
       if (typeof max === "number") {

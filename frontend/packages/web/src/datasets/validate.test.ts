@@ -3,7 +3,12 @@ import { describe, expect, it } from "vitest";
 import { shellMessages } from "../shell/messages";
 import { emptyTerm, fromMetadata, mapToMetadata } from "./formValues";
 import { goldenExamples } from "./goldenExamples";
-import { serverIssues, toFieldErrors, validateForSave } from "./validate";
+import {
+  foldTagIssue,
+  serverIssues,
+  toFieldErrors,
+  validateForSave,
+} from "./validate";
 
 const errors = shellMessages.datasetForm.errors;
 
@@ -161,11 +166,13 @@ describe("too-long texts", () => {
     expect(validateForSave(values).ok).toBe(true);
   });
 
-  it("does not give a keyword list the length message", () => {
+  it("gives a keyword list the tag-count message, not the length one", () => {
     const values = base();
     values.keyword = Array.from({ length: 21 }, (_, i) => `k${i}`);
     expect(messages(values).keyword).not.toBe(errors.tooLong(20, 1));
-    expect(messages(values).keyword).toBe(shellMessages.datasetForm.invalid);
+    expect(messages(values).keyword).toBe(
+      shellMessages.datasetForm.errors.tooManyTags(1, "keywords", 20),
+    );
   });
 
   it("maps a server string_too_long with its count, or without when unknown", () => {
@@ -197,5 +204,61 @@ describe("too-long texts", () => {
         new Map(),
       ),
     ).toEqual([{ path: "title.0.text", message: errors.tooLongNoCount(200) }]);
+  });
+});
+
+describe("foldTagIssue", () => {
+  const e = shellMessages.datasetForm.errors;
+
+  it("puts an over-long keyword on the Keywords field, naming it", () => {
+    expect(foldTagIssue("keyword.3", "too_big", "x".repeat(51))).toEqual({
+      path: "keyword",
+      message: e.tagTooLong("x".repeat(51), 50),
+    });
+    expect(foldTagIssue("keyword.0", "string_too_long", "abc")?.path).toBe(
+      "keyword",
+    );
+  });
+
+  it("says how many keywords to remove", () => {
+    const many = Array.from({ length: 23 }, (_, i) => `k${i}`);
+    expect(foldTagIssue("keyword", "too_big", many)).toEqual({
+      path: "keyword",
+      message: e.tooManyTags(3, "keywords", 20),
+    });
+    expect(foldTagIssue("keyword", "too_long", many)?.message).toBe(
+      e.tooManyTags(3, "keywords", 20),
+    );
+  });
+
+  it("leaves other issues alone", () => {
+    expect(foldTagIssue("keyword.0", "too_small", "")).toBeUndefined();
+    expect(foldTagIssue("code_values.0", "too_big", "x")).toBeUndefined();
+    expect(foldTagIssue("title.0.text", "too_big", "x")).toBeUndefined();
+  });
+
+  it("is used for a save check and a server error", () => {
+    const values = fromMetadata({ title: [{ lang: "en", text: "T" }] });
+    values.keyword = ["a", "y".repeat(51)];
+    const result = validateForSave(values);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.issues).toContainEqual({
+      path: "keyword",
+      message: e.tagTooLong("y".repeat(51), 50),
+    });
+    expect(
+      serverIssues(
+        [
+          {
+            loc: ["body", "metadata", "keyword"],
+            msg: "too long",
+            type: "too_long",
+            input: Array.from({ length: 21 }),
+          },
+        ],
+        mapToMetadata(values).indexMap,
+      ),
+    ).toEqual([{ path: "keyword", message: e.tooManyTags(1, "keywords", 20) }]);
   });
 });
