@@ -39,9 +39,14 @@ let orgId = "";
 let datasetId = "";
 
 test.beforeAll(async ({ browser }) => {
-  const context = await browser.newContext();
+  // Local runs against another port (the sign-in redirect points at the default port) can pass
+  // a saved signed-in browser state in E2E_STORAGE_STATE instead of signing in here.
+  const saved = process.env.E2E_STORAGE_STATE;
+  const context = await browser.newContext({
+    storageState: saved ?? { cookies: [], origins: [] },
+  });
   const page = await context.newPage();
-  await signIn(page, owner);
+  if (!saved) await signIn(page, owner);
   orgId = await createOrg(page, unique("E2E phone"));
   const created = await apiPost(
     page,
@@ -104,7 +109,16 @@ for (const [kind] of stripRoutes()) {
 
     const nav = (page: Page) =>
       page.getByRole("navigation", { name: text.datasetForm.sectionNavLabel });
-    const settle = (page: Page) => page.waitForTimeout(1200);
+    // Wait until the page has stopped moving (a smooth jump down a long form takes a while)
+    const settle = async (page: Page) => {
+      let last = -1;
+      for (let i = 0; i < 40; i++) {
+        await page.waitForTimeout(300);
+        const now = await page.evaluate(() => window.scrollY);
+        if (now === last) return;
+        last = now;
+      }
+    };
 
     test("sits right under the header after scrolling, edge to edge", async ({
       page,
