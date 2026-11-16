@@ -586,6 +586,11 @@ export const shellMessages = {
     SE: "Sweden",
     XX: "Other",
   },
+  connection: {
+    offline:
+      "You're offline. You can keep working on this page, but nothing can be saved until the connection is back.",
+    backOnline: "You're back online.",
+  },
   notFound: {
     title: "Page not found",
     description: "There is nothing at this address.",
@@ -721,6 +726,8 @@ export const shellMessages = {
       fixErrors: "Fix the answers marked below, then save again.",
       conflict:
         "Someone else changed this dataset since you opened it. Reload the page to see their changes.",
+      offline:
+        "You're offline, so the dataset wasn't saved. Your changes are still here. Save again when you're back online.",
       failed: "The dataset could not be saved. Try again in a moment.",
     },
     missing: {

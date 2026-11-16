@@ -24,13 +24,14 @@ import { isPasswordResult, type PasswordResult } from "../pages/passwordResult";
 import { OrgPickerPage } from "../pages/OrgPickerPage";
 import { SettingsPage } from "../pages/SettingsPage";
 import { SignInPage } from "../pages/SignInPage";
+import { RootLayout } from "../shell/RootLayout";
 import { OrgLayout } from "../shell/OrgLayout";
 import type { RouterContext } from "./context";
 
 // Code-based route tree (no generated file), so an extension can add routes to it later.
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
-  component: Outlet,
+  component: RootLayout,
   notFoundComponent: BareNotFound,
 });
 

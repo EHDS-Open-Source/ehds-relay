@@ -209,7 +209,10 @@ export function DatasetForm({
         setFeedback({ type: "error", message: text.status.conflict });
         break;
       case "failed":
-        setFeedback({ type: "error", message: text.status.failed });
+        setFeedback({
+          type: "error",
+          message: result.offline ? text.status.offline : text.status.failed,
+        });
         break;
     }
     return false;

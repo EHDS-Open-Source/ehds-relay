@@ -2,6 +2,7 @@ import { BrandCard } from "@ehds-relay/ui";
 import type { ReactNode } from "react";
 
 import { Logo } from "./Logo";
+import { OfflineBanner } from "./OfflineBanner";
 
 /**
  * The ring of stars: fixed to the window centre, about 88% of the window width (at least
@@ -59,6 +60,7 @@ export function BareLayout({
         id="content"
         className={`relative flex min-h-screen w-full flex-col items-center gap-6 px-4 py-6 md:justify-center md:px-5 md:py-12 ${title ? "" : "justify-center"}`}
       >
+        <OfflineBanner className="w-full max-w-[620px]" />
         {title ? (
           <BrandCard
             logo={<Logo size="card" />}
