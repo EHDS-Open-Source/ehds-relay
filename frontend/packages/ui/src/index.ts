@@ -1,4 +1,4 @@
-export { Button, buttonVariants } from "./components/button";
+export { Button, buttonVariants, hitArea } from "./components/button";
 export {
   AlertDialog,
   AlertDialogAction,

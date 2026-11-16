@@ -6,14 +6,14 @@ import { apiPost, createOrg, owner, signIn, text, unique } from "./support";
 
 /**
  * No horizontal overflow: the page is not wider than the window and no element reaches past
- * the right edge. The export code panel scrolls on its own, so what is inside it is ignored.
+ * the right edge. The export code panel and the form section strip scroll on their own (`data-scrolls`), so what is inside them is ignored.
  */
 export async function expectNoOverflow(page: Page, what: string) {
   const result = await page.evaluate(() => {
     const width = window.innerWidth;
     const wide: string[] = [];
     for (const element of document.body.querySelectorAll("*")) {
-      if (element.closest("[data-slot=code-block]")) continue;
+      if (element.closest("[data-slot=code-block], [data-scrolls]")) continue;
       const box = element.getBoundingClientRect();
       if (box.width === 0 && box.height === 0) continue;
       if (box.right > width + 0.5) {

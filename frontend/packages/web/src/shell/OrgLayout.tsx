@@ -1,4 +1,4 @@
-import { AppHeader, AppShell } from "@ehds-relay/ui";
+import { AppHeader, AppShell, hitArea } from "@ehds-relay/ui";
 import { Link, Outlet, useLocation, useParams } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -37,7 +37,7 @@ export function OrgLayout() {
                 <Link
                   to="/orgs/$orgId/catalogue"
                   params={{ orgId }}
-                  className="no-underline"
+                  className={`no-underline ${hitArea}`}
                 >
                   <Logo />
                 </Link>

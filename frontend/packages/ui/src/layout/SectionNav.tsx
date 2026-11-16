@@ -154,8 +154,10 @@ export function SectionNav({ sections, label, activeId }: SectionNavProps) {
     >
       <ul
         ref={list}
+        data-scrolls="x"
         onPointerDown={holdOff}
-        onScroll={holdOff}
+        onTouchMove={holdOff}
+        onWheel={holdOff}
         className="flex overflow-x-auto overflow-y-hidden overscroll-x-contain px-2 scroll-px-4 md:flex-col md:overflow-visible md:px-0"
       >
         {sections.map((section) => {

@@ -192,7 +192,7 @@ export function DatePicker({
           side="bottom"
           align="start"
           sideOffset={8}
-          collisionPadding={16}
+          collisionPadding={{ top: 24, bottom: 24, left: 16, right: 16 }}
           role="dialog"
           aria-label={labels.dialogLabel}
           onOpenAutoFocus={(event) => {
@@ -201,7 +201,7 @@ export function DatePicker({
               ?.querySelector<HTMLElement>(`[data-iso="${focused}"]`)
               ?.focus();
           }}
-          className="z-[60] w-[320px] max-w-[calc(100vw-32px)] rounded-card bg-white p-4 text-foreground shadow-overlay outline-none"
+          className="z-[60] max-h-[var(--radix-popover-content-available-height)] w-[320px] max-w-[calc(100vw-32px)] overflow-y-auto rounded-card max-md:w-[352px] bg-white p-4 text-foreground shadow-overlay outline-none"
         >
           <div className="mb-2 flex items-center justify-between">
             <MonthButton
@@ -271,7 +271,7 @@ export function DatePicker({
                           onFocus={() => setFocused(iso)}
                           onClick={() => choose(iso)}
                           className={cn(
-                            "relative mx-auto grid size-10 place-content-center rounded-full text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue",
+                            "relative mx-auto grid size-10 place-content-center max-md:size-11 rounded-full text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue",
                             !inMonth && "text-ink-3/60",
                             allowed
                               ? "hover:bg-blue-tint-90"
@@ -344,7 +344,7 @@ function MonthButton({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="grid size-10 place-content-center rounded-full text-blue hover:bg-blue-tint-90 focus-visible:ring-2 focus-visible:ring-blue focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+      className="grid size-10 place-content-center rounded-full text-blue max-md:size-11 hover:bg-blue-tint-90 focus-visible:ring-2 focus-visible:ring-blue focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
     >
       <Icon
         name="chevronDown"
