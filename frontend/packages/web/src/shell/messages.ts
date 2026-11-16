@@ -720,6 +720,10 @@ export const shellMessages = {
       email: "Enter an email address like name@organisation.eu.",
       lang: "Enter a language code, for example en or pt-BR.",
       wholeNumber: "Enter a whole number, 0 or more.",
+      tagTooLong: (tag: string, max: number) =>
+        `Shorten \u201c${tag}\u201d to ${max} characters or fewer.`,
+      tooManyTags: (over: number, many: string, max: number) =>
+        `Remove ${over} ${many}: at most ${max} are allowed.`,
     },
     leave: {
       title: "Leave without saving?",

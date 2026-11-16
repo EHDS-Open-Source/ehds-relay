@@ -581,10 +581,13 @@ describe("editing a dataset", () => {
     );
     await openEdit(dataset.id);
     await userEvent.clear(field("keyword").getByRole("textbox"));
-    for (const chip of field("keyword").queryAllByRole("button", {
-      name: /remove/i,
-    })) {
-      await userEvent.click(chip);
+    // Tags are keyed by position, so look the buttons up again after each removal
+    while (
+      field("keyword").queryAllByRole("button", { name: /remove/i }).length
+    ) {
+      await userEvent.click(
+        field("keyword").getAllByRole("button", { name: /remove/i })[0]!,
+      );
     }
     await choose(text.actions.saveKeepPublished);
     expect(
@@ -646,5 +649,76 @@ describe("editing a dataset", () => {
     expect(
       field("quantum_label").getByRole("textbox"),
     ).toHaveAccessibleDescription(expect.stringContaining(text.invalid));
+  });
+
+  it("loads a dataset with too many keywords, refuses to save it, and saves once trimmed", async () => {
+    const dataset = server.seed(
+      org,
+      {
+        title: [{ lang: "en", text: "T" }],
+        keyword: Array.from({ length: 21 }, (_, i) => `k${i}`),
+      },
+      "draft",
+    );
+    await openEdit(dataset.id);
+    await choose(text.actions.saveDraft);
+    expect(await screen.findByText(text.status.fixErrors)).toBeVisible();
+    expect(
+      field("keyword").getByText(text.errors.tooManyTags(1, "keywords", 20)),
+    ).toBeVisible();
+    expect(server.saves()).toHaveLength(0);
+
+    await userEvent.click(
+      field("keyword").getByRole("button", { name: "Remove keyword k20" }),
+    );
+    await choose(text.actions.saveDraft);
+    await waitFor(() => expect(server.saves()).toHaveLength(1));
+  });
+
+  it("shows a keyword over 50 characters as an error on Keywords", async () => {
+    const long = "x".repeat(51);
+    const dataset = server.seed(
+      org,
+      { title: [{ lang: "en", text: "T" }], keyword: [long] },
+      "draft",
+    );
+    await openEdit(dataset.id);
+    await choose(text.actions.saveDraft);
+    expect(
+      await field("keyword").findByText(text.errors.tagTooLong(long, 50)),
+    ).toBeVisible();
+    expect(server.saves()).toHaveLength(0);
+  });
+
+  it("shows the server's too-long keyword error on Keywords", async () => {
+    const dataset = server.seed(
+      org,
+      { title: [{ lang: "en", text: "T" }], keyword: ["a"] },
+      "draft",
+    );
+    await openEdit(dataset.id);
+    server.respondOnce(422, {
+      detail: [
+        {
+          loc: ["body", "metadata", "keyword", 0],
+          msg: "too long",
+          type: "string_too_long",
+          input: "abc",
+        },
+      ],
+    });
+    await choose(text.actions.saveDraft);
+    expect(
+      await field("keyword").findByText(text.errors.tagTooLong("abc", 50)),
+    ).toBeVisible();
+  });
+
+  it("limits keywords but not code values", async () => {
+    await openNew();
+    const keywords = field("keyword").getByRole("textbox");
+    expect(keywords).toHaveAttribute("maxlength", "50");
+    expect(field("code_values").getByRole("textbox")).not.toHaveAttribute(
+      "maxlength",
+    );
   });
 });
