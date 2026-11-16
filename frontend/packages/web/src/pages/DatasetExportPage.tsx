@@ -1,5 +1,6 @@
 import {
   Button,
+  hitArea,
   CodeBlock,
   CodeBlockButton,
   EmptyState,
@@ -11,6 +12,7 @@ import {
   TabsList,
   TabsTrigger,
   buttonVariants,
+  cn,
   useMinimumPending,
 } from "@ehds-relay/ui";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
@@ -173,7 +175,10 @@ export function DatasetExportPage() {
                 <TabsTrigger
                   key={f.format}
                   value={f.format}
-                  className="rounded-full bg-transparent px-4 py-2 text-[13px] leading-[1.5] font-semibold text-ink hover:bg-blue-tint-95 hover:text-blue data-[state=active]:bg-blue data-[state=active]:font-semibold data-[state=active]:text-white"
+                  className={cn(
+                    hitArea,
+                    "rounded-full bg-transparent px-4 py-2 text-[13px] leading-[1.5] font-semibold text-ink hover:bg-blue-tint-95 hover:text-blue data-[state=active]:bg-blue data-[state=active]:font-semibold data-[state=active]:text-white",
+                  )}
                 >
                   {m.output.tabs[f.format]}
                 </TabsTrigger>
