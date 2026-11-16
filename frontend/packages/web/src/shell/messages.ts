@@ -322,7 +322,9 @@ export const shellMessages = {
   account: {
     eyebrow: "Account",
     title: "Manage my account",
-    description: "Your name as the other members of your organisations see it.",
+    description: "Your personal details and sign-in settings.",
+    tabsLabel: "Account settings",
+    tabs: { details: "User details", security: "Security" },
     back: "Back to my organisations",
     nameLabel: "Full name",
     emailLabel: "Email address",
@@ -351,7 +353,7 @@ export const shellMessages = {
       unknownCountry: "Not set",
     },
     password: {
-      title: "Password",
+      heading: "Change password",
       description:
         "You will be asked for your current password first. A new password needs at least 12 characters, with an upper-case letter, a lower-case letter, a digit and a special character.",
       change: "Change password",

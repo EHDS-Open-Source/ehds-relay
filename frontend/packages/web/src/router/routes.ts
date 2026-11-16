@@ -19,6 +19,7 @@ import { DatasetNewPage } from "../pages/DatasetNewPage";
 import { MembersPage } from "../pages/MembersPage";
 import { BareNotFound, NotFound } from "../pages/NotFound";
 import { NewOrgPage } from "../pages/NewOrgPage";
+import { isAccountTab, type AccountTab } from "../pages/accountTab";
 import { isPasswordResult, type PasswordResult } from "../pages/passwordResult";
 import { OrgPickerPage } from "../pages/OrgPickerPage";
 import { SettingsPage } from "../pages/SettingsPage";
@@ -86,11 +87,14 @@ const accountRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "account",
   beforeLoad: requireSession,
-  // Set by the API after the identity provider's change-password page
+  // `password` is set by the API after the identity provider's change-password page;
+  // `tab` picks the tab (missing or unknown means User details).
   validateSearch: (
     search: Record<string, unknown>,
-  ): { password?: PasswordResult } =>
-    isPasswordResult(search.password) ? { password: search.password } : {},
+  ): { tab?: AccountTab; password?: PasswordResult } => ({
+    ...(isAccountTab(search.tab) ? { tab: search.tab } : {}),
+    ...(isPasswordResult(search.password) ? { password: search.password } : {}),
+  }),
   component: AccountPage,
 });
 
