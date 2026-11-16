@@ -27,7 +27,7 @@ export type SaveResult =
   | { kind: "invalid"; issues: ServerIssue[] }
   | { kind: "conflict" }
   /** Any other failure; `status` is the HTTP status when there was a response. */
-  | { kind: "failed"; status?: number };
+  | { kind: "failed"; status?: number; offline?: boolean };
 
 async function request(
   orgId: string,
@@ -79,7 +79,10 @@ export function useDatasetSave(
         }
         return { kind: "failed", status: response.status };
       } catch {
-        return { kind: "failed" };
+        // A thrown request while the browser is offline is not a server problem.
+        return navigator.onLine
+          ? { kind: "failed" }
+          : { kind: "failed", offline: true };
       }
     },
     [orgId, dataset, queryClient],
