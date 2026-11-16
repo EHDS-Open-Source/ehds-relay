@@ -35,8 +35,8 @@ export function Ribbon({
         overdue ? "bg-yellow font-bold" : "bg-blue-tint-95 font-semibold",
       )}
     >
-      {/* Lined up with the header content: same 96% frame and side padding. */}
-      <div className="mx-auto flex min-h-14 w-[96%] flex-wrap items-center gap-3 px-5 py-3 leading-[1.3] md:flex-nowrap md:px-10">
+      {/* Lined up with the header content: same 96% frame and side padding on desktop; full width, 20px inset on phones. */}
+      <div className="mx-auto flex min-h-14 w-full flex-wrap items-center gap-3 px-5 py-3 leading-[1.3] md:w-[96%] md:flex-nowrap md:px-10">
         <Icon
           name={overdue ? "calendarAlert" : "calendarTick"}
           size="lg"

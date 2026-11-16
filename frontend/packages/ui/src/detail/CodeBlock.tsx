@@ -95,7 +95,7 @@ export function CodeBlock({
         tabIndex={0}
         aria-label={label}
         className={cn(
-          "max-h-[600px] overflow-auto p-5 font-mono text-[13px] leading-[1.7] whitespace-pre focus-visible:outline-offset-[-3px]",
+          "max-h-[60vh] overflow-auto md:max-h-[600px] p-5 font-mono text-[13px] leading-[1.7] whitespace-pre focus-visible:outline-offset-[-3px]",
           codeClassName,
         )}
       >
