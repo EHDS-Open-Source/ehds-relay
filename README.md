@@ -281,8 +281,10 @@ keeps Keycloak's own look: people use the app's `/account` instead.
 
 - `login/`: the sign-in, registration, reset, set-password, verify-email, two-step and message
   pages. It extends Keycloak's `keycloak.v2` theme without PatternFly and overrides only the page
-  frame (`template.ftl`), the sign-in page (`login.ftl`), the page-expired page and the password
-  rules (`password-validation.ftl`). The look is in `resources/css/relay.css`; the wording in
+  frame (`template.ftl`), the sign-in page (`login.ftl`, which also shows the "Check your email"
+  step after a reset request), the reset-request, set-new-password, code and page-expired pages
+  (small copies of Keycloak's templates with the design's button labels and links) and the
+  password rules (`password-validation.ftl`). The look is in `resources/css/relay.css`; the wording in
   `messages/messages_en.properties`, including a title (`relayTitle.<page>`) or a line under it
   (`relaySubtitle.<page>`) for any page without overriding its template.
 - `email/`: the HTML frame and the verification, reset and account-action emails. Keycloak's

@@ -13,11 +13,17 @@
 <#import "social-providers.ftl" as identityProviders>
 <#import "passkeys.ftl" as passkeys>
 <#assign signInFailed = messagesPerField.existsError('username','password')>
-<@layout.registrationLayout displayMessage=!signInFailed displayInfo=false; section>
+<#-- Keycloak answers a reset request by showing this page with a success message; show it as the
+     "Check your email" step instead of the sign-in form. -->
+<#assign resetSent = message?has_content && message.type == 'success' && message.summary == msg("emailSentMessage")>
+<@layout.registrationLayout displayMessage=!(signInFailed || resetSent) displayInfo=false subtitle=resetSent?then(msg("relaySentSubtitle"), ""); section>
 <!-- template: login.ftl (ehds-relay) -->
 
     <#if section = "header">
-        ${msg("loginAccountTitle")}
+        <#if resetSent>${msg("relaySentTitle")}<#else>${msg("loginAccountTitle")}</#if>
+    <#elseif section = "form" && resetSent>
+        <p><a id="kc-resend" class="rl-card-link" href="${url.loginResetCredentialsUrl}">${msg("relayResendLink")}</a></p>
+        <p><a id="kc-back-to-sign-in" class="rl-card-link" href="${url.loginRestartFlowUrl}">${msg("backToLogin")}</a></p>
     <#elseif section = "form">
         <div id="kc-form">
           <div id="kc-form-wrapper">
@@ -26,7 +32,7 @@
                 <form id="kc-form-login" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" novalidate="novalidate">
                     <#if !usernameHidden??>
                         <#assign label>
-                            <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
+                            <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("relaySignInUsername")}<#else>${msg("email")}</#if>
                         </#assign>
                         <#-- Marked invalid with the password; the message itself shows under the password. -->
                         <div class="rl-error-elsewhere">
@@ -58,7 +64,7 @@
         <#if realm.password && social.providers?? && social.providers?has_content>
             <@identityProviders.show social=social/>
         </#if>
-    <#elseif section = "below" >
+    <#elseif section = "below" && !resetSent>
         <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
             <p id="kc-registration" class="rl-below">
                 ${msg("noAccount")} <a class="rl-below-link" href="${url.registrationUrl}">${msg("relayCreateAccount")}</a>
