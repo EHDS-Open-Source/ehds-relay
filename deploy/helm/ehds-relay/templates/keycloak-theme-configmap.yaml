@@ -1,0 +1,26 @@
+{{- if .Values.keycloak.enabled }}
+# The EHDS Relay Keycloak theme (files/keycloak-theme: sign-in pages and emails), mounted into
+# the stock Keycloak image at /opt/keycloak/themes/ehds-relay (see keycloak-deployment.yaml).
+# ConfigMap keys cannot contain slashes, so login/theme.properties is stored as
+# login--theme.properties and mounted back at its path. Fonts and images go in binaryData.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ehds-relay.fullname" . }}-keycloak-theme
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak
+data:
+  {{- range $path, $_ := .Files.Glob "files/keycloak-theme/**" }}
+  {{- if not (include "ehds-relay.keycloakThemeBinary" $path) }}
+  {{ trimPrefix "files/keycloak-theme/" $path | replace "/" "--" }}: |-
+    {{- $.Files.Get $path | nindent 4 }}
+  {{- end }}
+  {{- end }}
+binaryData:
+  {{- range $path, $_ := .Files.Glob "files/keycloak-theme/**" }}
+  {{- if include "ehds-relay.keycloakThemeBinary" $path }}
+  {{ trimPrefix "files/keycloak-theme/" $path | replace "/" "--" }}: {{ $.Files.Get $path | b64enc }}
+  {{- end }}
+  {{- end }}
+{{- end }}

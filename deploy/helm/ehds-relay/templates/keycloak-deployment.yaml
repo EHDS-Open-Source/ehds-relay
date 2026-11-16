@@ -107,6 +107,12 @@ spec:
             - name: realm
               mountPath: /opt/keycloak/data/import
               readOnly: true
+            # The EHDS Relay sign-in and email theme, selected on the realm. Dev mode does not
+            # cache themes, so an edit shows once the kubelet has synced the ConfigMap (about a
+            # minute).
+            - name: theme
+              mountPath: /opt/keycloak/themes/ehds-relay
+              readOnly: true
           # The first dev-mode start builds and imports before it listens: give it time
           startupProbe:
             httpGet:
@@ -135,4 +141,12 @@ spec:
         - name: realm
           configMap:
             name: {{ include "ehds-relay.fullname" . }}-keycloak-realm
+        - name: theme
+          configMap:
+            name: {{ include "ehds-relay.fullname" . }}-keycloak-theme
+            items:
+              {{- range $path, $_ := .Files.Glob "files/keycloak-theme/**" }}
+              - key: {{ trimPrefix "files/keycloak-theme/" $path | replace "/" "--" }}
+                path: {{ trimPrefix "files/keycloak-theme/" $path }}
+              {{- end }}
 {{- end }}
