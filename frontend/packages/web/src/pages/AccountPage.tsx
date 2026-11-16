@@ -10,15 +10,19 @@ import {
   LoadingStar,
   PageHeader,
   SaveButton,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Toggle,
   cn,
   fieldErrorId,
   useMinimumPending,
   useToast,
 } from "@ehds-relay/ui";
-import { Link, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 
 import { api } from "../api";
 import {
@@ -36,6 +40,7 @@ import { useSession, useSessionStore, useSignOut } from "../session/useSession";
 import type { OrgRole } from "../session/types";
 import { AccountLayout } from "../shell/AccountLayout";
 import { shellMessages } from "../shell/messages";
+import { isAccountTab, type AccountTab } from "./accountTab";
 import { isPasswordResult } from "./passwordResult";
 import { useSavedFlash } from "./useSavedFlash";
 
@@ -55,16 +60,20 @@ export function AccountPage() {
         title={text.title}
         description={text.description}
       />
-      <ProfileForm
-        key={`profile-${user.id}`}
-        name={user.name}
-        email={user.email}
-        // With one organisation the page knows which role to show.
-        role={orgs.length === 1 ? orgs[0]!.role : undefined}
+      <AccountTabs
+        profile={
+          <ProfileForm
+            key={`profile-${user.id}`}
+            name={user.name}
+            email={user.email}
+            // With one organisation the page knows which role to show.
+            role={orgs.length === 1 ? orgs[0]!.role : undefined}
+          />
+        }
+        notifications={
+          <NotificationsSection key={`notifications-${user.id}`} />
+        }
       />
-      <PasswordSection />
-      <OrganisationsSection />
-      <NotificationsSection key={`notifications-${user.id}`} />
       {orgs.length === 0 ? (
         // The header has no way back without an organisation, so it is offered here.
         <Button asChild variant="secondary" className="mt-12">
@@ -75,6 +84,58 @@ export function AccountPage() {
         </Button>
       ) : null}
     </AccountLayout>
+  );
+}
+
+/**
+ * User details and Security. The tab is in the URL (`?tab=security`; the default is left out).
+ * Coming back from the identity provider with a password result opens Security. Both panels stay
+ * mounted so a half-typed name survives a switch and notifications load once.
+ */
+function AccountTabs({
+  profile,
+  notifications,
+}: {
+  profile: ReactNode;
+  notifications: ReactNode;
+}) {
+  const search = useSearch({ from: "/account" });
+  const navigate = useNavigate();
+  // Other search values pass through the router untouched, so check again here.
+  const active: AccountTab = isAccountTab(search.tab)
+    ? search.tab
+    : isPasswordResult(search.password)
+      ? "security"
+      : "details";
+  const panel = cn("mt-0 data-[state=inactive]:hidden");
+  return (
+    <Tabs
+      value={active}
+      onValueChange={(value) => {
+        if (!isAccountTab(value)) return;
+        void navigate({
+          to: "/account",
+          search: value === "details" ? {} : { tab: value },
+          replace: true,
+        });
+      }}
+    >
+      <TabsList aria-label={text.tabsLabel} className="max-w-[560px]">
+        {(["details", "security"] as const).map((value) => (
+          <TabsTrigger key={value} value={value}>
+            {text.tabs[value]}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      <TabsContent value="details" forceMount className={panel}>
+        {profile}
+        <OrganisationsSection />
+        {notifications}
+      </TabsContent>
+      <TabsContent value="security" forceMount className={panel}>
+        <PasswordSection />
+      </TabsContent>
+    </Tabs>
   );
 }
 
@@ -132,7 +193,7 @@ function ProfileForm({
 
   return (
     <section aria-labelledby="account-details">
-      <h2 id="account-details" className={sectionHeading}>
+      <h2 id="account-details" className="sr-only">
         {text.detailsTitle}
       </h2>
       <form
@@ -142,7 +203,12 @@ function ProfileForm({
           void submit(event);
         }}
       >
-        <div className={`${settingsCard} flex flex-col gap-4 p-6`}>
+        <div
+          className={cn(
+            settingsCard,
+            "flex flex-col gap-4 rounded-tl-none p-6",
+          )}
+        >
           <Field
             label={text.nameLabel}
             htmlFor="account-name"
@@ -238,29 +304,34 @@ function PasswordSection() {
   const result = isPasswordResult(password) ? password : undefined;
   const copy = text.password;
   return (
-    <section aria-labelledby="account-password" className="mt-12 max-w-[560px]">
-      <h2 id="account-password" className={cn(sectionHeading, "mb-2")}>
-        {copy.title}
+    <section aria-labelledby="account-password">
+      <h2 id="account-password" className="sr-only">
+        {copy.heading}
       </h2>
-      <p className="mb-4 text-ink-3">{copy.description}</p>
-      <div role="status">
-        {result ? (
-          <FormMessage
-            tone={result === "error" ? "error" : "info"}
-            // The status region announces it; a second alert would repeat it.
-            role={undefined}
-            className="mb-4"
-            data-result={result}
+      <div className={cn(settingsCard, "rounded-tl-none p-6")}>
+        <p className="mb-4 text-ink-3">{copy.description}</p>
+        <div role="status">
+          {result ? (
+            <FormMessage
+              tone={result === "error" ? "error" : "info"}
+              // The status region announces it; a second alert would repeat it.
+              role={undefined}
+              className="mb-4"
+              data-result={result}
+            >
+              {copy[result]}
+            </FormMessage>
+          ) : null}
+        </div>
+        <Button asChild>
+          <a
+            href={loginUrl({ redirect: "/account", action: "change_password" })}
           >
-            {copy[result]}
-          </FormMessage>
-        ) : null}
+            <Icon name="lock" />
+            {copy.change}
+          </a>
+        </Button>
       </div>
-      <Button asChild variant="secondary">
-        <a href={loginUrl({ redirect: "/account", action: "change_password" })}>
-          {copy.change}
-        </a>
-      </Button>
     </section>
   );
 }

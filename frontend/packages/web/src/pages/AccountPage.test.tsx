@@ -114,43 +114,126 @@ describe("AccountPage", () => {
     expect(email).toHaveAttribute("readonly");
   });
 
-  it("links to the provider's change-password page and back here", async () => {
+  it("shows two tabs with User details selected by default", async () => {
     stubApi();
     renderPage();
-    const section = within(
-      await screen.findByRole("region", { name: text.password.title }),
-    );
+    await nameInput();
     expect(
-      section.getByRole("link", { name: text.password.change }),
-    ).toHaveAttribute(
+      screen.getByRole("tablist", { name: text.tabsLabel }),
+    ).toBeInTheDocument();
+    const details = screen.getByRole("tab", { name: text.tabs.details });
+    const security = screen.getByRole("tab", { name: text.tabs.security });
+    expect(details).toHaveAttribute("aria-selected", "true");
+    expect(security).toHaveAttribute("aria-selected", "false");
+    expect(
+      screen.getByRole("tabpanel", { name: text.tabs.details }),
+    ).toBeVisible();
+    expect(screen.getByLabelText(nameLabel)).toBeVisible();
+    expect(screen.getByRole("list", { name: text.orgs.title })).toBeVisible();
+    // Tailwind is not loaded here, so check the state that hides the panel.
+    expect(
+      screen
+        .getByRole("link", { name: text.password.change, hidden: true })
+        .closest("[role=tabpanel]"),
+    ).toHaveAttribute("data-state", "inactive");
+  });
+
+  it("opens Security on click, keeps the default out of the URL and replaces history", async () => {
+    stubApi();
+    const { router } = renderPage();
+    await nameInput();
+    await userEvent.click(
+      screen.getByRole("tab", { name: text.tabs.security }),
+    );
+    expect(router.state.location.search).toEqual({ tab: "security" });
+    const link = screen.getByRole("link", { name: text.password.change });
+    expect(link).toBeVisible();
+    expect(link).toHaveAttribute(
       "href",
       "/api/v1/auth/login?redirect=%2Faccount&action=change_password",
     );
-    expect(section.getByText(text.password.description)).toBeVisible();
-    expect(section.getByRole("status")).toBeEmptyDOMElement();
+    expect(screen.getByText(text.password.description)).toBeVisible();
+    await userEvent.click(screen.getByRole("tab", { name: text.tabs.details }));
+    expect(router.state.location.search).toEqual({});
+    expect(router.history.length).toBe(1);
+    expect(screen.getByLabelText(nameLabel)).toBeVisible();
+  });
+
+  it("moves between tabs with the keyboard", async () => {
+    stubApi();
+    renderPage();
+    await nameInput();
+    const details = screen.getByRole("tab", { name: text.tabs.details });
+    const security = screen.getByRole("tab", { name: text.tabs.security });
+    // Tab lands on the tab list, which hands focus to the selected tab.
+    details.focus();
+    await userEvent.keyboard("{ArrowRight}");
+    expect(security).toHaveFocus();
+    expect(security).toHaveAttribute("aria-selected", "true");
+    expect(security).toHaveAttribute("tabindex", "0");
+    expect(details).toHaveAttribute("tabindex", "-1");
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(details).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{End}");
+    expect(security).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{Home}");
+    expect(details).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("opens Security from a deep link", async () => {
+    stubApi();
+    renderPage(vi.fn(), "/account?tab=security");
+    expect(
+      await screen.findByRole("link", { name: text.password.change }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("tab", { name: text.tabs.security }),
+    ).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("falls back to User details for an unknown tab", async () => {
+    stubApi();
+    renderPage(vi.fn(), "/account?tab=bogus");
+    expect(await nameInput()).toBeVisible();
+    expect(
+      screen.getByRole("tab", { name: text.tabs.details }),
+    ).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("keeps a half-typed name when switching tabs", async () => {
+    stubApi();
+    renderPage();
+    const input = await nameInput();
+    await userEvent.type(input, " Jr");
+    await userEvent.click(
+      screen.getByRole("tab", { name: text.tabs.security }),
+    );
+    await userEvent.click(screen.getByRole("tab", { name: text.tabs.details }));
+    expect(screen.getByLabelText(nameLabel)).toHaveValue(
+      `${demoSession.user.name} Jr`,
+    );
   });
 
   it.each(["success", "cancelled", "error"] as const)(
-    "says how changing the password went: %s",
+    "opens Security and says how changing the password went: %s",
     async (result) => {
       stubApi();
       renderPage(vi.fn(), `/account?password=${result}`);
-      const section = within(
-        await screen.findByRole("region", { name: text.password.title }),
-      );
-      expect(section.getByRole("status")).toHaveTextContent(
-        text.password[result],
-      );
+      expect(await screen.findByText(text.password[result])).toBeVisible();
+      expect(
+        screen.getByRole("tab", { name: text.tabs.security }),
+      ).toHaveAttribute("aria-selected", "true");
     },
   );
 
   it("ignores an unknown password result", async () => {
     stubApi();
     renderPage(vi.fn(), "/account?password=bogus");
-    const section = within(
-      await screen.findByRole("region", { name: text.password.title }),
-    );
-    expect(section.getByRole("status")).toBeEmptyDOMElement();
+    expect(await nameInput()).toBeVisible();
+    expect(
+      screen.getByRole("tab", { name: text.tabs.details }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByText(text.password.success)).not.toBeInTheDocument();
   });
 
   it("works for someone with no organisation", async () => {
@@ -317,7 +400,8 @@ describe("AccountPage", () => {
     ).toHaveAttribute("data-variant", "secondary");
     expect(
       screen.getByRole("heading", { level: 2, name: text.detailsTitle }),
-    ).toHaveClass("font-bold", "text-blue");
+    ).toHaveClass("sr-only");
+    expect(card).toHaveClass("rounded-tl-none");
   });
 
   it("offers a way back only when the header has none", async () => {
