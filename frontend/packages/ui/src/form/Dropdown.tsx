@@ -109,7 +109,7 @@ export function Dropdown({
               <Select.Item
                 key={option.value}
                 value={option.value}
-                className="relative flex cursor-pointer items-center justify-between gap-2 rounded-[8px] px-4 py-3 text-base outline-none select-none data-[highlighted]:bg-blue-tint-95 data-[highlighted]:text-blue data-[state=checked]:font-bold data-[state=checked]:text-blue"
+                className="relative flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-[8px] px-4 py-3 text-base md:min-h-0 outline-none select-none data-[highlighted]:bg-blue-tint-95 data-[highlighted]:text-blue data-[state=checked]:font-bold data-[state=checked]:text-blue"
               >
                 <Select.ItemText>{option.label}</Select.ItemText>
                 <Select.ItemIndicator>

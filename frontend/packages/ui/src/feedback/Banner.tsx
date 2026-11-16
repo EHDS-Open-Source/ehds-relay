@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { hitArea } from "../components/button";
 import { cn } from "../lib/utils";
 import { Icon, type IconName } from "../icons";
 import { messages } from "../messages";
@@ -60,7 +61,7 @@ export function Banner({
         <button
           type="button"
           aria-label={messages.feedback.dismiss}
-          className="inline-flex shrink-0 rounded-full p-2 text-ink hover:bg-black/6"
+          className={`${hitArea} inline-flex shrink-0 rounded-full p-2 text-ink hover:bg-black/6`}
           onClick={onDismiss}
         >
           <Icon name="close" size="sm" />
