@@ -247,9 +247,10 @@ Keycloak handles passwords; the app has no password code of its own, only links 
   page (name and address only). Keycloak emails a link to verify the address; the link leads to a
   page where the user chooses a password (checked against the policy), then signs them in. This
   is Keycloak 26's behaviour when email verification is on.
-- **Forgotten password:** "Forgot Password?" on Keycloak's sign-in page (the app's `/sign-in`
-  says so). Keycloak shows the same answer whether or not the address has an account and only
-  emails a registered one. The link sets a new password and works once.
+- **Forgotten password:** "Reset it by email" under the card on Keycloak's sign-in page, and
+  in a notice on the card after a failed attempt (the app's `/sign-in` says so). Keycloak shows
+  the same answer whether or not the address has an account and only emails a registered one.
+  The link sets a new password and works once.
 - **Change password:** the "Change password" link on `/account` goes to
   `GET /api/v1/auth/login?action=change_password&redirect=/account`. Keycloak asks for the
   current password, then the new one, and the API sends the browser back to
@@ -257,19 +258,55 @@ Keycloak handles passwords; the app has no password code of its own, only links 
 
 The dev realm's password policy: at least 12 and at most 128 characters, with an upper-case
 letter, a lower-case letter, a digit and a special character, and not the username or email.
-Keycloak only shows the rules after a refused attempt. Links sent by email (verification and
-reset) are valid for 5 minutes (`actionTokenGeneratedByUserLifespan`). In development the
-emails land in Mailpit.
+Every page that sets a password lists the rules under the new password before the first attempt
+and ticks them off while the person types; Keycloak checks them again on submit. Links sent by
+email (verification, reset and account actions) are valid for 1 hour
+(`actionTokenGeneratedByUserLifespan`). In development the emails land in Mailpit.
 
 These are realm-level settings: they are in the realm JSON for new realms and in the realm
-migration `m002_password_settings.py` for existing ones (see "Changing a realm-level setting"
+migrations `m002_password_settings.py` and `m003_relay_theme.py` for existing ones (see "Changing a realm-level setting"
 above). The client's base URL (`RELAY_WEB_URL`), used for Keycloak's "Back to application"
 link, is refreshed on every realm-init start.
 
 `make check_password_flows` runs all three flows against the running stack (`make tilt`): it
 registers a new random user, reads the emails from Mailpit, changes and resets the password,
 and checks the realm settings. It is not part of `make test`. Add `ARGS=--check-expiry` to also
-wait for a reset link to expire.
+wait for a reset link to expire (a little over an hour).
+
+### Keycloak theme
+
+Keycloak's sign-in pages and emails use the `ehds-relay` theme in
+`deploy/helm/ehds-relay/files/keycloak-theme/`, so they look like the app. The account console
+keeps Keycloak's own look: people use the app's `/account` instead.
+
+- `login/`: the sign-in, registration, reset, set-password, verify-email, two-step and message
+  pages. It extends Keycloak's `keycloak.v2` theme without PatternFly and overrides only the page
+  frame (`template.ftl`), the sign-in page (`login.ftl`), the page-expired page and the password
+  rules (`password-validation.ftl`). The look is in `resources/css/relay.css`; the wording in
+  `messages/messages_en.properties`, including a title (`relayTitle.<page>`) or a line under it
+  (`relaySubtitle.<page>`) for any page without overriding its template.
+- `email/`: the HTML frame and the verification, reset and account-action emails. Keycloak's
+  plain-text parts are kept, with new wording.
+- Copies from the app: `resources/css/tokens.css` (the brand `:root` block of
+  `frontend/packages/ui/src/styles.css`), the Poppins fonts, the stars and the favicons. After
+  changing any of them in the app, run `make -C frontend keycloak_theme` and commit the result;
+  `frontend/packages/ui/src/keycloakTheme.test.ts` fails until you do. The logo
+  (`resources/img/logo.svg`) and the email colours are written out by hand; the same test checks
+  them against `Logo.tsx` and the tokens.
+
+The chart ships the folder as a ConfigMap mounted into the stock Keycloak image, and the realm
+selects it (`loginTheme` and `emailTheme`, migration `m003_relay_theme.py`). To preview an edit,
+keep `make tilt` running and reload the page: Keycloak's dev mode does not cache themes, and the
+kubelet syncs the ConfigMap within about a minute (adding or removing a file restarts Keycloak,
+or run `kubectl --context kind-ehds-relay -n ehds-relay rollout restart
+deploy/ehds-relay-dev-keycloak`). Pages to look at, from the app's `/sign-in`: sign in (and a
+wrong password), "Create one", "Reset it by email", the link in the reset email, "Change
+password" on `/account`; Keycloak's `/realms/ehds-relay/protocol/openid-connect/logout` shows
+the sign-out page. Emails are in Mailpit.
+
+When upgrading Keycloak, compare the overridden templates with the new `keycloak.v2` and `base`
+copies (they are in `lib/lib/main/org.keycloak.keycloak-themes-<version>.jar` in the image) and
+check the pages above.
 
 ## Email in development
 
