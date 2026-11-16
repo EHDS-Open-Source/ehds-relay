@@ -290,7 +290,7 @@ export function InviteDialog({
             />
           </Field>
           {formError ? <FormMessage>{formError}</FormMessage> : null}
-          <AlertDialogFooter className="-mt-2 justify-between max-[480px]:flex-row max-[480px]:*:w-auto">
+          <AlertDialogFooter className="-mt-2 md:justify-between">
             <AlertDialogCancel
               type="button"
               size="sm"
