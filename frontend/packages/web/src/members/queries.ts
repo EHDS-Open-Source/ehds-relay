@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 
 import { api } from "../api";
-import { ApiError } from "../datasets/queries";
+import { ApiError, errorStatus } from "../datasets/queries";
 import { useSessionStore } from "../session/useSession";
 
 export type Member = Schemas["MemberDTO"];
@@ -141,6 +141,29 @@ export function useRemoveMember(orgId: string) {
         { params: { path: { org_id: orgId, user_id: userId } } },
       );
       if (!response.ok) throw failure(response, error);
+    },
+    onSettled: () => refreshMembers(queryClient, orgId),
+  });
+}
+
+/** Makes a member the owner and the caller a standard user, then reloads the session. */
+export function useTransferOwnership(orgId: string) {
+  const queryClient = useQueryClient();
+  const store = useSessionStore();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, response, error } = await api.POST(
+        "/api/v1/organisations/{org_id}/members/{user_id}/transfer-ownership",
+        { params: { path: { org_id: orgId, user_id: userId } } },
+      );
+      if (!data) throw failure(response, error);
+      return data;
+    },
+    // Not awaited: the page drops the members list once the role changes, and the
+    // dialog's own success handling must still run before that.
+    onSuccess: () => void store.refresh(),
+    onError: (error) => {
+      if (errorStatus(error) === 403) void store.refresh();
     },
     onSettled: () => refreshMembers(queryClient, orgId),
   });

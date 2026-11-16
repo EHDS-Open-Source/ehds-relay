@@ -17,6 +17,21 @@ export function memberErrorMessage(error: unknown): string {
   }
 }
 
+/** Readable text for a failed ownership transfer. */
+export function transferErrorMessage(error: unknown): string {
+  const text = m.transferErrors;
+  switch (errorStatus(error)) {
+    case 403:
+      return text.forbidden;
+    case 404:
+      return text.notFound;
+    case 409:
+      return text.alreadyOwner;
+    default:
+      return text.failed;
+  }
+}
+
 /** Readable text for a failed invite, resend or cancel. */
 export function invitationErrorMessage(error: unknown): string {
   const text = m.invitations.errors;
