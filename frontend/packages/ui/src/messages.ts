@@ -24,6 +24,12 @@ export const messages = {
     alreadyAdded: (tag: string) => `\u201c${tag}\u201d is already added.`,
     pressAgain: (tag: string) =>
       `Press Backspace again to remove \u201c${tag}\u201d.`,
+    maxReached: (count: number, many: string) =>
+      `Maximum of ${count} ${many} reached`,
+    upTo: (count: number, many: string) =>
+      `You can add up to ${count} ${many}.`,
+    tooLong: (many: string, max: number) =>
+      `${many.charAt(0).toUpperCase()}${many.slice(1)} can be up to ${max} characters.`,
   },
   repeatableList: { add: "Add", remove: "Remove" },
   datePicker: {

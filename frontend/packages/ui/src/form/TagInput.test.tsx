@@ -8,12 +8,22 @@ import { TagInput } from "./TagInput";
 
 const noun = { one: "keyword", many: "keywords" };
 
-function Harness({ initial = [] as string[], onSubmit = vi.fn() }) {
+function Harness({
+  initial = [] as string[],
+  onSubmit = vi.fn(),
+  limits = {} as { maxLength?: number; maxTags?: number },
+}) {
   const [tags, setTags] = useState(initial);
   return (
     <form onSubmit={onSubmit}>
       <Field label="Keywords" htmlFor="kw" hint="Press Enter to add.">
-        <TagInput id="kw" value={tags} onChange={setTags} noun={noun} />
+        <TagInput
+          id="kw"
+          value={tags}
+          onChange={setTags}
+          noun={noun}
+          {...limits}
+        />
       </Field>
       <span data-testid="tags">{tags.join("|")}</span>
     </form>
@@ -97,5 +107,108 @@ describe("TagInput", () => {
   it("is described by the field's hint", () => {
     render(<Harness />);
     expect(box()).toHaveAccessibleDescription("Press Enter to add.");
+  });
+
+  describe("limits", () => {
+    const twenty = Array.from({ length: 20 }, (_, i) => `k${i}`);
+    const paste = (data: string) =>
+      fireEvent.paste(box(), { clipboardData: { getData: () => data } });
+
+    it("stops typing at the longest tag and says so", async () => {
+      render(<Harness limits={{ maxLength: 5 }} />);
+      await userEvent.type(box(), "abcdefg");
+      expect(box()).toHaveValue("abcde");
+      expect(status()).toHaveTextContent("Keywords can be up to 5 characters.");
+    });
+
+    it("shortens a pasted item and says so", () => {
+      render(<Harness limits={{ maxLength: 5 }} />);
+      paste("abcdefgh, ok");
+      expect(tags()).toHaveTextContent("abcde|ok");
+      expect(status()).toHaveTextContent("Keywords can be up to 5 characters.");
+    });
+
+    it("says so when a paste without commas does not fit", () => {
+      render(<Harness limits={{ maxLength: 5 }} />);
+      paste("abcdefgh");
+      expect(status()).toHaveTextContent("Keywords can be up to 5 characters.");
+    });
+
+    it("does not split a character when shortening", () => {
+      render(<Harness limits={{ maxLength: 3 }} />);
+      paste("ab😀x, y");
+      expect(tags()).toHaveTextContent("ab|y");
+    });
+
+    it("refuses a tag past the maximum, keeping the text and focus", async () => {
+      render(<Harness initial={twenty} limits={{ maxTags: 20 }} />);
+      expect(box()).toHaveAttribute(
+        "placeholder",
+        "Maximum of 20 keywords reached",
+      );
+      await userEvent.type(box(), "extra{Enter}");
+      expect(tags().textContent?.split("|")).toHaveLength(20);
+      expect(box()).toHaveValue("extra");
+      expect(box()).toHaveFocus();
+      expect(status()).toHaveTextContent("You can add up to 20 keywords.");
+      await userEvent.type(box(), ",");
+      expect(box()).toHaveValue("extra");
+      await userEvent.tab();
+      expect(box()).toHaveValue("extra");
+      expect(
+        await screen.findByText("You can add up to 20 keywords."),
+      ).toBeInTheDocument();
+    });
+
+    it("still removes the last tag with Backspace at the maximum", async () => {
+      render(<Harness initial={twenty} limits={{ maxTags: 20 }} />);
+      await userEvent.type(box(), "{Backspace}{Backspace}");
+      expect(tags().textContent?.split("|")).toHaveLength(19);
+      expect(box()).toHaveAttribute("placeholder", "Add another keyword");
+    });
+
+    it("adds a paste up to the maximum, then shows the limit message", () => {
+      render(
+        <Harness initial={twenty.slice(0, 18)} limits={{ maxTags: 20 }} />,
+      );
+      paste("a, b, c, d");
+      expect(tags().textContent?.split("|")).toHaveLength(20);
+      expect(tags()).toHaveTextContent("k17|a|b");
+      expect(tags()).not.toHaveTextContent("c");
+      expect(status()).toHaveTextContent("You can add up to 20 keywords.");
+      expect(status()).not.toHaveTextContent("Added");
+    });
+
+    it("still refuses repeats whatever their capitals", async () => {
+      render(
+        <Harness initial={["EHDS"]} limits={{ maxLength: 50, maxTags: 20 }} />,
+      );
+      await userEvent.type(box(), "ehds{Enter}");
+      expect(tags()).toHaveTextContent(/^EHDS$/);
+      expect(status()).toHaveTextContent("“ehds” is already added.");
+    });
+
+    it("says the limit before a repeat when both apply", () => {
+      render(<Harness initial={["a", "b"]} limits={{ maxTags: 2 }} />);
+      paste("A, c");
+      expect(status()).toHaveTextContent("You can add up to 2 keywords.");
+    });
+
+    it("announces the same message again after clearing it", async () => {
+      render(<Harness initial={["a", "b"]} limits={{ maxTags: 2 }} />);
+      await userEvent.type(box(), "x{Enter}");
+      expect(status()).toHaveTextContent("You can add up to 2 keywords.");
+      await userEvent.type(box(), "{Enter}");
+      expect(status()).toBeEmptyDOMElement();
+      expect(await screen.findByText("You can add up to 2 keywords.")).toBe(
+        status(),
+      );
+    });
+
+    it("has no limits unless given", async () => {
+      render(<Harness initial={twenty} />);
+      await userEvent.type(box(), `${"x".repeat(80)}{Enter}`);
+      expect(tags().textContent?.split("|")).toHaveLength(21);
+    });
   });
 });
