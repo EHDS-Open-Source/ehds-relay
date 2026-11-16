@@ -34,7 +34,10 @@ function TitleText({
   return (
     <>
       {head}
-      <span data-slot="title-tail" className="whitespace-nowrap">
+      <span
+        data-slot="title-tail"
+        className="inline-block max-w-full [overflow-wrap:anywhere]"
+      >
         {last}
         <span className="ml-[0.16em] inline-block align-[0.02em] leading-none">
           {adornment}
@@ -68,7 +71,7 @@ export function PageHeader({
         {eyebrow ? (
           <p
             className={cn(
-              "font-semibold text-blue",
+              "font-semibold [overflow-wrap:anywhere] text-blue",
               record ? "text-[1.15em]" : "mb-1 text-[1.1em]",
               "leading-[1.6]",
             )}
@@ -80,7 +83,7 @@ export function PageHeader({
         <h1
           tabIndex={-1}
           className={cn(
-            "font-bold tracking-[-0.015em] text-foreground outline-none md:text-[length:var(--h1-size)]",
+            "font-bold tracking-[-0.015em] [overflow-wrap:anywhere] text-foreground outline-none md:text-[length:var(--h1-size)]",
             record ? "max-w-[34ch] text-[1.85em]" : "text-[length:2em]",
             "leading-[1.15]",
           )}
@@ -90,7 +93,7 @@ export function PageHeader({
         {description ? (
           <p
             className={cn(
-              "max-w-[72ch]",
+              "max-w-[72ch] [overflow-wrap:anywhere]",
               record ? "mt-6 text-[1em]" : "mt-4 text-[1.05em]",
               record ? "leading-[1.6]" : "leading-[1.75]",
             )}
