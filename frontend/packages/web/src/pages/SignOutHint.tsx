@@ -1,3 +1,6 @@
+import { cn } from "@ehds-relay/ui";
+import { hitArea } from "@ehds-relay/ui/components/button";
+
 import { useSession, useSignOut } from "../session/useSession";
 import { BelowCard, belowCardLinkClass } from "../shell/BareLayout";
 import { shellMessages } from "../shell/messages";
@@ -17,7 +20,7 @@ export function SignOutHint({ lead }: { lead: string }) {
       {lead}{" "}
       <button
         type="button"
-        className={belowCardLinkClass}
+        className={cn(belowCardLinkClass, hitArea)}
         onClick={() => {
           void signOut();
         }}

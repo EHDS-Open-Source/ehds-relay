@@ -19,6 +19,39 @@ describe("Button", () => {
   });
 });
 
+describe("Button hit area", () => {
+  const sizes = [
+    "sm",
+    "default",
+    "record",
+    "lg",
+    "xs",
+    "icon",
+    "icon-xs",
+    "icon-sm",
+    "icon-lg",
+  ] as const;
+
+  it.each(sizes)("size %s has a 44px hit area on phones", (size) => {
+    render(<Button size={size}>Go</Button>);
+    const classes = screen.getByRole("button").className;
+    expect(classes).toContain("max-md:before:min-h-11");
+    expect(classes).toContain("max-md:before:min-w-11");
+    expect(classes).toContain("relative");
+  });
+
+  it("keeps the standard icon button 44px and the small ones visually small", () => {
+    render(
+      <>
+        <Button size="icon" aria-label="a" />
+        <Button size="icon-xs" aria-label="b" />
+      </>,
+    );
+    expect(screen.getByLabelText("a")).toHaveClass("size-11");
+    expect(screen.getByLabelText("b")).toHaveClass("size-6");
+  });
+});
+
 describe("Button busy", () => {
   it("shows the star after the label, marked busy, and ignores presses", async () => {
     const onClick = vi.fn();

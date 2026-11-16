@@ -40,7 +40,10 @@ export function RadioChoices({
       {choices.map((choice) => {
         const id = `${idPrefix}-${choice.value}`;
         return (
-          <div key={choice.value} className="flex items-start gap-3">
+          <div
+            key={choice.value}
+            className="flex items-start gap-3 max-md:py-2.5"
+          >
             <input
               {...inputProps}
               type="radio"

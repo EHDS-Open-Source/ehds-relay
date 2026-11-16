@@ -103,12 +103,30 @@ html {
   font-size: 15px;
 }
 
+/* A short screen (a phone on its side): the header and the form's section strip scroll away
+   with the page instead of staying pinned. Use as `short:static`, `short:top-auto` ... */
+@custom-variant short (@media (max-height: 500px));
+
+/* Space the pinned chrome takes at the top of the window. AppHeader writes --header-h (its
+   real height). --sticky-offset starts as the header alone and is 0 when nothing is pinned;
+   a wrapper that pins more (the form's section strip) sets its own --sticky-offset to
+   calc(var(--header-h) + its height), and 0px again inside the same short-screen query. */
+:root {
+  --sticky-offset: var(--header-h, 64px);
+}
+@media (max-height: 500px) {
+  :root {
+    --sticky-offset: 0px;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
   }
   body {
     @apply bg-background font-sans text-foreground;
+    line-height: 1.6;
   }
   /* Blue outline on white, yellow on blue surfaces (mark a blue surface with data-surface="blue"). */
   :focus-visible {

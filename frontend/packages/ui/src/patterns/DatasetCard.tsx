@@ -67,20 +67,20 @@ export function DatasetCard({
   const band = overdue || Boolean(reminderDate);
   const late = overdue;
   return (
-    <li className="list-none">
+    <li className="min-w-0 list-none">
       {renderLink({
         className: cn(
           // Hover draws the blue ring; keyboard focus draws the outline, away from the card.
-          "group relative flex h-full flex-col rounded-card bg-white px-8 pt-8 text-ink shadow-card transition-shadow hover:shadow-card-hover focus-visible:outline-offset-4",
+          "group relative flex h-full min-w-0 flex-col rounded-card bg-white px-6 pt-6 text-ink md:px-8 md:pt-8 shadow-card transition-shadow hover:shadow-card-hover focus-visible:outline-offset-4",
           band ? "overflow-hidden" : "pb-14",
         ),
         children: (
           <>
-            <span className="mb-4 flex items-start justify-between gap-3">
+            <span className="mb-4 flex min-w-0 items-start justify-between gap-3">
               <span
                 role="heading"
                 aria-level={2}
-                className="text-[1.1em] leading-[1.3] font-bold tracking-[-0.005em] text-blue"
+                className="min-w-0 text-[1.1em] leading-[1.3] font-bold tracking-[-0.005em] [overflow-wrap:anywhere] text-blue"
               >
                 {title}
               </span>
@@ -94,7 +94,7 @@ export function DatasetCard({
               <span
                 data-card-description=""
                 className={cn(
-                  "line-clamp-4 text-[0.94em] leading-[1.6] text-ink",
+                  "line-clamp-4 text-[0.94em] leading-[1.6] [overflow-wrap:anywhere] text-ink",
                   band && "mb-6",
                 )}
               >
@@ -105,7 +105,7 @@ export function DatasetCard({
               <span
                 data-band={late ? "overdue" : "reminder"}
                 className={cn(
-                  "-mx-8 mt-auto flex min-h-[62px] items-center gap-4 border-t py-4 pr-5 pl-8 leading-[1.2] transition-colors",
+                  "-mx-6 mt-auto flex min-h-[62px] items-center gap-4 border-t py-4 pr-5 pl-6 leading-[1.2] md:-mx-8 md:pl-8 transition-colors",
                   late
                     ? "border-transparent bg-yellow font-bold text-blue"
                     : "border-blue-tint-95 font-semibold text-blue-hint group-hover:text-blue group-focus-visible:text-blue",

@@ -1,6 +1,11 @@
 // Shared looks for the native checkbox, radio button and switch. The inputs stay native
 // (default look removed) so keyboard and screen reader behaviour comes for free.
 
+// A transparent hit area of at least 44px on phones, drawn by ::after because the radio dot
+// and the switch knob use ::before (the same idea as `hitArea` in the button).
+const hitAfter =
+  "relative max-md:after:absolute max-md:after:top-1/2 max-md:after:left-1/2 max-md:after:size-full max-md:after:min-h-11 max-md:after:min-w-11 max-md:after:-translate-1/2 max-md:after:content-['']";
+
 const base =
   "peer shrink-0 appearance-none border-2 border-ink-3 bg-white transition-colors hover:border-blue disabled:cursor-not-allowed disabled:border-blue-tint-80 disabled:bg-blue-tint-90 disabled:hover:border-blue-tint-80 aria-invalid:border-destructive";
 
@@ -9,13 +14,14 @@ const baseOnBlue =
 
 export function checkboxClass(onBlue: boolean): string {
   return onBlue
-    ? `${baseOnBlue} size-[22px] rounded-[6px] checked:border-yellow checked:bg-yellow`
-    : `${base} size-[22px] rounded-[6px] checked:border-blue checked:bg-blue`;
+    ? `${baseOnBlue} ${hitAfter} size-[22px] rounded-[6px] checked:border-yellow checked:bg-yellow`
+    : `${base} ${hitAfter} size-[22px] rounded-[6px] checked:border-blue checked:bg-blue`;
 }
 
 // The dot is drawn by ::before: 10px, centred, grown in when checked (no shadow).
 const radioDot =
-  "grid size-[22px] place-content-center rounded-full before:size-2.5 before:scale-0 before:rounded-full before:transition-transform before:content-[''] checked:before:scale-100";
+  hitAfter +
+  " grid size-[22px] place-content-center rounded-full before:size-2.5 before:scale-0 before:rounded-full before:transition-transform before:content-[''] checked:before:scale-100";
 
 export function radioClass(onBlue: boolean): string {
   return onBlue
@@ -25,7 +31,8 @@ export function radioClass(onBlue: boolean): string {
 
 export function toggleClass(onBlue: boolean): string {
   const knob =
-    "relative h-7 w-12 rounded-full before:absolute before:top-[3px] before:left-[3px] before:size-[18px] before:rounded-full before:transition-transform before:content-[''] checked:before:translate-x-5";
+    hitAfter +
+    " relative h-7 w-12 rounded-full before:absolute before:top-[3px] before:left-[3px] before:size-[18px] before:rounded-full before:transition-transform before:content-[''] checked:before:translate-x-5";
   return onBlue
     ? `${baseOnBlue} ${knob} before:bg-white checked:border-yellow checked:bg-yellow checked:before:bg-blue`
     : `${base} ${knob} before:bg-ink-3 checked:border-blue checked:bg-blue checked:before:bg-yellow disabled:before:bg-blue-tint-80`;

@@ -1,4 +1,4 @@
-import { AppHeader, AppShell } from "@ehds-relay/ui";
+import { AppHeader, AppShell, hitArea } from "@ehds-relay/ui";
 import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 
@@ -30,7 +30,7 @@ export function AccountLayout({ children }: { children: ReactNode }) {
       header={
         <AppHeader
           logo={
-            <Link to="/orgs" className="no-underline">
+            <Link to="/orgs" className={`no-underline ${hitArea}`}>
               <Logo />
             </Link>
           }

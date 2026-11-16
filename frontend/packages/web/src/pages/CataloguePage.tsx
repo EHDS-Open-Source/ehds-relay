@@ -172,22 +172,26 @@ export function CataloguePage() {
             placeholder={text.searchPlaceholder}
             className="max-w-[360px] flex-1 max-md:max-w-none max-md:basis-full"
           />
-          <FilterChips
-            label={text.filterLabel}
-            value={access}
-            onChange={(value) => setSearch({ access: value })}
-            options={accessFilters.map((value) => ({
-              value,
-              label: text.access[value],
-            }))}
-          />
-          {anyOverdue || overdue ? (
-            <FilterToggle
-              label={text.overdueFilter}
-              pressed={overdue}
-              onChange={(pressed) => setSearch({ overdue: pressed })}
+          {/* One wrapping row, so the Overdue chip follows the others instead of sitting alone. */}
+          <div className="flex flex-wrap gap-3">
+            <FilterChips
+              className="contents"
+              label={text.filterLabel}
+              value={access}
+              onChange={(value) => setSearch({ access: value })}
+              options={accessFilters.map((value) => ({
+                value,
+                label: text.access[value],
+              }))}
             />
-          ) : null}
+            {anyOverdue || overdue ? (
+              <FilterToggle
+                label={text.overdueFilter}
+                pressed={overdue}
+                onChange={(pressed) => setSearch({ overdue: pressed })}
+              />
+            ) : null}
+          </div>
         </div>
         {visible.length === 0 ? (
           <EmptyState

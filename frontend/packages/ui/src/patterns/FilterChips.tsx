@@ -1,3 +1,4 @@
+import { hitArea } from "../components/button";
 import { cn } from "../lib/utils";
 
 export interface FilterChipOption<T extends string> {
@@ -17,6 +18,7 @@ export interface FilterChipsProps<T extends string> {
 
 const chipClass = (selected: boolean) =>
   cn(
+    hitArea,
     "h-10 rounded-full border-2 px-5 text-[0.95em] font-semibold transition-[color,background-color,border-color]",
     selected
       ? "border-blue bg-blue text-white"

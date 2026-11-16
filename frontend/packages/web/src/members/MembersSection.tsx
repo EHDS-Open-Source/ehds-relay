@@ -5,9 +5,11 @@ import {
   EmptyState,
   Icon,
   LoadingStar,
+  cn,
   useMinimumPending,
   useToast,
 } from "@ehds-relay/ui";
+import { hitArea } from "@ehds-relay/ui/components/button";
 import { useState } from "react";
 
 import { shellMessages } from "../shell/messages";
@@ -115,7 +117,7 @@ export function MembersSection({
                 <Dropdown
                   size="compact"
                   aria-label={m.list.roleFor(member.name)}
-                  className="w-36 shrink-0"
+                  className={cn(hitArea, "w-36 shrink-0")}
                   value={member.role}
                   disabled={changeRole.isPending}
                   options={roleOptions.map((role) => ({

@@ -117,7 +117,7 @@ export function ReminderDialog({
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent
-        className="data-[size=default]:max-w-[min(420px,calc(100%-40px))]"
+        className="max-h-[calc(100dvh-24px)] overflow-y-auto data-[size=default]:max-w-[min(420px,calc(100%-40px))]"
         onOverlayClick={() => {
           if (!save.isPending) onOpenChange(false);
         }}
@@ -163,8 +163,8 @@ export function ReminderDialog({
           {save.isError && !confirmingClear ? (
             <FormMessage>{saveErrorMessage(save.error)}</FormMessage>
           ) : null}
-          {/* Cancel on the left, Clear reminder and Save on the right; they wrap on phones. */}
-          <AlertDialogFooter className="-mt-2 justify-between max-[480px]:flex-row max-[480px]:*:w-auto">
+          {/* Cancel on the left, Clear reminder and Save on the right; on phones they stack full width with Save on top. */}
+          <AlertDialogFooter className="-mt-2 justify-between">
             <AlertDialogCancel
               type="button"
               size="sm"
@@ -172,7 +172,7 @@ export function ReminderDialog({
             >
               {m.cancel}
             </AlertDialogCancel>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 max-md:flex-col-reverse max-md:*:w-full">
               {current ? (
                 <Button
                   type="button"

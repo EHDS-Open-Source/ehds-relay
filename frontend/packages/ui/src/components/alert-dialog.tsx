@@ -64,7 +64,7 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          "group/alert-dialog-content fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100%-2rem)] w-full max-w-[calc(100%-40px)] translate-x-[-50%] translate-y-[-50%] gap-6 overflow-y-auto rounded-modal border-0 bg-background p-8 text-ink shadow-overlay duration-(--motion-enter) ease-(--ease-out) data-[size=sm]:max-w-xs data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-reduce:animate-none data-[size=default]:max-w-[min(500px,calc(100%-40px))]",
+          "group/alert-dialog-content fixed top-[50%] left-[50%] z-50 grid grid-cols-[minmax(0,1fr)] max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-40px)] translate-x-[-50%] translate-y-[-50%] gap-6 overflow-y-auto overscroll-contain rounded-modal border-0 bg-background p-8 short:gap-4 short:p-6 text-ink shadow-overlay duration-(--motion-enter) ease-(--ease-out) data-[size=sm]:max-w-xs data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-reduce:animate-none data-[size=default]:max-w-[min(500px,calc(100%-40px))]",
           className,
         )}
         onOpenAutoFocus={(event) => {
@@ -107,7 +107,7 @@ function AlertDialogFooter({
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        "flex flex-wrap justify-end gap-3 max-[480px]:flex-col-reverse max-[480px]:*:w-full",
+        "flex flex-wrap justify-end gap-3 max-md:flex-col-reverse max-md:*:w-full",
         className,
       )}
       {...props}

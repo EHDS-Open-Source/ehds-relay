@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Button } from "../components/button";
 import { Icon } from "../icons";
 import { messages } from "../messages";
@@ -17,7 +17,9 @@ export interface AppHeaderProps {
 /**
  * Solid blue bar: logo on the left, then page actions and the yellow menu button on the right.
  * 72px tall with the page's side margin (2% + 40px); on phones 64px with 16px sides, and the
- * actions wrap to their own row under the logo and menu.
+ * actions wrap to their own row under the logo and menu. Pinned to the top, except on short
+ * screens (the `short` variant) where it scrolls away. Writes its real height to `--header-h`
+ * on the root element, for things that stick or scroll under it (`--sticky-offset`).
  */
 export function AppHeader({
   logo,
@@ -26,10 +28,31 @@ export function AppHeader({
   menuOpen = false,
   menuLabel = messages.openMenu,
 }: AppHeaderProps) {
+  const header = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const element = header.current;
+    if (!element) return;
+    const root = document.documentElement;
+    const write = () =>
+      root.style.setProperty("--header-h", `${element.offsetHeight}px`);
+    write();
+    if (typeof ResizeObserver === "undefined") {
+      return () => root.style.removeProperty("--header-h");
+    }
+    const observer = new ResizeObserver(write);
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--header-h");
+    };
+  }, []);
+
   return (
     <header
+      ref={header}
       data-surface="blue"
-      className="sticky top-0 z-30 bg-blue text-white"
+      className="sticky top-0 z-30 bg-blue text-white short:static"
     >
       <div className="flex min-h-16 flex-wrap items-center gap-x-2 gap-y-3 px-4 py-3 md:min-h-18 md:flex-nowrap md:px-[calc(2%+var(--space-40))] md:py-0">
         <div className="mr-auto flex min-w-0 items-center">{logo}</div>

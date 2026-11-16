@@ -24,7 +24,7 @@ export function Checkbox({
 }: CheckboxProps) {
   const onBlue = tone === "onBlue";
   return (
-    <div className={cn("flex items-start gap-3", className)}>
+    <div className={cn("flex items-start gap-3 max-md:py-2.5", className)}>
       <span className="relative inline-flex">
         <input
           {...inputProps}

@@ -6,6 +6,7 @@ import {
   type KeyboardEvent,
 } from "react";
 
+import { hitArea } from "../components/button";
 import { Icon } from "../icons";
 import { cn } from "../lib/utils";
 import { messages } from "../messages";
@@ -223,7 +224,7 @@ export function TagInput({
         data-slot="tag-input"
         aria-invalid={invalid || undefined}
         className={cn(
-          "flex min-h-[52px] cursor-text flex-wrap items-center gap-2 rounded-field border-2 border-input bg-white px-3 py-2 transition-colors",
+          "flex min-h-[52px] cursor-text flex-wrap items-center gap-2 max-md:gap-y-3 rounded-field border-2 border-input bg-white px-3 py-2 transition-colors",
           "focus-within:border-blue has-[>input:focus-visible]:[outline:3px_solid_var(--blue)] has-[>input:focus-visible]:[outline-offset:3px]",
           "aria-invalid:border-destructive aria-invalid:focus-within:border-destructive",
         )}
@@ -240,17 +241,18 @@ export function TagInput({
               data-slot="tag"
               data-armed={isArmed || undefined}
               className={cn(
-                "inline-flex h-8 max-w-full items-center gap-1 rounded-full border-2 pr-1 pl-3 text-[0.88em] font-semibold whitespace-nowrap",
+                "inline-flex h-8 max-w-full min-w-0 items-center gap-1 rounded-full border-2 pr-1 pl-3 text-[0.88em] font-semibold whitespace-nowrap",
                 isArmed
                   ? "border-destructive bg-error-bg text-destructive"
                   : "border-transparent bg-blue-tint-90 text-blue",
               )}
             >
-              {tag}
+              <span className="min-w-0 truncate">{tag}</span>
               <button
                 type="button"
                 className={cn(
-                  "inline-flex size-6 items-center justify-center rounded-full focus-visible:outline-offset-1",
+                  hitArea,
+                  "inline-flex size-6 shrink-0 items-center justify-center rounded-full focus-visible:outline-offset-1",
                   isArmed
                     ? "hover:bg-destructive/12"
                     : "hover:bg-blue/12 hover:text-blue",

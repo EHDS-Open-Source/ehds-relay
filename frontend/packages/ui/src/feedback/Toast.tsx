@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { hitArea } from "../components/button";
+import { cn } from "../lib/utils";
 import { Icon, type IconName } from "../icons";
 import { messages } from "../messages";
 
@@ -105,7 +107,10 @@ function ToastItem({
       {toast.action ? (
         <button
           type="button"
-          className="rounded-[8px] p-2 font-bold whitespace-nowrap text-yellow underline-offset-[3px] hover:underline"
+          className={cn(
+            hitArea,
+            "rounded-[8px] p-2 font-bold whitespace-nowrap text-yellow underline-offset-[3px] hover:underline",
+          )}
           onClick={() => {
             toast.action?.onClick();
             onDismiss(id);
@@ -117,7 +122,10 @@ function ToastItem({
       <button
         type="button"
         aria-label={messages.feedback.dismiss}
-        className="inline-flex shrink-0 rounded-full p-2 text-white/80 hover:bg-white/12 hover:text-white"
+        className={cn(
+          hitArea,
+          "inline-flex shrink-0 rounded-full p-2 text-white/80 hover:bg-white/12 hover:text-white",
+        )}
         onClick={() => onDismiss(id)}
       >
         <Icon name="close" size="sm" />
@@ -152,7 +160,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           width 12px in from the edges on phones. */}
       <section
         aria-label={messages.feedback.notifications}
-        className="pointer-events-none fixed inset-x-3 bottom-[calc(12px+env(safe-area-inset-bottom,0px))] z-[60] md:inset-x-auto md:right-6 md:bottom-[calc(24px+env(safe-area-inset-bottom,0px))]"
+        className="pointer-events-none fixed left-[max(12px,env(safe-area-inset-left,0px))] right-[max(12px,env(safe-area-inset-right,0px))] bottom-[calc(12px+env(safe-area-inset-bottom,0px))] z-[60] md:left-auto md:right-6 md:bottom-[calc(24px+env(safe-area-inset-bottom,0px))]"
       >
         <ol className="flex flex-col items-stretch gap-3 md:items-end">
           {toasts.map((t) => (

@@ -268,7 +268,8 @@ export function DatasetForm({
   const leave = useLeaveGuard({ isChanged, saveForLeave });
   return (
     <FormProvider {...form}>
-      <div className="flex flex-col md:flex-row">
+      {/* Phones: header plus the 45px menu strip stay pinned, so sections land below both */}
+      <div className="flex flex-col [--sticky-offset:calc(var(--header-h,64px)+45px)] short:[--sticky-offset:0px] md:flex-row">
         {/* Contents on phones, so the menu strip sticks under the header for the whole form */}
         <aside className="contents md:block md:w-[260px] md:shrink-0 md:border-r md:border-line">
           <SectionNav
@@ -323,7 +324,10 @@ export function DatasetForm({
           <CoverageSection />
           <OrganisationsSection />
           <TechnicalSection />
-          <QuantumSection />
+          {/* Room under the last section, so a tap on its entry can bring its heading to the top */}
+          <div className="max-md:min-h-[calc(100svh-var(--sticky-offset)-16px)] max-md:short:min-h-0">
+            <QuantumSection />
+          </div>
         </form>
       </div>
       <LeaveDialog
