@@ -136,4 +136,5 @@ export {
   type ToastOptions,
   type ToastTone,
 } from "./feedback/Toast";
+export { useOnlineStatus } from "./feedback/useOnlineStatus";
 export { Banner, type BannerProps, type BannerTone } from "./feedback/Banner";

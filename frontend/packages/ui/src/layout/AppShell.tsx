@@ -6,6 +6,8 @@ export interface AppShellProps {
   header: ReactNode;
   /** Full-width band between the header and the content, e.g. a revalidation ribbon. */
   ribbon?: ReactNode;
+  /** Content-width band after the ribbon, e.g. an offline banner. No wrapper when empty. */
+  banner?: ReactNode;
   /** Optional section navigation beside the content (not the app menu). */
   sidebar?: ReactNode;
   skipLabel?: string;
@@ -16,6 +18,7 @@ export interface AppShellProps {
 export function AppShell({
   header,
   ribbon,
+  banner,
   sidebar,
   skipLabel = messages.skipToContent,
   children,
@@ -30,6 +33,11 @@ export function AppShell({
       </a>
       {header}
       {ribbon}
+      {banner ? (
+        <div className="mx-auto mt-4 w-[96%] max-md:mx-3 max-md:mt-3 max-md:w-auto">
+          {banner}
+        </div>
+      ) : null}
       <div className="flex flex-1">
         {sidebar ? (
           <aside className="w-65 shrink-0 border-r bg-sidebar text-sidebar-foreground">
