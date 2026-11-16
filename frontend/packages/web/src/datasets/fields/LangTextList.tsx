@@ -4,6 +4,7 @@ import { useFieldArray, useFormContext } from "react-hook-form";
 import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel } from "../fields";
 import type { DatasetFormValues } from "../formValues";
+import { DESCRIPTION_LIMIT, TITLE_LIMIT } from "../limits";
 import { GroupPanel, TextInput } from "./common";
 import { useGroupState } from "./formState";
 
@@ -43,6 +44,7 @@ export function LangTextField({ name }: { name: "title" | "description" }) {
               path={`${name}.${index}.text`}
               label={index === 0 ? label : `${label} ${index + 1}`}
               multiline={name === "description"}
+              limit={name === "title" ? TITLE_LIMIT : DESCRIPTION_LIMIT}
             />
           </GroupPanel>
         )}

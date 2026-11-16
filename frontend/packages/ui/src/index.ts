@@ -58,6 +58,12 @@ export {
   RepeatableList,
   type RepeatableListProps,
 } from "./form/RepeatableList";
+export {
+  CharacterCount,
+  characterCountState,
+  type CharacterCountProps,
+  type CharacterCountState,
+} from "./form/CharacterCount";
 export { TagInput, type TagInputProps, type TagNoun } from "./form/TagInput";
 export { AppHeader, type AppHeaderProps } from "./layout/AppHeader";
 export { BrandCard, type BrandCardProps } from "./layout/BrandCard";

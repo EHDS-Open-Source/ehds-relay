@@ -748,6 +748,10 @@ export const shellMessages = {
       email: "Enter an email address like name@organisation.eu.",
       lang: "Enter a language code, for example en or pt-BR.",
       wholeNumber: "Enter a whole number, 0 or more.",
+      tooLong: (max: number, over: number) =>
+        `Shorten this to ${max.toLocaleString("en-GB")} characters or fewer. It's ${over.toLocaleString("en-GB")} over.`,
+      tooLongNoCount: (max: number) =>
+        `Shorten this to ${max.toLocaleString("en-GB")} characters or fewer.`,
     },
     leave: {
       title: "Leave without saving?",

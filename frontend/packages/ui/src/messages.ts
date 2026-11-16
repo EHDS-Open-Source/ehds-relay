@@ -25,6 +25,15 @@ export const messages = {
     pressAgain: (tag: string) =>
       `Press Backspace again to remove \u201c${tag}\u201d.`,
   },
+  characterCount: {
+    count: (n: number, max: number) =>
+      `${n.toLocaleString("en-GB")} / ${max.toLocaleString("en-GB")}`,
+    over: (over: number, max: number) =>
+      `${over.toLocaleString("en-GB")} over the ${max.toLocaleString("en-GB")} character limit`,
+    left: (n: number) => `${n.toLocaleString("en-GB")} characters left.`,
+    overLimit: (max: number) =>
+      `Over the ${max.toLocaleString("en-GB")} character limit.`,
+  },
   repeatableList: { add: "Add", remove: "Remove" },
   datePicker: {
     placeholder: "Choose a date",

@@ -52,6 +52,36 @@ export function messageFor(path: string, kind?: string): string {
   return text.invalid;
 }
 
+/** The "too long" message for a text `over` characters past its `max`; without a count if unknown. */
+export function tooLongMessage(max: number, over?: number): string {
+  return over === undefined
+    ? text.errors.tooLongNoCount(max)
+    : text.errors.tooLong(max, over);
+}
+
+/** The over-length message for a zod issue about a string that is too long, if it is one. */
+function stringTooLong(
+  issue: {
+    code: string;
+    origin?: unknown;
+    maximum?: unknown;
+    path: PropertyKey[];
+  },
+  metadata: unknown,
+): string | undefined {
+  if (issue.code !== "too_big" || issue.origin !== "string") return undefined;
+  if (typeof issue.maximum !== "number") return undefined;
+  // Zod does not repeat the value in the issue, so read it from the metadata
+  let value: unknown = metadata;
+  for (const key of issue.path) {
+    value = (value as Record<PropertyKey, unknown> | undefined)?.[key];
+  }
+  return tooLongMessage(
+    issue.maximum,
+    typeof value === "string" ? value.length - issue.maximum : undefined,
+  );
+}
+
 /** Form issues for the metadata the form values map to, or the metadata if it may be saved. */
 export function validateForSave(values: DatasetFormValues): ValidationResult {
   const { metadata, indexMap } = mapToMetadata(values);
@@ -63,7 +93,10 @@ export function validateForSave(values: DatasetFormValues): ValidationResult {
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
       const path = formPath(issue.path, indexMap);
-      issues.push({ path, message: messageFor(path, issue.code) });
+      issues.push({
+        path,
+        message: stringTooLong(issue, metadata) ?? messageFor(path, issue.code),
+      });
     }
   }
   return issues.length ? { ok: false, issues } : { ok: true, metadata };
@@ -74,6 +107,8 @@ export interface ServerIssue {
   loc: (string | number)[];
   msg: string;
   type?: string;
+  ctx?: { max_length?: number };
+  input?: unknown;
 }
 
 /**
@@ -90,6 +125,16 @@ export function serverIssues(
         ? issue.loc.slice(2)
         : [];
     const path = formPath(loc, indexMap);
+    if (path && issue.type === "string_too_long") {
+      const max = issue.ctx?.max_length;
+      if (typeof max === "number") {
+        const over =
+          typeof issue.input === "string"
+            ? issue.input.length - max
+            : undefined;
+        return { path, message: tooLongMessage(max, over) };
+      }
+    }
     const kind = issue.type === "missing" ? "missing" : undefined;
     return { path, message: path ? messageFor(path, kind) : text.invalid };
   });

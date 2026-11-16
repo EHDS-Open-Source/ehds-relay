@@ -4,6 +4,7 @@ import { useFieldArray, useFormContext } from "react-hook-form";
 import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel } from "../fields";
 import { emptyVariable, type DatasetFormValues } from "../formValues";
+import { DEFINITION_LIMIT } from "../limits";
 import { TextInput } from "./common";
 import { panelClass, useGroupState } from "./formState";
 
@@ -50,6 +51,7 @@ export function VariablesField() {
                     path={`${path}.definition`}
                     label={text.variable.definition}
                     multiline
+                    limit={DEFINITION_LIMIT}
                     className="sm:col-span-2"
                   />
                   <TextInput
