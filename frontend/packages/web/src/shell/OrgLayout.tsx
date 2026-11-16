@@ -6,6 +6,7 @@ import { useSession } from "../session/useSession";
 import { BackToCatalogue } from "./HeaderBack";
 import { LeaveGuardProvider } from "./leaveGuard";
 import { Logo } from "./Logo";
+import { OfflineBanner } from "./OfflineBanner";
 import { RibbonSlot, RibbonSlotProvider } from "./RibbonSlot";
 import { ShellMenu } from "./ShellMenu";
 
@@ -29,6 +30,7 @@ export function OrgLayout() {
       <RibbonSlotProvider>
         <AppShell
           ribbon={<RibbonSlot />}
+          banner={<OfflineBanner />}
           header={
             <AppHeader
               logo={

@@ -4,7 +4,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { datasetStarColour } from "@ehds-relay/ui";
+import { ToastProvider, datasetStarColour } from "@ehds-relay/ui";
 import { noRevalidationData } from "../datasets/fakeServer";
 import { createRelayRouter } from "../router/router";
 import { createTestSessionStore } from "../session/testing";
@@ -90,7 +90,9 @@ function renderAt(path: string) {
   });
   render(
     <QueryClientProvider client={router.options.context.queryClient}>
-      <RouterProvider router={router} />
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
     </QueryClientProvider>,
   );
   return router;

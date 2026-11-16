@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Fragment } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -43,14 +42,11 @@ function renderApp(
     navigateExternal,
     history: createMemoryHistory({ initialEntries: [path] }),
   });
-  // Signed-in pages can show toasts. Its alert region would confuse the sign-in message
-  // tests, so signed-out visitors render without it.
-  const Toasts = session === null ? Fragment : ToastProvider;
   render(
     <QueryClientProvider client={router.options.context.queryClient}>
-      <Toasts>
+      <ToastProvider>
         <RouterProvider router={router} />
-      </Toasts>
+      </ToastProvider>
     </QueryClientProvider>,
   );
   return router;

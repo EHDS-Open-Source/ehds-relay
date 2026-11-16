@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react";
 import { useSession } from "../session/useSession";
 import { BackToCatalogue } from "./HeaderBack";
 import { Logo } from "./Logo";
+import { OfflineBanner } from "./OfflineBanner";
 import { ShellMenu } from "./ShellMenu";
 
 /**
@@ -25,6 +26,7 @@ export function AccountLayout({ children }: { children: ReactNode }) {
 
   return (
     <AppShell
+      banner={<OfflineBanner />}
       header={
         <AppHeader
           logo={

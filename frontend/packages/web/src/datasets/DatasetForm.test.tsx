@@ -1,3 +1,4 @@
+import { ToastProvider } from "@ehds-relay/ui";
 import { CSRF_HEADER, CSRF_HEADER_VALUE } from "@ehds-relay/api-client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router";
@@ -32,7 +33,9 @@ function renderAt(path: string) {
   });
   render(
     <QueryClientProvider client={router.options.context.queryClient}>
-      <RouterProvider router={router} />
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
     </QueryClientProvider>,
   );
   return router;
