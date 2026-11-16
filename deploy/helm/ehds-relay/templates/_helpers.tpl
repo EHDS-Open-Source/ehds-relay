@@ -165,3 +165,11 @@ app.kubernetes.io/component: {{ .component }}
 - name: RELAY_SMTP_FROM
   value: {{ .Values.smtp.from | quote }}
 {{- end -}}
+
+{{/*
+"true" for a Keycloak theme file that goes in the ConfigMap's binaryData (fonts, images other
+than SVG); empty for text.
+*/}}
+{{- define "ehds-relay.keycloakThemeBinary" -}}
+{{- if regexMatch "\\.(woff2?|png|ico|jpe?g|gif)$" . }}true{{ end }}
+{{- end }}

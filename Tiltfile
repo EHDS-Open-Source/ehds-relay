@@ -129,7 +129,9 @@ k8s_resource(
 # Keycloak in dev mode with its data in its own database on the bundled Postgres. The ehds-relay
 # realm (deploy/helm/ehds-relay/files) is imported once; users keep their ids across restarts.
 # Later realm edits are applied by the keycloak-realm-init resource below. Test users: owner,
-# standard, invitee (passwords in the README).
+# standard, invitee (passwords in the README). The sign-in and email theme is a ConfigMap from
+# deploy/helm/ehds-relay/files/keycloak-theme: an edit to a file shows on the next page load once
+# the kubelet has synced it (about a minute); adding or removing a file restarts Keycloak.
 k8s_resource(
   RELEASE_NAME + '-keycloak',
   new_name='keycloak',
@@ -138,6 +140,7 @@ k8s_resource(
   # image build, so it deploys first and the pod finds the secret straight away.
   objects=[
     RELEASE_NAME + '-keycloak-realm:configmap',
+    RELEASE_NAME + '-keycloak-theme:configmap',
     RELEASE_NAME + '-keycloak:secret',
     RELEASE_NAME + '-oidc:secret',
   ],

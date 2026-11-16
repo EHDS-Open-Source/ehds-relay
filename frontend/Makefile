@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 PNPM ?= pnpm
 
-.PHONY: install dev lint format typecheck test check build api_client e2e
+.PHONY: install dev lint format typecheck test check build api_client e2e keycloak_theme
 
 install:
 	$(PNPM) install --frozen-lockfile
@@ -32,6 +32,11 @@ api_client:
 	$(PNPM) --filter @ehds-relay/api-client generate
 
 check: lint typecheck
+
+# Copy the brand tokens, Poppins, the stars and the favicons into the Keycloak theme
+# (deploy/helm/ehds-relay/files/keycloak-theme). Commit the result; a test fails while they differ.
+keycloak_theme:
+	node scripts/sync-keycloak-theme.mjs
 
 # Playwright specs in e2e/ against a running stack (Tilt): the web app on ${WEB_PORT:-5173}.
 # Not part of `make test`. Needs a browser once: pnpm exec playwright install chromium

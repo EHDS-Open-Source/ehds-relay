@@ -15,7 +15,7 @@ and the client's base URL. Each run uses a new random user, so it can be repeate
 
 Run with `make check_password_flows` (needs `make tilt` and the web dev server). Ports come from
 the environment (`.dev.env`): WEB_PORT, KEYCLOAK_LOCAL_PORT, MAILPIT_UI_LOCAL_PORT.
-`--check-expiry` also waits for a reset link to expire (a little over five minutes).
+`--check-expiry` also waits for a reset link to expire (a little over an hour).
 """
 
 import argparse
@@ -42,7 +42,7 @@ EXPECTED_POLICY = (
     "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1)"
     " and notUsername and notEmail and maxLength(128)"
 )
-EXPECTED_LIFESPAN_SECONDS = 300
+EXPECTED_LIFESPAN_SECONDS = 3600
 ACTION_LINK = re.compile(
     r"https?://[^\s\"'<>]+/login-actions/action-token\?[^\s\"'<>]+"
 )
@@ -95,6 +95,13 @@ class Page(HTMLParser):
         self.url = response.url
         self.forms: list[dict] = []
         self.links: list[tuple[str, str]] = []
+        # Names of the fields the page marks as invalid (aria-invalid="true"), whether it shows
+        # an error message (role="alert") and the text of Keycloak's messages (class
+        # "kc-feedback-text"). The wording is the theme's, so the checks do not depend on it.
+        self.invalid: set[str] = set()
+        self.alert = False
+        self.messages: list[str] = []
+        self._message: list | None = None
         self._text: list[str] = []
         self._skip = 0
         self._link: list | None = None
@@ -118,6 +125,8 @@ class Page(HTMLParser):
             and self.forms
             and a.get("name")
         ):
+            if a.get("aria-invalid") == "true":
+                self.invalid.add(a["name"])
             if a.get("type") in ("checkbox", "radio") and "checked" not in a:
                 return
             if a["name"].startswith(
@@ -127,6 +136,10 @@ class Page(HTMLParser):
             self.forms[-1]["fields"].setdefault(a["name"], a.get("value", ""))
         elif tag == "a" and a.get("href"):
             self._link = [urljoin(self.url, a["href"]), ""]
+        if a.get("role") == "alert":
+            self.alert = True
+        if "kc-feedback-text" in a.get("class", "").split() and self._message is None:
+            self._message = [tag, ""]
 
     def handle_endtag(self, tag):
         if tag in ("script", "style") and self._skip:
@@ -134,6 +147,9 @@ class Page(HTMLParser):
         elif tag == "a" and self._link is not None:
             self.links.append((self._link[0], " ".join(self._link[1].split())))
             self._link = None
+        if self._message is not None and tag == self._message[0]:
+            self.messages.append(" ".join(self._message[1].split()))
+            self._message = None
 
     def handle_data(self, data):
         if self._skip:
@@ -141,6 +157,8 @@ class Page(HTMLParser):
         self._text.append(data)
         if self._link is not None:
             self._link[1] += data
+        if self._message is not None:
+            self._message[1] += data
 
     def form_with(self, *fields: str) -> dict | None:
         for form in self.forms:
@@ -301,8 +319,8 @@ def check_registration(username: str, email: str, password: str) -> requests.Ses
             "weak password accepted",
         )
         check(
-            "invalid password" in page.text.lower(),
-            f"no policy message: {page.text[:200]}",
+            refused(page, "password"),
+            f"no error for the weak password: {page.text[:200]}",
         )
         step(f"weak password refused: {_message(page)}")
         res = submit(
@@ -341,8 +359,8 @@ def check_registration(username: str, email: str, password: str) -> requests.Ses
             page.form_with("password-new", "password-confirm"), "weak password accepted"
         )
         check(
-            "invalid password" in page.text.lower(),
-            f"no policy message: {page.text[:200]}",
+            refused(page, "password-new"),
+            f"no error for the weak password: {page.text[:200]}",
         )
         step(f"weak password refused: {_message(page)}")
         res = submit(
@@ -354,17 +372,22 @@ def check_registration(username: str, email: str, password: str) -> requests.Ses
     return session
 
 
+def refused(page: Page, field: str) -> bool:
+    """The page marks the password field invalid or shows an error message (Keycloak puts some
+    policy errors under the field and some at the top of the form)."""
+    return field in page.invalid or page.alert
+
+
 def _message(page: Page) -> str:
-    """The first sentence-like bit of a Keycloak page that looks like an error."""
-    found = re.search(r"Invalid password[^.]*\.", page.text)
-    return found.group(0) if found else page.text[:120]
+    """Keycloak's first message on the page (the error under a field or the page message)."""
+    return page.messages[0] if page.messages else page.text[:120]
 
 
 def request_reset(session: requests.Session, address: str) -> Page:
     page = start(session, redirect="/")
     reset = need(
         page.link("reset-credentials"),
-        "no 'Forgot Password?' link on Keycloak's sign-in page",
+        "no reset-password link on Keycloak's sign-in page",
     )
     page = Page(session.get(reset, timeout=TIMEOUT))
     form = need(page.form_with("username"), "no form on the reset page")

@@ -269,7 +269,7 @@ export const shellMessages = {
     createAccount: "Create one",
     failed: "Sign-in failed. Please try again.",
     forgot:
-      "Forgot your password? Choose Sign in, then “Forgot Password?” to get a reset link by email.",
+      "Forgotten your password? Choose Sign in, then “Reset it by email”.",
   },
   orgPicker: {
     title: "Select your organisation",

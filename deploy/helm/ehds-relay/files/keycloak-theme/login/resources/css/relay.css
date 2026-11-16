@@ -1,0 +1,963 @@
+/* EHDS Relay sign-in pages: the app's sign-in look (white page, ring of stars, blue card,
+   underline fields, yellow buttons, pink errors) for Keycloak's pages. Colours, sizes and
+   motion come from tokens.css, which is generated from the web app; use those tokens rather
+   than new values. Class names are the ones theme.properties hands to Keycloak's templates.
+   Phone layout up to 768px wide, like the app. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 15px;
+}
+
+body.rl-body {
+  margin: 0;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+
+[data-surface="blue"] :focus-visible {
+  outline-color: var(--yellow);
+}
+
+.rl-hidden,
+.rl-input-util {
+  display: none !important;
+}
+
+.rl-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Icons: a mask in the current text colour (the shapes are at the end of this file). */
+.rl-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  background-color: currentColor;
+  -webkit-mask: var(--rl-icon) center / contain no-repeat;
+  mask: var(--rl-icon) center / contain no-repeat;
+}
+
+/* Page: the ring of stars behind, fixed to the window centre, turning once every 140 s. */
+
+.rl-stars {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  width: max(88.5vw, 1100px);
+  max-width: none;
+  aspect-ratio: 2266 / 2165;
+  translate: -50% -50%;
+  pointer-events: none;
+  animation: rl-star-ring-turn var(--motion-ambient) linear infinite;
+}
+
+@keyframes rl-star-ring-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rl-page {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-24);
+  width: 100%;
+  min-height: 100vh;
+  padding: var(--space-24) var(--space-16);
+}
+
+/* The blue card: 520px (620px for longer forms), 28px radius, 56px 64px padding; on phones
+   a 22px radius and 40px 24px padding. */
+
+.rl-card {
+  width: 100%;
+  max-width: 520px;
+  padding: var(--space-40) var(--space-24);
+  border-radius: 22px;
+  background: var(--blue);
+  color: #fff;
+}
+
+[data-page-id="login-register"] .rl-card,
+[data-page-id="login-login-update-profile"] .rl-card,
+[data-page-id="login-login-config-totp"] .rl-card,
+[data-page-id="login-login-recovery-authn-code-config"] .rl-card {
+  max-width: 620px;
+}
+
+.rl-logo {
+  margin-bottom: var(--space-24);
+}
+
+.rl-logo img {
+  display: block;
+  width: auto;
+  height: 30px;
+}
+
+.rl-title {
+  margin: 0;
+  color: #fff;
+  font-size: 1.75em;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.rl-card .rl-sub {
+  margin: var(--space-16) 0 0;
+  font-size: 1.1em;
+  line-height: 1.6;
+}
+
+.rl-sub strong,
+.rl-card strong {
+  font-weight: 600;
+}
+
+.rl-body-main {
+  margin-top: var(--space-32);
+}
+
+.rl-sub ~ .rl-body-main {
+  margin-top: var(--space-40);
+}
+
+.rl-card p {
+  margin: 0 0 var(--space-16);
+}
+
+.rl-card .instruction {
+  font-size: 1.05em;
+  line-height: 1.6;
+}
+
+/* Lines on white under the card, such as "Don't have an organisation? Create one". */
+
+.rl-below {
+  width: 100%;
+  max-width: 620px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 1em;
+  font-weight: 600;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.rl-below-quiet {
+  margin-top: calc(-1 * var(--space-8));
+  color: var(--ink-3);
+  font-size: 0.95em;
+  font-weight: 500;
+}
+
+.rl-below-link {
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: none;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.rl-below-link:hover {
+  text-decoration-line: underline;
+}
+
+/* Links on blue: yellow, dotted underline, solid on hover. A link that answers a question in
+   the same line ("Not you?", "Reset it by email") drops the underline until hovered. */
+
+.rl-card a:not([class]),
+.rl-card .rl-card-link {
+  color: var(--yellow);
+  font-weight: 600;
+  text-decoration: underline dotted 2px;
+  text-underline-offset: 3px;
+}
+
+.rl-card a:not([class]):hover,
+.rl-card .rl-card-link:hover {
+  text-decoration-style: solid;
+}
+
+.rl-quiet-link {
+  color: var(--yellow);
+  font-weight: 600;
+  text-decoration: none;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.rl-quiet-link:hover {
+  text-decoration-line: underline;
+}
+
+.rl-card-link {
+  display: inline-block;
+  margin-top: var(--space-24);
+}
+
+.rl-signed-in-as {
+  font-size: 1.05em;
+}
+
+.rl-content {
+  margin-bottom: var(--space-24);
+}
+
+.rl-signed-in-as strong {
+  color: var(--yellow);
+}
+
+.rl-signed-in-as .rl-quiet-link {
+  margin-left: var(--space-8);
+}
+
+/* Messages on the card: a translucent white panel with an icon. Errors are pink, the colour
+   for errors on blue; the icon colour says the kind, never the colour alone (each has its
+   own icon). */
+
+.rl-alert,
+.rl-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+  margin: 0 0 var(--space-24);
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-field);
+  background: rgb(255 255 255 / 12%);
+  color: #fff;
+  font-size: 0.95em;
+  font-weight: 600;
+  line-height: 1.45;
+  animation: rl-arrive var(--motion-enter) var(--ease-out);
+}
+
+.rl-notice {
+  margin: 0;
+}
+
+.rl-alert-icon {
+  display: inline-flex;
+  margin-top: 1px;
+}
+
+.rl-alert-error {
+  color: var(--error);
+}
+
+.rl-alert-success .rl-alert-icon {
+  color: var(--success);
+}
+
+.rl-alert-warning .rl-alert-icon {
+  color: var(--warning);
+}
+
+.rl-alert-info .rl-alert-icon,
+.rl-notice .rl-icon {
+  color: var(--yellow);
+}
+
+@keyframes rl-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Forms */
+
+.rl-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+}
+
+.rl-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rl-group:empty {
+  display: none;
+}
+
+.rl-label,
+.rl-card label {
+  display: block;
+  color: #fff;
+  font-size: 1.05em;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.rl-group-label,
+.rl-label-wrapper {
+  margin-bottom: var(--space-4);
+}
+
+.rl-required {
+  margin-left: var(--space-4);
+  color: var(--yellow);
+}
+
+.rl-group:has([aria-invalid="true"]) .rl-required {
+  color: var(--error);
+}
+
+.rl-required-note {
+  color: rgb(255 255 255 / 85%);
+  font-size: 0.9em;
+}
+
+.rl-input {
+  display: block;
+  position: relative;
+}
+
+/* The underline field on blue: bold yellow text, white placeholder at 75%, a 2px white line
+   that turns yellow on focus and 3px pink when invalid (still pink on focus). */
+.rl-card input:is([type="text"], [type="email"], [type="password"], [type="tel"], [type="number"], [type="url"], :not([type])),
+.rl-card select,
+.rl-card textarea {
+  width: 100%;
+  margin: 0;
+  padding: var(--space-8) 0 var(--space-12);
+  border: 0;
+  border-bottom: 2px solid #fff;
+  border-radius: 0;
+  background: transparent;
+  color: var(--yellow);
+  caret-color: var(--yellow);
+  font: inherit;
+  font-size: 1.05em;
+  font-weight: 600;
+  line-height: normal;
+  outline: none;
+  transition: border-color var(--motion-fast) var(--ease-standard);
+}
+
+.rl-card input::placeholder,
+.rl-card textarea::placeholder {
+  color: rgb(255 255 255 / 75%);
+  font-weight: 500;
+  opacity: 1;
+}
+
+.rl-card input:focus,
+.rl-card select:focus,
+.rl-card textarea:focus {
+  border-bottom-color: var(--yellow);
+}
+
+.rl-card input[aria-invalid="true"],
+.rl-card select[aria-invalid="true"],
+.rl-card textarea[aria-invalid="true"] {
+  padding-bottom: 11px;
+  border-bottom: 3px solid var(--error);
+}
+
+.rl-card input[readonly] {
+  border-bottom-style: dashed;
+}
+
+.rl-card select option {
+  color: #000;
+  background: #fff;
+}
+
+/* Browser autofill: keep the yellow text on the blue card. */
+.rl-card input:-webkit-autofill,
+.rl-card input:-webkit-autofill:hover,
+.rl-card input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--yellow);
+  -webkit-box-shadow: 0 0 0 40px var(--blue) inset;
+  caret-color: var(--yellow);
+}
+
+/* Password fields: the show/hide eye sits inside the field on the right. */
+
+.rl-input-group {
+  display: flex;
+  position: relative;
+}
+
+.rl-input-group-item.rl-fill {
+  flex: 1;
+  min-width: 0;
+}
+
+.rl-input-group .rl-fill input {
+  padding-right: 48px;
+}
+
+.rl-input-group-item:not(.rl-fill) {
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+}
+
+.rl-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--yellow);
+  cursor: pointer;
+}
+
+.rl-icon-button:hover {
+  background: rgb(255 255 255 / 12%);
+}
+
+.rl-icon-button .rl-icon {
+  width: 24px;
+}
+
+/* Under a field: helper lines and the error. */
+
+.rl-helper {
+  margin-top: var(--space-8);
+}
+
+.rl-helper:empty,
+.rl-helper-items:empty {
+  display: none;
+}
+
+.rl-helper-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.rl-helper-text {
+  color: rgb(255 255 255 / 85%);
+  font-size: 0.95em;
+}
+
+/* An error: an 18px pink asterisk, then the message in pink 600 at 0.9em. */
+.rl-field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  margin-top: var(--space-4);
+  color: var(--error);
+  font-size: 0.9em;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.rl-field-error::before {
+  content: "";
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  background-color: currentColor;
+  -webkit-mask: var(--rl-icon-star) center / contain no-repeat;
+  mask: var(--rl-icon-star) center / contain no-repeat;
+}
+
+[id^="input-error-container-"]:not(:empty) {
+  margin-top: var(--space-8);
+}
+
+/* Wrong credentials mark both sign-in fields; the message shows once, under the password. */
+.rl-error-elsewhere [id^="input-error-container-"] {
+  display: none;
+}
+
+/* Password rules under the new password, ticked off while typing. */
+
+.rl-rules {
+  margin-top: var(--space-12);
+  color: rgb(255 255 255 / 90%);
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.rl-rules-intro {
+  margin: 0 0 var(--space-4) !important;
+  font-weight: 600;
+}
+
+.rl-rules-list {
+  display: grid;
+  gap: var(--space-4) var(--space-16);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rl-rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.rl-rule-icon {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  --rl-icon: var(--rl-icon-dot);
+}
+
+.rl-rule[data-met="true"] {
+  color: #fff;
+}
+
+.rl-rule[data-met="true"] .rl-rule-icon {
+  color: var(--success);
+  --rl-icon: var(--rl-icon-tick);
+}
+
+.rl-rules-note {
+  margin: var(--space-8) 0 0 !important;
+  color: rgb(255 255 255 / 85%);
+}
+
+/* Checkboxes on blue ("Keep me signed in", "Sign out of my other devices"). */
+
+.rl-check label,
+label.rl-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.rl-check-input {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-grid;
+  place-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  border: 2px solid #fff;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.rl-check-input::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: var(--blue);
+  transform: scale(0);
+  transition: transform var(--motion-fast) var(--ease-standard);
+  -webkit-mask: var(--rl-icon-check) center / contain no-repeat;
+  mask: var(--rl-icon-check) center / contain no-repeat;
+}
+
+.rl-check-input:checked {
+  border-color: var(--yellow);
+  background: var(--yellow);
+}
+
+.rl-check-input:checked::before {
+  transform: scale(1);
+}
+
+.rl-check-input:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 3px;
+}
+
+.rl-options {
+  font-size: 1em;
+}
+
+/* Buttons: Large pills in Poppins 600 with a 2px border; yellow primary, outline secondary.
+   Full width on phones with the label and icon pushed apart. */
+
+.rl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12) var(--space-16);
+  margin-top: var(--space-8);
+}
+
+.rl-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-24);
+  width: 100%;
+  min-height: 50px;
+  margin: 0;
+  padding: 0 var(--space-24);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 1.05em;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
+}
+
+input.rl-button {
+  justify-content: center;
+}
+
+.rl-button-primary {
+  border-color: var(--yellow);
+  background: var(--yellow);
+  color: var(--blue);
+}
+
+.rl-button-primary:hover {
+  border-color: var(--yellow-shade);
+  background: var(--yellow-shade);
+}
+
+.rl-button-secondary {
+  border-color: rgb(255 255 255 / 45%);
+  background: transparent;
+  color: #fff;
+}
+
+.rl-button-secondary:hover {
+  border-color: #fff;
+  background: rgb(255 255 255 / 10%);
+}
+
+.rl-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* The icon after the label on the main buttons. */
+#kc-login::after,
+#kc-passwd-update-form #kc-submit::after,
+#kc-otp-login-form #kc-login::after,
+#saveTOTPBtn::after {
+  content: "";
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  background-color: currentColor;
+  -webkit-mask: var(--rl-icon-sign-in) center / contain no-repeat;
+  mask: var(--rl-icon-sign-in) center / contain no-repeat;
+}
+
+#kc-passwd-update-form #kc-submit::after {
+  -webkit-mask-image: var(--rl-icon-lock);
+  mask-image: var(--rl-icon-lock);
+}
+
+#kc-otp-login-form #kc-login::after,
+#saveTOTPBtn::after {
+  -webkit-mask-image: var(--rl-icon-shield);
+  mask-image: var(--rl-icon-shield);
+}
+
+.rl-button-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--yellow);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline dotted 2px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* The info area at the bottom of the card ("Didn't get it? ... to send it again."). */
+
+.rl-card-info {
+  margin-top: var(--space-24);
+  color: rgb(255 255 255 / 90%);
+  font-size: 0.95em;
+}
+
+.rl-card-info p {
+  margin: 0;
+}
+
+/* Registration and profile: "Back to sign in" under the button. */
+#kc-register-form #kc-form-options {
+  margin-top: var(--space-8);
+}
+
+/* Two-step verification: set-up steps, the QR code and the code field. */
+
+#kc-totp-settings {
+  margin: 0 0 var(--space-32);
+  padding-left: 1.3em;
+  line-height: 1.6;
+}
+
+#kc-totp-settings > li {
+  margin-bottom: var(--space-16);
+  padding-left: var(--space-4);
+}
+
+#kc-totp-settings > li::marker {
+  color: var(--yellow);
+  font-weight: 700;
+}
+
+#kc-totp-settings p {
+  margin: 0 0 var(--space-8);
+}
+
+#kc-totp-settings ul {
+  margin: 0;
+  padding-left: 1.2em;
+  font-weight: 600;
+}
+
+#kc-totp-secret-key {
+  color: var(--yellow);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  word-break: break-all;
+}
+
+.rl-qr-code {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-12);
+}
+
+.rl-qr-code img,
+#kc-totp-secret-qr-code {
+  max-width: 200px;
+  padding: var(--space-8);
+  border-radius: var(--radius-field);
+  background: #fff;
+}
+
+.rl-card input#otp,
+.rl-card input#totp {
+  font-size: 1.6em;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  font-variant-numeric: tabular-nums;
+}
+
+.rl-otp-device {
+  display: inline-flex;
+  margin: 0 var(--space-8) var(--space-8) 0;
+  padding: var(--space-8) var(--space-16);
+  border: 2px solid rgb(255 255 255 / 45%);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.rl-otp-device.rl-selected {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
+.rl-otp-device-header {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.rl-recovery-codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
+  padding: var(--space-16);
+  border-radius: var(--radius-field);
+  background: rgb(255 255 255 / 12%);
+  color: var(--yellow);
+  font-weight: 700;
+  list-style: none;
+}
+
+/* Choosing a sign-in method. */
+
+.rl-choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.rl-choice-wrapper {
+  border-radius: var(--radius-field);
+  background: rgb(255 255 255 / 12%);
+  cursor: pointer;
+}
+
+.rl-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  padding: var(--space-16);
+}
+
+.rl-choice-description {
+  font-size: 0.9em;
+  color: rgb(255 255 255 / 85%);
+}
+
+/* Desktop */
+
+@media (min-width: 48.0625rem) {
+  .rl-page {
+    justify-content: center;
+    padding: var(--space-48) var(--space-20);
+  }
+
+  .rl-card {
+    padding: var(--space-56) var(--space-64);
+    border-radius: var(--radius-signin);
+  }
+
+  .rl-logo {
+    margin-bottom: var(--space-40);
+  }
+
+  .rl-logo img {
+    height: 40px;
+  }
+
+  .rl-title {
+    font-size: 2.15em;
+  }
+
+  .rl-button {
+    align-self: flex-start;
+    width: auto;
+  }
+
+  .rl-rules-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Reduced motion: the stars stand still and nothing slides in. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Icon shapes, drawn after the app's icons. Each is a class for .rl-icon and a
+   --rl-icon-<name> variable for masks on pseudo-elements. */
+:root {
+  --rl-icon-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 37 37'%3E%3Cpath d='M31.867 5.14486L36.5769 13.2152L25.3533 18.461L36.5769 23.6058L31.867 31.7771L21.7457 24.6146L22.9482 36.9219H13.6286L14.8312 24.6146L4.7099 31.7771L0 23.6058L11.2236 18.461L0 13.2152L4.7099 5.14486L14.8312 12.3073L13.6286 0L22.9482 0L21.7457 12.2064L31.867 5.14486Z'/%3E%3C/svg%3E");
+  --rl-icon-info: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 1a11 11 0 1 0 0 22a11 11 0 0 0 0-22zM10.7 10h2.6v8h-2.6zM12 5.2a1.6 1.6 0 1 1 0 3.2a1.6 1.6 0 0 1 0-3.2z'/%3E%3C/svg%3E");
+  --rl-icon-warning: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M10.3 2.9a2 2 0 0 1 3.4 0l9.6 16.6A2 2 0 0 1 21.6 22.5H2.4a2 2 0 0 1-1.7-3L10.3 2.9zM12 8.5H12a1.3 1.3 0 0 1 1.3 1.3V14.7a1.3 1.3 0 0 1 -1.3 1.3H12a1.3 1.3 0 0 1 -1.3 -1.3V9.8a1.3 1.3 0 0 1 1.3 -1.3zM10.5 18.6a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0z'/%3E%3C/svg%3E");
+  --rl-icon-tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 1a11 11 0 1 0 0 22a11 11 0 0 0 0-22zM7.919 11.581L10.207 13.869L16.088 8.074A1.3 1.3 0 0 1 17.912 9.926L11.112 16.626A1.3 1.3 0 0 1 9.281 16.619L6.081 13.419A1.3 1.3 0 0 1 7.919 11.581z'/%3E%3C/svg%3E");
+  --rl-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --rl-icon-dot: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2.4'/%3E%3C/svg%3E");
+  --rl-icon-eye: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 22'%3E%3Cpath fill-rule='evenodd' d='M15 1C8 1 3 5.6 1 11c2 5.4 7 10 14 10s12-4.6 14-10C27 5.6 22 1 15 1zM9 11a6 6 0 1 0 12 0a6 6 0 1 0 -12 0zM11.4 11a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0 -7.2 0z'/%3E%3C/svg%3E");
+  --rl-icon-eye-off: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 22'%3E%3Cmask id='m'%3E%3Crect width='30' height='22' fill='white'/%3E%3Cpath d='M4 20L26 2' stroke='black' stroke-width='6' stroke-linecap='round'/%3E%3C/mask%3E%3Cpath mask='url%28%23m%29' fill-rule='evenodd' d='M15 1C8 1 3 5.6 1 11c2 5.4 7 10 14 10s12-4.6 14-10C27 5.6 22 1 15 1zM9 11a6 6 0 1 0 12 0a6 6 0 1 0 -12 0zM11.4 11a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0 -7.2 0z'/%3E%3Cpath d='M4 20L26 2' stroke='black' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --rl-icon-lock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'%3E%3Cpath fill-rule='evenodd' d='M12 1a7 7 0 0 0-7 7v3H4a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h16a3 3 0 0 0 3-3V14a3 3 0 0 0-3-3h-1V8a7 7 0 0 0-7-7zm4 10V8a4 4 0 1 0-8 0v3h8zm-4 5a2.2 2.2 0 0 0-1.3 4V23h2.6v-3A2.2 2.2 0 0 0 12 16z'/%3E%3C/svg%3E");
+  --rl-icon-shield: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 30'%3E%3Cpath fill-rule='evenodd' d='M13 1l11 4v8c0 7.4-4.7 13.6-11 16C6.7 26.6 2 20.4 2 13V5l11-4zm5.2 9.3a1.6 1.6 0 0 0-2.3 0l-4.4 4.6-1.8-1.9a1.6 1.6 0 1 0-2.3 2.3l3 3.1a1.6 1.6 0 0 0 2.3 0l5.5-5.8a1.6 1.6 0 0 0 0-2.3z'/%3E%3C/svg%3E");
+  --rl-icon-next: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 83 62'%3E%3Cpath d='M81.4801 34.6475C83.5066 32.6301 83.5066 29.3538 81.4801 27.3363L55.5414 1.51308C53.5149 -0.504359 50.2239 -0.504359 48.1975 1.51308C46.171 3.53052 46.171 6.80686 48.1975 8.8243L65.2846 25.8354L5.18775 25.8354C2.31827 25.8354 0 28.1433 0 31C0 33.8567 2.31828 36.1647 5.18775 36.1647L65.2846 36.1647L48.1975 53.1757C46.171 55.1932 46.171 58.4695 48.1975 60.4869C50.2239 62.5044 53.5149 62.5044 55.5414 60.4869L81.4801 34.6637L81.4801 34.6475Z'/%3E%3C/svg%3E");
+  --rl-icon-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 146 87'%3E%3Cpath d='M64.4106 82.4015C69.1614 87.1995 76.8766 87.1995 81.6274 82.4015L142.437 20.9866C147.188 16.1886 147.188 8.39656 142.437 3.59853C137.686 -1.19951 129.971 -1.19951 125.22 3.59853L73 56.3385L20.7798 3.63691C16.029 -1.16113 8.31381 -1.16113 3.56306 3.63691C-1.18769 8.43494 -1.18769 16.227 3.56306 21.025L64.3726 82.4399L64.4106 82.4015Z'/%3E%3C/svg%3E");
+  --rl-icon-sign-in: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cg fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 15h15M12.5 8.5L19 15l-6.5 6.5'/%3E%3Cpath d='M21 4h4v22h-4'/%3E%3C/g%3E%3C/svg%3E");
+  --rl-icon-copy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M8 2h11a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3zm0 2.6a.4.4 0 0 0-.4.4v11c0 .2.2.4.4.4h11c.2 0 .4-.2.4-.4V5a.4.4 0 0 0-.4-.4zM2 8.5a1.3 1.3 0 0 1 2.6 0V19c0 .2.2.4.4.4h10.5a1.3 1.3 0 0 1 0 2.6H5a3 3 0 0 1-3-3z'/%3E%3C/svg%3E");
+}
+
+.rl-icon-star {
+  --rl-icon: var(--rl-icon-star);
+}
+
+.rl-icon-info {
+  --rl-icon: var(--rl-icon-info);
+}
+
+.rl-icon-warning {
+  --rl-icon: var(--rl-icon-warning);
+}
+
+.rl-icon-tick {
+  --rl-icon: var(--rl-icon-tick);
+}
+
+.rl-icon-check {
+  --rl-icon: var(--rl-icon-check);
+}
+
+.rl-icon-dot {
+  --rl-icon: var(--rl-icon-dot);
+}
+
+.rl-icon-eye {
+  --rl-icon: var(--rl-icon-eye);
+}
+
+.rl-icon-eye-off {
+  --rl-icon: var(--rl-icon-eye-off);
+}
+
+.rl-icon-lock {
+  --rl-icon: var(--rl-icon-lock);
+}
+
+.rl-icon-shield {
+  --rl-icon: var(--rl-icon-shield);
+}
+
+.rl-icon-next {
+  --rl-icon: var(--rl-icon-next);
+}
+
+.rl-icon-down {
+  --rl-icon: var(--rl-icon-down);
+}
+
+.rl-icon-sign-in {
+  --rl-icon: var(--rl-icon-sign-in);
+}
+
+.rl-icon-copy {
+  --rl-icon: var(--rl-icon-copy);
+}

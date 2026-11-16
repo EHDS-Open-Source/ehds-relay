@@ -5,6 +5,8 @@ on:
     paths:
       - "backend/**"
       - "deploy/helm/ehds-relay/files/realm-init/**"
+      - "deploy/helm/ehds-relay/files/ehds-relay-realm.json"
+      - "deploy/helm/ehds-relay/files/keycloak-theme/**"
       - "frontend/packages/api-client/**"
       - ".github/workflows/ci-api.yml"
   push:
@@ -14,6 +16,8 @@ on:
     paths:
       - "backend/**"
       - "deploy/helm/ehds-relay/files/realm-init/**"
+      - "deploy/helm/ehds-relay/files/ehds-relay-realm.json"
+      - "deploy/helm/ehds-relay/files/keycloak-theme/**"
       - "frontend/packages/api-client/**"
       - ".github/workflows/ci-api.yml"
 

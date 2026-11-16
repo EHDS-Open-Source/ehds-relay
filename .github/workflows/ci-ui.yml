@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "frontend/**"
+      # The theme drift test compares the Keycloak theme with the app
+      - "deploy/helm/ehds-relay/files/keycloak-theme/**"
       - ".github/workflows/ci-ui.yml"
   push:
     branches:
@@ -11,6 +13,8 @@ on:
       - mvp-integration
     paths:
       - "frontend/**"
+      # The theme drift test compares the Keycloak theme with the app
+      - "deploy/helm/ehds-relay/files/keycloak-theme/**"
       - ".github/workflows/ci-ui.yml"
 
 permissions:
