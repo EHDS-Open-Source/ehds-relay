@@ -35,7 +35,7 @@ export async function signIn(page: Page, user: User): Promise<void> {
   await page
     .getByRole("link", { name: shellMessages.signIn.action, exact: true })
     .click();
-  // Keycloak's default login theme
+  // Keycloak's sign-in page (the relay theme keeps these ids)
   await page.locator("#username").fill(user.username);
   await page.locator("#password").fill(user.password);
   await page.locator("#kc-login").click();
