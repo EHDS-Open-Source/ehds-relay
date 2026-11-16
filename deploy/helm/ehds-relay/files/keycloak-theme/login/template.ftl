@@ -29,10 +29,11 @@
   </p>
 </#macro>
 
-<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
+<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false subtitle="">
 <#assign headerMarkup><#nested "header"></#assign>
 <#assign relayTitle = optionalMsg("relayTitle." + pageId)>
-<#assign relaySubtitle = optionalMsg("relaySubtitle." + pageId)>
+<#assign relaySubtitle = subtitle?has_content?then(subtitle, optionalMsg("relaySubtitle." + pageId))>
+<#assign relayPlaceholder = optionalMsg("relayPlaceholder." + pageId)>
 <#-- The title as text for <title>: the page's own title is already escaped markup, so only
      its tags are removed. -->
 <#assign headerText = headerMarkup?markup_string?replace("<[^>]*>", "", "r")?trim>
@@ -197,6 +198,16 @@
   </section>
   <#nested "below">
 </main>
+<#if relayPlaceholder?has_content>
+<script>
+  <#outputformat "JavaScript">
+  (function () {
+    var field = document.querySelector("main form input[type=text]");
+    if (field) field.placeholder = ${relayPlaceholder?c};
+  })();
+  </#outputformat>
+</script>
+</#if>
 </body>
 </html>
 </#macro>
