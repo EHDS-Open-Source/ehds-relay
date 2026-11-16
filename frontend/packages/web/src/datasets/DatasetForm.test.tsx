@@ -648,3 +648,80 @@ describe("editing a dataset", () => {
     ).toHaveAccessibleDescription(expect.stringContaining(text.invalid));
   });
 });
+
+describe("character counters", () => {
+  const descriptionBox = () =>
+    field("description").getByLabelText(text.fields.description);
+  const counter = () => document.querySelector("[data-slot=character-count]");
+
+  it("shows the count while focused and not empty, and keeps a pasted text whole", async () => {
+    await openNew();
+    expect(counter()).toBeNull();
+    await userEvent.type(titleBox(), "Bed");
+    expect(counter()).toHaveTextContent("3 / 200");
+    await userEvent.tab();
+    expect(counter()).toBeNull();
+
+    await userEvent.click(descriptionBox());
+    await userEvent.paste("z".repeat(2100));
+    expect(descriptionBox()).toHaveValue("z".repeat(2100));
+    expect(counter()).toHaveTextContent("100 over the 2,000 character limit");
+    await userEvent.tab();
+    expect(counter()).toHaveTextContent("100 over the 2,000 character limit");
+  });
+
+  it("refuses to save an over-limit title, then clears the error as it is shortened", async () => {
+    await openNew();
+    await userEvent.click(titleBox());
+    await userEvent.paste("x".repeat(215));
+    await choose(text.actions.saveDraft);
+    expect(await screen.findByText(text.errors.tooLong(200, 15))).toBeVisible();
+    expect(counter()).toBeNull();
+    await waitFor(() => expect(titleBox()).toHaveFocus());
+    expect(server.saves()).toHaveLength(0);
+
+    await userEvent.type(titleBox(), "{Backspace}".repeat(15));
+    await waitFor(() =>
+      expect(screen.queryByText(text.errors.tooLong(200, 15))).toBeNull(),
+    );
+  });
+
+  it("shows a server string_too_long on its field", async () => {
+    const dataset = server.seed(
+      org,
+      { title: [{ lang: "en", text: "T" }] },
+      "draft",
+    );
+    await openEdit(dataset.id);
+    server.respondOnce(422, {
+      detail: [
+        {
+          loc: ["body", "metadata", "title", 0, "text"],
+          msg: "too long",
+          type: "string_too_long",
+          ctx: { max_length: 200 },
+          input: "x".repeat(210),
+        },
+      ],
+    });
+    await choose(text.actions.saveDraft);
+    expect(await screen.findByText(text.errors.tooLong(200, 10))).toBeVisible();
+  });
+
+  it("loads an over-length value as over and saves it once shortened", async () => {
+    const dataset = server.seed(
+      org,
+      { title: [{ lang: "en", text: "x".repeat(250) }] },
+      "draft",
+    );
+    await openEdit(dataset.id);
+    expect(counter()).toHaveTextContent("50 over the 200 character limit");
+    await userEvent.click(titleBox());
+    await userEvent.type(titleBox(), "{Backspace}".repeat(50));
+    await choose(text.actions.saveDraft);
+    await waitFor(() => expect(server.saves()).toHaveLength(1));
+    expect(server.saves()[0]?.body).toMatchObject({
+      metadata: { title: [{ lang: "en", text: "x".repeat(200) }] },
+    });
+  });
+});

@@ -1,4 +1,5 @@
 import {
+  CharacterCount,
   Field,
   FormMessage,
   Input,
@@ -8,8 +9,8 @@ import {
   cn,
   fieldErrorId,
 } from "@ehds-relay/ui";
-import type { ComponentProps, ReactNode } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { useState, type ComponentProps, type ReactNode } from "react";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 
 import { shellMessages } from "../../shell/messages";
 import { fieldAnchorId, fieldLabel, type FieldKey } from "../fields";
@@ -46,6 +47,8 @@ interface TextInputProps extends Omit<ComponentProps<"input">, "name"> {
   multiline?: boolean;
   /** The dataset needs this answer to be published: adds the star beside the label. */
   required?: boolean;
+  /** Show a character counter for this limit. Never stops the person typing past it. */
+  limit?: number;
 }
 
 /** A labelled text box (or text area) for one form value. */
@@ -56,10 +59,24 @@ export function TextInput({
   hint,
   multiline,
   required,
+  limit,
   className,
   ...inputProps
 }: TextInputProps) {
-  const { register } = useFormContext<DatasetFormValues>();
+  const { register, control } = useFormContext<DatasetFormValues>();
+  const [focused, setFocused] = useState(false);
+  const value = useWatch({ control, name: path });
+  const length = typeof value === "string" ? value.length : 0;
+  const registered = register(path);
+  const onBlur: typeof registered.onBlur = (event) => {
+    setFocused(false);
+    return registered.onBlur(event);
+  };
+  const bound = {
+    ...registered,
+    onBlur,
+    onFocus: () => setFocused(true),
+  };
   const error = useFieldError(path);
   const id = inputId(path);
   return (
@@ -74,15 +91,23 @@ export function TextInput({
       className={className}
     >
       {multiline ? (
-        <Textarea id={id} {...errorProps(path, error)} {...register(path)} />
+        <Textarea id={id} {...errorProps(path, error)} {...bound} />
       ) : (
         <Input
           id={id}
           {...inputProps}
           {...errorProps(path, error)}
-          {...register(path)}
+          {...bound}
         />
       )}
+      {limit ? (
+        <CharacterCount
+          length={length}
+          max={limit}
+          active={focused}
+          hidden={Boolean(error)}
+        />
+      ) : null}
     </Field>
   );
 }

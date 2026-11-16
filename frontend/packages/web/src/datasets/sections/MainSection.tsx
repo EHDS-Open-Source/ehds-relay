@@ -4,6 +4,7 @@ import { shellMessages } from "../../shell/messages";
 import type { DatasetFormValues } from "../formValues";
 import { TagField, TextField, YesNoField } from "../fields/common";
 import { DistributionsField } from "../fields/DistributionsField";
+import { PROVENANCE_LIMIT } from "../limits";
 import { LangTextField } from "../fields/LangTextList";
 import { TermListField } from "../fields/TermList";
 import { VariablesField } from "../fields/VariablesField";
@@ -21,7 +22,12 @@ export function MainSection() {
       <DistributionsField />
       <YesNoField name="structured_data" />
       {structured === "yes" ? <VariablesField /> : null}
-      <TextField name="provenance" multiline required />
+      <TextField
+        name="provenance"
+        multiline
+        required
+        limit={PROVENANCE_LIMIT}
+      />
       <TagField name="keyword" required />
       <TermListField name="health_theme" required />
       <TermListField name="health_category" required />
