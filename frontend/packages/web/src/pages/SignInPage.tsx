@@ -1,4 +1,5 @@
-import { Button, FormMessage, Icon } from "@ehds-relay/ui";
+import { Button, FormMessage, Icon, cn } from "@ehds-relay/ui";
+import { hitArea } from "@ehds-relay/ui/components/button";
 import { useSearch } from "@tanstack/react-router";
 
 import { loginUrl } from "../session/login";
@@ -28,7 +29,7 @@ export function SignInPage() {
             {text.noAccount}{" "}
             <a
               href={loginUrl({ redirect, signup: true })}
-              className={belowCardLinkClass}
+              className={cn(belowCardLinkClass, hitArea)}
             >
               {text.createAccount}
             </a>
