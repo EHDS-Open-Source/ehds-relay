@@ -24,5 +24,34 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      testIgnore: "mobile.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    // Phone layout checks: this spec only. Portrait, and on its side.
+    {
+      name: "phone",
+      testMatch: "mobile.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+        deviceScaleFactor: 3,
+      },
+    },
+    {
+      name: "landscape",
+      testMatch: "mobile.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 844, height: 390 },
+        isMobile: true,
+        hasTouch: true,
+        deviceScaleFactor: 3,
+      },
+    },
+  ],
 });
