@@ -172,7 +172,7 @@ export function ReminderDialog({
             >
               {m.cancel}
             </AlertDialogCancel>
-            <div className="flex flex-wrap gap-2 max-[480px]:flex-col-reverse">
+            <div className="flex flex-wrap gap-2 max-md:flex-col-reverse max-md:*:w-full">
               {current ? (
                 <Button
                   type="button"

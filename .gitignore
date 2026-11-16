@@ -21,6 +21,7 @@ coverage/
 
 # Playwright output
 frontend/e2e/test-results/
+frontend/test-results/
 frontend/e2e/playwright-report/
 
 # Helm dependencies (restored by `helm dependency build`)

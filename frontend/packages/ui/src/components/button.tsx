@@ -11,7 +11,9 @@ import { LoadingStar } from "../feedback/LoadingStar";
 // the extended areas do not overlap. Other tappable things (chips, tabs, links) reuse the same
 // `max-md:before:...` classes, see `hitArea` below.
 export const hitArea =
-  "relative max-md:before:absolute max-md:before:top-1/2 max-md:before:left-1/2 max-md:before:size-full max-md:before:min-h-11 max-md:before:min-w-11 max-md:before:-translate-1/2 max-md:before:content-['']";
+  "relative max-md:before:absolute max-md:before:top-1/2 max-md:before:left-1/2 max-md:before:size-full max-md:before:min-h-11 max-md:before:min-w-11 max-md:before:-translate-1/2 max-md:before:content-['']" +
+  // Touch screens wider than the phone layout (a phone on its side, a tablet) get the same area.
+  " pointer-coarse:before:absolute pointer-coarse:before:top-1/2 pointer-coarse:before:left-1/2 pointer-coarse:before:size-full pointer-coarse:before:min-h-11 pointer-coarse:before:min-w-11 pointer-coarse:before:-translate-1/2 pointer-coarse:before:content-['']";
 
 // Pills in Poppins 600 with a 2px border. Types: primary, secondary, row, icon, destructive
 // (destructive only inside confirmations). `default`, `outline`, `ghost` and `link` are older
