@@ -11,7 +11,9 @@
   "verifyEmail": true,
   "rememberMe": true,
   "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername and notEmail and maxLength(128)",
-  "actionTokenGeneratedByUserLifespan": 300,
+  "actionTokenGeneratedByUserLifespan": 3600,
+  "loginTheme": "ehds-relay",
+  "emailTheme": "ehds-relay",
   "smtpServer": {
     "host": "${RELAY_SMTP_HOST}",
     "port": "${RELAY_SMTP_PORT}",

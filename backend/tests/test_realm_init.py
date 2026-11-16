@@ -265,7 +265,7 @@ def test_realm_json_and_migration_agree_on_password_settings(realm_init) -> None
     definition = realm_init.load_realm_definition(str(REALM_FILE), ENV)
     m002 = importlib.import_module("migrations.m002_password_settings")
     assert definition["passwordPolicy"] == m002.PASSWORD_POLICY
-    assert definition["actionTokenGeneratedByUserLifespan"] == 300
+    # m002 shipped with Keycloak's 5-minute default; m003 lengthened it to the JSON's value.
     assert m002.ACTION_TOKEN_LIFESPAN_SECONDS == 300
     policy = dict(
         re.fullmatch(r"(\w+)(?:\((\d+)\))?", part).groups()  # type: ignore[union-attr]
@@ -328,3 +328,69 @@ def test_m002_follows_the_baseline(realm_init) -> None:
     migrations = importlib.import_module("migrations")
     versions = [m.VERSION for m in migrations.discover(migrations)]
     assert versions[:2] == [1, 2]
+
+
+def test_m003_follows_m002(realm_init) -> None:
+    migrations = importlib.import_module("migrations")
+    versions = [m.VERSION for m in migrations.discover(migrations)]
+    assert versions[:3] == [1, 2, 3]
+
+
+def test_m003_selects_the_theme_and_lengthens_links_and_keeps_other_settings(realm_init) -> None:
+    m003 = importlib.import_module("migrations.m003_relay_theme")
+    admin = FakeRealm(
+        {
+            "realm": "ehds-relay",
+            "actionTokenGeneratedByUserLifespan": 300,
+            "accountTheme": "keycloak.v3",
+            "attributes": {"a": "b"},
+        }
+    )
+    m003.migrate(admin)
+    assert admin.realm["loginTheme"] == "ehds-relay"
+    assert admin.realm["emailTheme"] == "ehds-relay"
+    assert admin.realm["actionTokenGeneratedByUserLifespan"] == 3600
+    # The account console keeps its own theme
+    assert admin.realm["accountTheme"] == "keycloak.v3"
+    assert admin.realm["attributes"] == {"a": "b"}
+    assert admin.puts == 1
+    # Idempotent, and a no-op on a fresh realm that got the settings from the JSON
+    m003.migrate(admin)
+    assert admin.puts == 1
+
+
+def test_realm_json_and_m003_agree_on_theme_and_link_lifetime(realm_init) -> None:
+    definition = realm_init.load_realm_definition(str(REALM_FILE), ENV)
+    m003 = importlib.import_module("migrations.m003_relay_theme")
+    assert definition["loginTheme"] == m003.THEME
+    assert definition["emailTheme"] == m003.THEME
+    assert definition["actionTokenGeneratedByUserLifespan"] == m003.ACTION_TOKEN_LIFESPAN_SECONDS
+    assert m003.ACTION_TOKEN_LIFESPAN_SECONDS == 3600
+    assert "accountTheme" not in definition
+    assert "adminTheme" not in definition
+
+
+# The Keycloak theme shipped with the chart
+
+THEME_DIR = REALM_INIT_DIR.parent / "keycloak-theme"
+
+
+def test_theme_parts_extend_keycloaks_own_themes() -> None:
+    def properties(part: str) -> dict[str, str]:
+        lines = (THEME_DIR / part / "theme.properties").read_text().splitlines()
+        pairs = [line.split("=", 1) for line in lines if "=" in line and not line.startswith("#")]
+        return {key.strip(): value.strip() for key, value in pairs}
+
+    login = properties("login")
+    assert login["parent"] == "keycloak.v2"
+    # No PatternFly: only the theme's own stylesheets
+    assert login["stylesCommon"] == ""
+    assert login["styles"] == "css/tokens.css css/fonts.css css/relay.css"
+    assert not [key for key, value in login.items() if "pf-v5" in value or "fa-" in value]
+    assert properties("email")["parent"] == "base"
+
+
+def test_theme_fits_in_a_configmap() -> None:
+    """A ConfigMap holds at most 1 MiB, and binary files grow by a third in base64."""
+    size = sum(path.stat().st_size for path in THEME_DIR.rglob("*") if path.is_file())
+    assert size < 900 * 1024
