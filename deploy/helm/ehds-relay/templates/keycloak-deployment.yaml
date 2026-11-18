@@ -22,60 +22,23 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
-      {{- if include "ehds-relay.keycloakDbEnabled" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if and (include "ehds-relay.keycloakDbEnabled" .) .Values.database.provision }}
       initContainers:
-        # Creates the Keycloak role and database on the bundled Postgres if they are missing.
-        # Postgres only runs its init scripts on a new volume, so this also reaches existing
-        # clusters. Safe to repeat.
-        - name: keycloak-db-init
-          image: "postgres:{{ .Values.postgres.image.tag }}"
-          env:
-            - name: PGHOST
-              value: {{ include "ehds-relay.dbHost" . | quote }}
-            - name: PGPORT
-              value: {{ .Values.database.port | quote }}
-            - name: PGUSER
-              value: postgres
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ehds-relay.dbSecretName" . }}
-                  key: POSTGRES_PASSWORD
-            - name: KC_DB_NAME
-              value: {{ .Values.keycloak.database.name | quote }}
-            - name: KC_DB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ehds-relay.fullname" . }}-keycloak
-                  key: KC_DB_USERNAME
-            - name: KC_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ehds-relay.fullname" . }}-keycloak
-                  key: KC_DB_PASSWORD
-          command:
-            - /bin/sh
-            - -c
-            - |
-              until pg_isready -q; do echo "waiting for postgres"; sleep 2; done
-              psql -v ON_ERROR_STOP=1 -v db="$KC_DB_NAME" -v user="$KC_DB_USERNAME" \
-                -v pw="$KC_DB_PASSWORD" -d postgres <<'SQL'
-              SELECT format('CREATE ROLE %I LOGIN', :'user')
-                WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'user') \gexec
-              SELECT format('ALTER ROLE %I PASSWORD %L', :'user', :'pw') \gexec
-              SELECT format('CREATE DATABASE %I OWNER %I', :'db', :'user')
-                WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db') \gexec
-              SQL
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
+        {{- include "ehds-relay.dbInitContainer" (dict "ctx" . "name" "keycloak-db-init" "database" .Values.keycloak.database.name "secret" (include "ehds-relay.keycloakSecretName" .) "userKey" "KC_DB_USERNAME" "passwordKey" "KC_DB_PASSWORD") | nindent 8 }}
       {{- end }}
       containers:
         - name: keycloak
           image: "{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}"
           imagePullPolicy: {{ .Values.keycloak.image.pullPolicy }}
+          {{- if eq .Values.keycloak.mode "production" }}
+          args: ["start", "--import-realm"]
+          {{- else }}
           args: ["start-dev", "--import-realm"]
+          {{- end }}
           ports:
             - name: http
               containerPort: 8080
@@ -83,7 +46,7 @@ spec:
               containerPort: 9000
           envFrom:
             - secretRef:
-                name: {{ include "ehds-relay.fullname" . }}-keycloak
+                name: {{ include "ehds-relay.keycloakSecretName" . }}
           env:
             - name: KC_HTTP_ENABLED
               value: "true"
@@ -95,13 +58,18 @@ spec:
               value: {{ .Values.keycloak.hostname | quote }}
             - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
               value: "true"
+            {{- if eq .Values.keycloak.mode "production" }}
+            # TLS ends at the ingress, which passes the original scheme and host on
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
+            {{- end }}
             # Filled into the ${RELAY_*} placeholders of the realm JSON (first import only)
             {{- include "ehds-relay.keycloakRealmEnv" . | nindent 12 }}
             {{- if include "ehds-relay.keycloakDbEnabled" . }}
             - name: KC_DB
               value: postgres
             - name: KC_DB_URL
-              value: {{ printf "jdbc:postgresql://%s:%v/%s" (include "ehds-relay.dbHost" .) .Values.database.port .Values.keycloak.database.name | quote }}
+              value: {{ printf "jdbc:postgresql://%s:%v/%s%s" (include "ehds-relay.dbHost" .) .Values.database.port .Values.keycloak.database.name (include "ehds-relay.dbQuery" .) | quote }}
             {{- end }}
           volumeMounts:
             - name: realm

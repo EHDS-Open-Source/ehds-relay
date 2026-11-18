@@ -1,0 +1,154 @@
+{{- if .Values.gateway.enabled }}
+{{- if not .Values.web.enabled }}
+{{- fail "gateway.enabled needs web.enabled: the web host is routed to the web app" }}
+{{- end }}
+{{- $fullname := include "ehds-relay.fullname" . }}
+{{- $tlsSecret := .Values.gateway.tlsSecretName | default (printf "%s-tls" $fullname) }}
+{{- $hosts := dict "web" (include "ehds-relay.webHost" .) }}
+{{- if .Values.keycloak.enabled }}
+{{- $_ := set $hosts "auth" (include "ehds-relay.keycloakHost" .) }}
+{{- end }}
+# A Gateway of this release's own: listeners only for its hosts, and routes only from its
+# namespace, so it can share the cluster's Traefik with other apps.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ $fullname }}
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+spec:
+  gatewayClassName: {{ .Values.gateway.className }}
+  listeners:
+    {{- range $name, $host := $hosts }}
+    - name: {{ $name }}-http
+      protocol: HTTP
+      port: {{ $.Values.gateway.httpPort }}
+      hostname: {{ $host | quote }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: {{ $name }}-https
+      protocol: HTTPS
+      port: {{ $.Values.gateway.httpsPort }}
+      hostname: {{ $host | quote }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            group: ""
+            name: {{ $tlsSecret }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+    {{- end }}
+---
+# Plain http only redirects to https
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $fullname }}-https-redirect
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    {{- range $name, $_ := $hosts }}
+    - name: {{ $fullname }}
+      sectionName: {{ $name }}-http
+    {{- end }}
+  hostnames:
+    {{- range $_, $host := $hosts }}
+    - {{ $host | quote }}
+    {{- end }}
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+---
+# One origin for the browser: the API under the web host, everything else the web app
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $fullname }}-web
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ $fullname }}
+      sectionName: web-https
+  hostnames:
+    - {{ $hosts.web | quote }}
+  rules:
+    - matches:
+        {{- range list "/api" "/healthz" "/readyz" }}
+        - path:
+            type: PathPrefix
+            value: {{ . }}
+        {{- end }}
+      backendRefs:
+        - name: {{ $fullname }}-api
+          port: {{ .Values.api.service.port }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ $fullname }}-web
+          port: {{ .Values.web.service.port }}
+{{- if .Values.keycloak.enabled }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $fullname }}-keycloak
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ $fullname }}
+      sectionName: auth-https
+  hostnames:
+    - {{ $hosts.auth | quote }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ $fullname }}-keycloak
+          port: {{ .Values.keycloak.service.port }}
+{{- end }}
+{{- with .Values.gateway.certificate.issuerSpec }}
+{{- if ne $.Values.gateway.certificate.issuerKind "Issuer" }}
+{{- fail "gateway.certificate.issuerSpec needs issuerKind: Issuer" }}
+{{- end }}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ required "gateway.certificate.issuerName names the Issuer" $.Values.gateway.certificate.issuerName }}
+  labels:
+    {{- include "ehds-relay.labels" $ | nindent 4 }}
+spec:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with .Values.gateway.certificate.issuerName }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $fullname }}
+  labels:
+    {{- include "ehds-relay.labels" $ | nindent 4 }}
+spec:
+  secretName: {{ $tlsSecret }}
+  dnsNames:
+    {{- range $_, $host := $hosts }}
+    - {{ $host | quote }}
+    {{- end }}
+  issuerRef:
+    name: {{ . }}
+    kind: {{ $.Values.gateway.certificate.issuerKind }}
+{{- end }}
+{{- end }}

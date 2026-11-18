@@ -1,0 +1,67 @@
+{{- if .Values.ingress.enabled }}
+{{- if not .Values.web.enabled }}
+{{- fail "ingress.enabled needs web.enabled: the ingress routes the web host to the web app" }}
+{{- end }}
+{{- $fullname := include "ehds-relay.fullname" . }}
+{{- $webHost := include "ehds-relay.webHost" . }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}
+  labels:
+    {{- include "ehds-relay.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if or .Values.ingress.tls.webSecretName .Values.ingress.tls.keycloakSecretName }}
+  tls:
+    {{- with .Values.ingress.tls.webSecretName }}
+    - hosts: [{{ $webHost | quote }}]
+      secretName: {{ . }}
+    {{- end }}
+    {{- if .Values.keycloak.enabled }}
+    {{- with .Values.ingress.tls.keycloakSecretName }}
+    - hosts: [{{ include "ehds-relay.keycloakHost" $ | quote }}]
+      secretName: {{ . }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+  rules:
+    # One origin for the browser: the API under the web host, everything else the web app
+    - host: {{ $webHost | quote }}
+      http:
+        paths:
+          {{- range list "/api" "/healthz" "/readyz" }}
+          - path: {{ . }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullname }}-api
+                port:
+                  number: {{ $.Values.api.service.port }}
+          {{- end }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullname }}-web
+                port:
+                  number: {{ .Values.web.service.port }}
+    {{- if .Values.keycloak.enabled }}
+    - host: {{ include "ehds-relay.keycloakHost" . | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullname }}-keycloak
+                port:
+                  number: {{ .Values.keycloak.service.port }}
+    {{- end }}
+{{- end }}

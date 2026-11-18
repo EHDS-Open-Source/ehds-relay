@@ -131,6 +131,34 @@ Tear down: `make cluster down` (add `--remove-registries` to also remove the reg
 which other kind clusters on the machine may share). This deletes the whole cluster, including
 every checkout's stack in it.
 
+## Builds
+
+`.github/workflows/build.yml` builds two images, `ehds-relay-api` (backend/) and
+`ehds-relay-web` (the built web app served by nginx, frontend/Dockerfile), and packages the Helm
+chart with the same version, so a chart installs the images built with it. Pushes to `main` and
+`mvp-integration`, and manual runs from the Actions tab on any branch, publish them to GHCR; pull
+requests only build them. The version is `Chart.yaml`'s version plus `-beta.N`
+(mvp-integration), `-rc.N` (main) or `-branch.g<sha>`, where N counts merges since the chart
+version last changed. The run's summary lists them:
+
+```bash
+helm install <release> oci://ghcr.io/ehds-open-source/charts/ehds-relay --version 0.1.0-beta.3
+```
+
+Chart values for running outside a local kind cluster (all off by default):
+- `web.enabled`: the web image instead of the Vite dev server.
+- `gateway.enabled`: a Gateway API Gateway of the release's own, with HTTPRoutes sending the web
+  host's `/api`, `/healthz` and `/readyz` to the API and everything else to the web app, a
+  second host for Keycloak, an http-to-https redirect, and a cert-manager Certificate for both
+  hosts (optionally with its own Issuer). `ingress.enabled` does the same with an Ingress.
+- `keycloak.mode: production` runs `start` behind a TLS-terminating proxy;
+  `keycloak.testUsers: false` leaves the test users and their published passwords out of the realm.
+- `postgres.enabled: false` with `database.host` and `database.sslMode` uses a separate Postgres
+  server. With `database.provision` (the default) init containers create the `relay` and
+  `keycloak` roles and databases on it, signed in as `database.superuser`.
+- `database.existingSecret`, `oidc.existingSecret` and `keycloak.existingSecret` take credentials
+  from secrets you create instead of values.
+
 ## Demo walkthrough
 
 With the stack running (ports below are the defaults):
