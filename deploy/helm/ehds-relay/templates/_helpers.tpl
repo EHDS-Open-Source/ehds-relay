@@ -42,9 +42,82 @@ app.kubernetes.io/component: api
       name: {{ include "ehds-relay.dbSecretName" . }}
       key: USERDB_PASSWORD
 - name: RELAY_DATABASE_URL
-  value: {{ printf "postgresql+psycopg2://$(DB_USER):$(DB_PASSWORD)@%s:%v/%s" (include "ehds-relay.dbHost" .) .Values.database.port .Values.database.name | quote }}
+  value: {{ printf "postgresql+psycopg2://$(DB_USER):$(DB_PASSWORD)@%s:%v/%s%s" (include "ehds-relay.dbHost" .) .Values.database.port .Values.database.name (include "ehds-relay.dbQuery" .) | quote }}
 - name: RELAY_LOG_LEVEL
   value: {{ .Values.api.logLevel | quote }}
+{{- end -}}
+
+{{/* "?sslmode=..." for database URLs when database.sslMode is set */}}
+{{- define "ehds-relay.dbQuery" -}}
+{{- with .Values.database.sslMode }}?sslmode={{ . }}{{ end -}}
+{{- end -}}
+
+{{/* "<repository>:<tag>" for an image block; the tag defaults to the chart's appVersion */}}
+{{- define "ehds-relay.image" -}}
+{{- printf "%s:%s" .image.repository (.image.tag | default .ctx.Chart.AppVersion | toString) -}}
+{{- end -}}
+
+{{- define "ehds-relay.keycloakSecretName" -}}
+{{- .Values.keycloak.existingSecret | default (printf "%s-keycloak" (include "ehds-relay.fullname" .)) -}}
+{{- end -}}
+
+{{/*
+Init container that creates a role and database if they are missing, signed in as
+database.superuser. Safe to repeat. Takes ctx, name, the database name, and the secret and keys
+holding the role's username and password.
+*/}}
+{{- define "ehds-relay.dbInitContainer" -}}
+{{- $ := .ctx -}}
+- name: {{ .name }}
+  image: "postgres:{{ $.Values.postgres.image.tag }}"
+  env:
+    - name: PGHOST
+      value: {{ include "ehds-relay.dbHost" $ | quote }}
+    - name: PGPORT
+      value: {{ $.Values.database.port | quote }}
+    - name: PGUSER
+      value: {{ $.Values.database.superuser | quote }}
+    - name: PGPASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: {{ include "ehds-relay.dbSecretName" $ }}
+          key: POSTGRES_PASSWORD
+    {{- with $.Values.database.sslMode }}
+    - name: PGSSLMODE
+      value: {{ . | quote }}
+    {{- end }}
+    - name: TARGET_DB
+      value: {{ .database | quote }}
+    - name: TARGET_USER
+      valueFrom:
+        secretKeyRef:
+          name: {{ .secret }}
+          key: {{ .userKey }}
+    - name: TARGET_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: {{ .secret }}
+          key: {{ .passwordKey }}
+  # The GRANT lets a non-superuser admin (managed Postgres) create a database owned by the role.
+  command:
+    - /bin/sh
+    - -c
+    - |
+      until pg_isready -q -d postgres; do echo "waiting for postgres"; sleep 2; done
+      psql -v ON_ERROR_STOP=1 -v db="$TARGET_DB" -v user="$TARGET_USER" \
+        -v pw="$TARGET_PASSWORD" -d postgres <<'SQL'
+      SELECT format('CREATE ROLE %I LOGIN', :'user')
+        WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'user') \gexec
+      SELECT format('ALTER ROLE %I PASSWORD %L', :'user', :'pw') \gexec
+      SELECT format('GRANT %I TO CURRENT_USER', :'user')
+        WHERE NOT pg_has_role(CURRENT_USER, :'user', 'MEMBER') \gexec
+      SELECT format('CREATE DATABASE %I OWNER %I', :'db', :'user')
+        WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db') \gexec
+      SQL
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
 {{- end -}}
 
 {{/* Selector labels for the components templated below (the API keeps its own helper) */}}
@@ -141,9 +214,10 @@ app.kubernetes.io/component: {{ .component }}
   value: {{ .Values.smtp.from | quote }}
 {{- end -}}
 
-{{/* Keycloak keeps its data in its own database on the bundled Postgres (else in-pod H2) */}}
+{{/* Keycloak keeps its data in its own database on the bundled Postgres or database.host
+     (else in-pod H2) */}}
 {{- define "ehds-relay.keycloakDbEnabled" -}}
-{{- if and .Values.postgres.enabled .Values.keycloak.database.enabled -}}true{{- end -}}
+{{- if and .Values.keycloak.database.enabled (or .Values.postgres.enabled .Values.database.host) -}}true{{- end -}}
 {{- end -}}
 
 {{/* Values filled into the ${RELAY_*} placeholders of the realm JSON. Keycloak substitutes them
@@ -173,3 +247,12 @@ than SVG); empty for text.
 {{- define "ehds-relay.keycloakThemeBinary" -}}
 {{- if regexMatch "\\.(woff2?|png|ico|jpe?g|gif)$" . }}true{{ end }}
 {{- end }}
+
+{{/* Host names (no scheme or port) the browser uses for the web app and Keycloak */}}
+{{- define "ehds-relay.webHost" -}}
+{{- (urlParse .Values.web.url).host | splitList ":" | first -}}
+{{- end -}}
+
+{{- define "ehds-relay.keycloakHost" -}}
+{{- (urlParse .Values.keycloak.hostname).host | splitList ":" | first -}}
+{{- end -}}

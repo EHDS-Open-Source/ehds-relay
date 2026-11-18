@@ -1,0 +1,13 @@
+# Only the web image builds from the repo root (frontend/Dockerfile); the API image uses backend/.
+*
+!frontend/package.json
+!frontend/pnpm-lock.yaml
+!frontend/pnpm-workspace.yaml
+!frontend/tsconfig.base.json
+!frontend/tsconfig.json
+!frontend/packages
+!frontend/docker
+!backend/tests/golden
+**/node_modules
+**/dist
+**/*.tsbuildinfo

@@ -2,8 +2,9 @@ api:
   enabled: true
   replicas: 1
   image:
-    repository: localhost:5001/ehds-relay-api
-    tag: dev
+    repository: ghcr.io/ehds-open-source/ehds-relay-api
+    # Empty: the chart's appVersion. CI packages each chart with the tag of the images it built.
+    tag: ""
     pullPolicy: IfNotPresent
   logLevel: info
   # uvicorn --reload, for the Tilt live-update loop only
@@ -32,6 +33,54 @@ worker:
 # origin, so sign-in redirects, the session cookie and invitation links all use it.
 web:
   url: http://localhost:5173
+  # The built web app served by nginx (frontend/Dockerfile). Off for local development, where
+  # the Vite dev server on the host serves it instead.
+  enabled: false
+  replicas: 1
+  image:
+    repository: ghcr.io/ehds-open-source/ehds-relay-web
+    # Empty: the chart's appVersion
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8080
+  resources: {}
+
+# Secrets for pulling the images, e.g. while the GHCR packages are private
+imagePullSecrets: []
+
+# Gateway API alternative to the ingress below: a Gateway of the release's own, HTTPRoutes for web.url and
+# keycloak.hostname, an http-to-https redirect, and optionally a cert-manager Certificate for
+# both hosts. Needs web.enabled.
+gateway:
+  enabled: false
+  className: traefik
+  # Must match the Traefik entrypoints the GatewayClass serves (Traefik chart defaults)
+  httpPort: 8000
+  httpsPort: 8443
+  # Secret holding the certificate for both hosts. Empty: <release>-tls.
+  tlsSecretName: ""
+  # cert-manager issuer for that certificate. Empty name: no Certificate, provide the secret.
+  certificate:
+    issuerKind: ClusterIssuer
+    issuerName: ""
+    # Spec of a namespaced cert-manager Issuer to create under issuerName (set issuerKind:
+    # Issuer), e.g. ACME with a DNS-01 solver. Empty: use an issuer that already exists.
+    issuerSpec: {}
+
+# Routes web.url and keycloak.hostname to the services. The web host sends /api, /healthz and
+# /readyz to the API and everything else to the web app, so the browser sees one origin.
+# Needs web.enabled. Hosts come from web.url and keycloak.hostname.
+ingress:
+  enabled: false
+  className: traefik
+  # e.g. cert-manager.io/cluster-issuer: letsencrypt
+  annotations: {}
+  # Secret names for the certificates (cert-manager creates them from the annotation above).
+  # Empty: no tls section.
+  tls:
+    webSecretName: ""
+    keycloakSecretName: ""
 
 # Browser sessions issued by the API after sign-in
 session:
@@ -62,6 +111,15 @@ oidc:
 # Keycloak falls back to in-pod H2 and loses everything on restart.
 keycloak:
   enabled: true
+  # dev: `start-dev` (no caching, relaxed checks), for local clusters.
+  # production: `start` behind a TLS-terminating ingress (keycloak.hostname must be https).
+  mode: dev
+  # The test users in the realm file (owner, standard, invitee) with their published dev
+  # passwords. Switch off for anything reachable from outside your machine.
+  testUsers: true
+  # Secret with KC_BOOTSTRAP_ADMIN_USERNAME, KC_BOOTSTRAP_ADMIN_PASSWORD and, with the
+  # database on, KC_DB_USERNAME and KC_DB_PASSWORD. Empty: created from the values below.
+  existingSecret: ""
   image:
     repository: keycloak/keycloak
     tag: "26.8.1"
@@ -76,7 +134,8 @@ keycloak:
   # Empty webUrl: web.url.
   webUrl: ""
   apiUrl: http://localhost:8000
-  # Database on the bundled Postgres. The role and database are created if missing.
+  # Keycloak's own database, on the bundled Postgres or on database.host. The role and database
+  # are created if missing (see database.provision).
   database:
     enabled: true
     name: keycloak
@@ -127,6 +186,13 @@ database:
   host: ""
   port: 5432
   name: relay
+  # libpq sslmode for every connection, e.g. require for a managed server.
+  # Empty: the client default.
+  sslMode: ""
+  # Create the app and Keycloak roles and databases if they are missing, signed in as
+  # superuser with POSTGRES_PASSWORD. On a managed server use its admin login.
+  provision: true
+  superuser: postgres
   # Secret holding USERDB_USER / USERDB_PASSWORD / POSTGRES_PASSWORD. Created by this
   # chart from the values below unless existingSecret is set.
   existingSecret: ""

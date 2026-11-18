@@ -1,6 +1,6 @@
 {{- if .Values.worker.enabled }}
 {{- $repository := .Values.worker.image.repository | default .Values.api.image.repository }}
-{{- $tag := .Values.worker.image.tag | default .Values.api.image.tag }}
+{{- $tag := .Values.worker.image.tag | default .Values.api.image.tag | default .Chart.AppVersion }}
 {{- $pullPolicy := .Values.worker.image.pullPolicy | default .Values.api.image.pullPolicy }}
 apiVersion: apps/v1
 kind: Deployment
@@ -23,6 +23,10 @@ spec:
         runAsNonRoot: true
         runAsUser: 1001
         runAsGroup: 1001
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: worker
           # Same image as the API; only the command differs

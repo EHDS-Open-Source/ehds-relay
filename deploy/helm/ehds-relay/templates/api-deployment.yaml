@@ -20,10 +20,20 @@ spec:
         runAsNonRoot: true
         runAsUser: 1001
         runAsGroup: 1001
-      {{- if .Values.api.migrations.enabled }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- $provision := and .Values.database.provision (not .Values.postgres.enabled) }}
+      {{- if or .Values.api.migrations.enabled $provision }}
       initContainers:
+        {{- if $provision }}
+        # The bundled Postgres creates the app database itself; a separate server needs this
+        {{- include "ehds-relay.dbInitContainer" (dict "ctx" . "name" "db-init" "database" .Values.database.name "secret" (include "ehds-relay.dbSecretName" .) "userKey" "USERDB_USER" "passwordKey" "USERDB_PASSWORD") | nindent 8 }}
+        {{- end }}
+        {{- if .Values.api.migrations.enabled }}
         - name: migrations
-          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          image: {{ include "ehds-relay.image" (dict "ctx" . "image" .Values.api.image) | quote }}
           imagePullPolicy: {{ .Values.api.image.pullPolicy }}
           # Retry until the database accepts connections
           command:
@@ -41,10 +51,11 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+        {{- end }}
       {{- end }}
       containers:
         - name: api
-          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          image: {{ include "ehds-relay.image" (dict "ctx" . "image" .Values.api.image) | quote }}
           imagePullPolicy: {{ .Values.api.image.pullPolicy }}
           {{- if .Values.api.reload }}
           # Appended to the image's uvicorn ENTRYPOINT (dev only, used by Tilt)

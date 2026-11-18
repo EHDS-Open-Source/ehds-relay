@@ -26,6 +26,10 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: realm-init
           image: "{{ .Values.realmInit.image.repository }}:{{ .Values.realmInit.image.tag }}"
@@ -35,7 +39,7 @@ spec:
           workingDir: /app
           envFrom:
             - secretRef:
-                name: {{ include "ehds-relay.fullname" . }}-keycloak
+                name: {{ include "ehds-relay.keycloakSecretName" . }}
           env:
             - name: PYTHONDONTWRITEBYTECODE
               value: "1"

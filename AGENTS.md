@@ -86,6 +86,7 @@ Before finishing a change run `make check` and `make test`.
 - `ci-api.yml`: backend `make -C backend install check test`, on changes to `backend/**`, the API client or the realm-init files.
 - `ci-ui.yml`: frontend `make -C frontend install check test build`, on changes to `frontend/**`.
 - `ci-e2e.yml`: brings up the Helm chart on a kind cluster on the runner (`scripts/e2e-stack.sh`), starts Vite and runs `make e2e`, on changes to `backend/**`, `frontend/**`, `deploy/**` or the Tiltfile.
+- `build.yml`: builds and publishes the API and web images and the Helm chart to GHCR (see the README, "Builds"). Pushes to `main` and `mvp-integration` and manual runs publish; pull requests only build.
 - Every `uses:` is pinned to a full commit SHA with the version in a comment; keep it that way when bumping.
 
 ### kind / Tilt / kube context
