@@ -31,14 +31,29 @@ spec:
               containerPort: 1025
             - name: http
               containerPort: 8025
+          {{- if or .Values.mailpit.webroot .Values.mailpit.uiAuthSecret }}
+          env:
+            {{- with .Values.mailpit.webroot }}
+            - name: MP_WEBROOT
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.mailpit.uiAuthSecret }}
+            - name: MP_UI_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: {{ . }}
+                  key: MP_UI_AUTH
+            {{- end }}
+          {{- end }}
+          {{- $root := trimSuffix "/" .Values.mailpit.webroot }}
           livenessProbe:
             httpGet:
-              path: /livez
+              path: {{ printf "%s/livez" $root }}
               port: http
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /readyz
+              path: {{ printf "%s/readyz" $root }}
               port: http
             periodSeconds: 5
           securityContext:
