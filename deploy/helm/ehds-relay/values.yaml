@@ -178,6 +178,14 @@ mailpit:
   # SMTP is served on smtp.port
   service:
     uiPort: 8025
+  # Serve the web UI and API under this path (e.g. /mailpit/) instead of /
+  webroot: ""
+  # Secret with the key MP_UI_AUTH ("user:password", several separated by spaces) to require
+  # basic auth for the web UI and API. Empty: no auth.
+  uiAuthSecret: ""
+  # With gateway.enabled and a webroot: route <web host><webroot> to Mailpit. Only for test
+  # environments whose gateway is not open to the public.
+  route: false
   resources: {}
 
 # Connection settings for the application database. host defaults to the bundled
