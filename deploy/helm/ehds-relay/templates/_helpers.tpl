@@ -98,7 +98,8 @@ holding the role's username and password.
         secretKeyRef:
           name: {{ .secret }}
           key: {{ .passwordKey }}
-  # The GRANT lets a non-superuser admin (managed Postgres) create a database owned by the role.
+  # The GRANT lets a non-superuser admin (managed Postgres) create a database owned by the role
+  # and hand it the public schema.
   command:
     - /bin/sh
     - -c
@@ -113,6 +114,12 @@ holding the role's username and password.
         WHERE NOT pg_has_role(CURRENT_USER, :'user', 'MEMBER') \gexec
       SELECT format('CREATE DATABASE %I OWNER %I', :'db', :'user')
         WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db') \gexec
+      SQL
+      # Some managed servers create public owned by their admin role, not the database owner
+      psql -v ON_ERROR_STOP=1 -v user="$TARGET_USER" -d "$TARGET_DB" <<'SQL'
+      SELECT format('ALTER SCHEMA public OWNER TO %I', :'user')
+        WHERE (SELECT nspowner::regrole::text FROM pg_namespace WHERE nspname = 'public')
+          IS DISTINCT FROM quote_ident(:'user') \gexec
       SQL
   securityContext:
     allowPrivilegeEscalation: false
