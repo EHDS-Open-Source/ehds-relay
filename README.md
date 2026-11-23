@@ -389,6 +389,16 @@ as Tilt, port-forwards the API, Keycloak and Mailpit and waits until they are re
 starts Vite and runs `make e2e`. A failed run uploads the Playwright report and traces as an
 artifact and prints the pods' logs.
 
+## Design-review screenshots
+
+`make screenshots` signs in as the dev owner and saves a full-page PNG of every core screen to
+`~/ehds-relay-screenshots/<today>/` (sign-in, Keycloak's form, the pages in the side menu, one dataset,
+and a 390x844 shot with the menu open), numbered in menu order. It is read-only and finds pages
+from the menu and their links, so a new route needs no change to the script. Run it against the
+running stack (`make tilt`), after the one-time browser install from the End-to-end section:
+`(cd frontend && pnpm exec playwright install chromium)`. `UI_URL`, `FN_USER`, `FN_PASSWORD` and
+`OUT_DIR` override the defaults (`http://localhost:${WEB_PORT:-5173}`, the dev owner above, the folder above).
+
 ## API
 
 | Method | Path | |

@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 
-.PHONY: cluster up down deploy tilt web install pip_compile pip_compile_dev api_client test check check_password_flows e2e
+.PHONY: cluster up down deploy tilt web install pip_compile pip_compile_dev api_client test check check_password_flows e2e screenshots
 
 # make cluster up | make cluster down [--remove-registries]
 cluster:
@@ -53,3 +53,9 @@ check_password_flows:
 e2e:
 	set -a; [ -f .dev.env ] && . ./.dev.env; set +a; \
 	$(MAKE) -C frontend e2e
+
+# Full-page screenshots of the core screens for design review, saved to
+# ~/ehds-relay-screenshots/<today>/. Against the running stack (Tilt). Read-only. See the README.
+screenshots:
+	set -a; [ -f .dev.env ] && . ./.dev.env; set +a; \
+	$(MAKE) -C frontend screenshots
