@@ -57,4 +57,5 @@ e2e:
 # Full-page screenshots of the core screens for design review, saved to
 # ~/ehds-relay-screenshots/<today>/. Against the running stack (Tilt). Read-only. See the README.
 screenshots:
+	set -a; [ -f .dev.env ] && . ./.dev.env; set +a; \
 	$(MAKE) -C frontend screenshots
