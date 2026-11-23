@@ -52,11 +52,37 @@ async function visit(page, url) {
   await settle(page);
 }
 
+const outcomes = [];
+
+/**
+ * Runs one step. A failure is logged, the page is saved as failed-<name>.png when it can be,
+ * and the run carries on; it only shows in the summary and the exit code.
+ */
+async function step(name, fn, page) {
+  try {
+    const value = await fn();
+    outcomes.push({ name, ok: true });
+    return value;
+  } catch (err) {
+    const message = err.message.split("\n")[0];
+    console.error(`FAILED ${name}: ${message}`);
+    outcomes.push({ name, ok: false, message });
+    await page
+      ?.screenshot({
+        path: path.join(OUT_DIR, `failed-${slugify(name)}.png`),
+        fullPage: true,
+        timeout: 5_000,
+      })
+      .catch(() => {});
+    return undefined;
+  }
+}
+
 /** Opens the app's sign-in page and follows its Sign in link to Keycloak's own form. */
 async function openKeycloakForm(page) {
   await visit(page, href("sign-in"));
   await page.getByRole("link", { name: "Sign in", exact: true }).click();
-  await page.locator("#username").waitFor();
+  await page.locator("#username").waitFor({ timeout: 15_000 });
 }
 
 /** Signs in through Keycloak's form and waits until the browser is back in the app. */
@@ -119,6 +145,8 @@ async function pickOrg(page) {
   const orgs = (await linksIn(page, "main a")).filter((h) =>
     /\/orgs\/[^/]+\/catalogue$/.test(h),
   );
+  if (orgs.length === 0)
+    throw new Error("No organisation to show: create one first");
   for (const org of orgs) {
     await visit(page, href(org));
     if ((await linksIn(page, "main a")).some(isDataset))
@@ -127,10 +155,13 @@ async function pickOrg(page) {
   return { catalogue: orgs[0], steps };
 }
 
-/** The catalogue, its add-dataset form, then the first dataset with its edit and export pages. */
-async function catalogueSteps(page, catalogueHref) {
+/**
+ * Adds the catalogue, its add-dataset form, then the first dataset with its edit and export
+ * pages to `steps`. What was found before a failure stays in `steps`.
+ */
+async function catalogueSteps(page, catalogueHref, steps) {
   await visit(page, href(catalogueHref));
-  const steps = [{ slug: "catalogue", url: href(catalogueHref) }];
+  steps.push({ slug: "catalogue", url: href(catalogueHref) });
   const links = await linksIn(page, "main a");
 
   const create = links.find((h) => h.endsWith("/datasets/new"));
@@ -139,35 +170,51 @@ async function catalogueSteps(page, catalogueHref) {
   const dataset = links.find(isDataset);
   if (!dataset) {
     console.log("No datasets: only the empty catalogue is captured");
-    return steps;
+    return;
   }
   steps.push({ slug: "dataset-detail", url: href(dataset) });
   await visit(page, href(dataset));
   const below = await linksIn(page, `main a[href^="${dataset}/"]`);
   for (const sub of below)
     steps.push({ slug: `dataset-${sub.split("/").pop()}`, url: href(sub) });
-  return steps;
 }
 
 /** Logs in once and walks the side menu, in menu order. */
 async function discover(browser) {
   const context = await newContext(browser, DESKTOP);
   const page = await context.newPage();
-  await login(page);
-  const { catalogue, steps: extra } = await pickOrg(page);
-  if (!catalogue) throw new Error("No organisation to show: create one first");
-  await visit(page, href(catalogue));
-  await openMenu(page);
-  const menu = await menuLinks(page);
-  await page.keyboard.press("Escape");
-
   const steps = [];
-  for (const item of menu) {
-    if (item.href.endsWith("/catalogue"))
-      steps.push(...(await catalogueSteps(page, item.href)));
-    else steps.push({ slug: slugify(item.label), url: href(item.href) });
+  let menu = [];
+  const signedIn = await step(
+    "discover: sign in",
+    () => login(page).then(() => true),
+    page,
+  );
+  const org = signedIn
+    ? await step("discover: organisation", () => pickOrg(page), page)
+    : undefined;
+  if (org) {
+    await step(
+      "discover: side menu",
+      async () => {
+        await visit(page, href(org.catalogue));
+        await openMenu(page);
+        menu = await menuLinks(page);
+        await page.keyboard.press("Escape");
+      },
+      page,
+    );
+    for (const item of menu) {
+      if (item.href.endsWith("/catalogue"))
+        await step(
+          "discover: catalogue",
+          () => catalogueSteps(page, item.href, steps),
+          page,
+        );
+      else steps.push({ slug: slugify(item.label), url: href(item.href) });
+    }
+    steps.push(...org.steps);
   }
-  steps.push(...extra);
   await context.close();
   return { menu, steps };
 }
@@ -185,56 +232,83 @@ async function shot(page, number, slug) {
 async function captureSignIn(browser) {
   const context = await newContext(browser, DESKTOP);
   const page = await context.newPage();
-  await visit(page, href("sign-in"));
-  await shot(page, 1, "sign-in");
-  await openKeycloakForm(page);
-  await shot(page, 2, "keycloak-login");
+  await step(
+    "sign-in",
+    async () => {
+      await visit(page, href("sign-in"));
+      await shot(page, 1, "sign-in");
+    },
+    page,
+  );
+  await step(
+    "keycloak-login",
+    async () => {
+      await openKeycloakForm(page);
+      await shot(page, 2, "keycloak-login");
+    },
+    page,
+  );
   await context.close();
 }
 
-async function captureDesktop(browser, steps, failures) {
+async function captureDesktop(browser, steps) {
   const context = await newContext(browser, DESKTOP);
   const page = await context.newPage();
-  await login(page);
-
-  for (const [i, step] of steps.entries()) {
-    try {
-      await visit(page, step.url);
-      await shot(page, i + 3, step.slug);
-    } catch (err) {
-      failures.push(`${step.slug}: ${err.message.split("\n")[0]}`);
+  const signedIn = await step(
+    "desktop: sign in",
+    () => login(page).then(() => true),
+    page,
+  );
+  if (signedIn) {
+    for (const [i, target] of steps.entries()) {
+      await step(
+        target.slug,
+        async () => {
+          await visit(page, target.url);
+          await shot(page, i + 3, target.slug);
+        },
+        page,
+      );
     }
   }
   await context.close();
 }
 
 /** One narrow screen: the first menu page with the side menu open. */
-async function captureMobile(browser, menu, number, failures) {
+async function captureMobile(browser, menu, number) {
+  if (menu.length === 0) return;
   const context = await newContext(browser, MOBILE);
   const page = await context.newPage();
-  await login(page);
-  try {
-    await visit(page, href(menu[0].href));
-    await openMenu(page);
-    await shot(page, number, `mobile-${slugify(menu[0].label)}-menu-open`);
-  } catch (err) {
-    failures.push(`mobile: ${err.message.split("\n")[0]}`);
+  const signedIn = await step(
+    "mobile: sign in",
+    () => login(page).then(() => true),
+    page,
+  );
+  if (signedIn) {
+    await step(
+      "mobile",
+      async () => {
+        await visit(page, href(menu[0].href));
+        await openMenu(page);
+        await shot(page, number, `mobile-${slugify(menu[0].label)}-menu-open`);
+      },
+      page,
+    );
   }
   await context.close();
 }
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 const browser = await chromium.launch();
-const failures = [];
 try {
   await captureSignIn(browser);
   const { menu, steps } = await discover(browser);
-  await captureDesktop(browser, steps, failures);
-  await captureMobile(browser, menu, steps.length + 3, failures);
+  await captureDesktop(browser, steps);
+  await captureMobile(browser, menu, steps.length + 3);
 } finally {
   await browser.close();
 }
-if (failures.length > 0) {
-  console.error(`\nFailed:\n${failures.join("\n")}`);
-  process.exitCode = 1;
-}
+const failed = outcomes.filter((o) => !o.ok);
+console.log(`\n${outcomes.length - failed.length} ok, ${failed.length} failed`);
+for (const f of failed) console.log(`  FAILED ${f.name}: ${f.message}`);
+if (failed.length > 0) process.exitCode = 1;
