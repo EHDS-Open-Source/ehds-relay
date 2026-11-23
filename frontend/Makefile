@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 PNPM ?= pnpm
 
-.PHONY: install dev lint format typecheck test check build api_client e2e keycloak_theme
+.PHONY: install dev lint format typecheck test check build api_client e2e screenshots keycloak_theme
 
 install:
 	$(PNPM) install --frozen-lockfile
@@ -42,3 +42,9 @@ keycloak_theme:
 # Not part of `make test`. Needs a browser once: pnpm exec playwright install chromium
 e2e:
 	$(PNPM) e2e $(ARGS)
+
+# Full-page screenshots of the core screens in ~/ehds-relay-screenshots/<today>/ for design review,
+# against the running stack (Tilt) on ${WEB_PORT:-5173}. Read-only. Needs a browser once:
+# pnpm exec playwright install chromium. UI_URL, FN_USER, FN_PASSWORD and OUT_DIR override the defaults.
+screenshots:
+	$(PNPM) screenshots
